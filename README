@@ -144,7 +144,9 @@ If the server has 32GB of DRAM, or less, the results will be sub-optimal.
 
 mthread-ro.sh & multihost-ro.sh
 
-This test exercises read-only data (dates) that have already been created by previous runs of mthread.sh. The additinal argument to this is the name of the directory containing the test data. 
+This test exercises read-only data (dates) that have already been created by previous 
+runs of mthread.sh. The additional argument to this is the name of the directory 
+containing the test data. 
 This version of the script is useful where the file system is "tiered" and you wish 
 to read from files that might be retired to a long-term or slower tier, for example 
 when testing files that you know are migrated to an object store, via the file system 
