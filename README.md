@@ -1,6 +1,6 @@
-# nano benchmark README v1.15.  February 2018 
+# nano benchmark README v1.16.  August 2019 
 
-© Kx Systems 2018
+© Kx Systems 2019
 
 
 "nano" calculates basic raw I/O capability of non-volatile storage, as measured from the perspective of kdb+
@@ -136,7 +136,7 @@ This takes three arguments :
    be used, with 256KB blocksize.  If undefined, there is no 
    compression (default)
 
-Typical examples for the number of threads to test are 1, 2, 4, 8, 16.  
+Typical examples for the number of threads to test are 1, 2, 4, 8, 16, 32, 64.  
 The script will consume approx approx 85% of available memory during the latter 
 stages of the "run" phase, as lists are modified.
 If the server has 32&nbsp;GB of DRAM, or less, the results will be sub-optimal.
