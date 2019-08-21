@@ -1,12 +1,12 @@
 #!/bin/bash
-VERS=v1.15
+VERS=v1.16
 # usage mthread.sh numthreads keep|delete [compress]
 HERE=`pwd`
 echo please set PATH and QHOME at top of this script, to include q dirs, then comment out these two lines and re-run mthread.sh
 exit
-export PATH=$PATH:/home/kx/3.5/l64
-export QHOME=/home/kx/3.5
-export QBIN="numactl --physcpubind=0-15 $QHOME/l64/qd"
+export QHOME=/home/kx/
+export PATH=$PATH:$QHOME/l64
+export QBIN="$QHOME/l64/q"
 #
 DATE=`date +%m%d:%H%M`
 HOST=`uname -n`
@@ -23,9 +23,9 @@ then
 	echo "Usage: mthread #numberthreads keep|delete [compress]"
 	exit
 fi
-if [ $1 -gt 32 ]
+if [ $1 -gt 64 ]
 then
-	echo "This test does not qualify results above 32 processes"
+	echo "This test does not qualify results above 64 processes"
 	exit
 fi
 
