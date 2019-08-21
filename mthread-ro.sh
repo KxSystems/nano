@@ -1,12 +1,11 @@
 #!/bin/bash
-VERS=v1.15
+VERS=v1.16
 HERE=`pwd`
 # echo please set PATH and QHOME at top of this script, to include q dirs, then comment out these two lines and re-run mthread-ro.sh
 # exit
-export PATH=$PATH:/nano/q/l64
-export QHOME=/nano/q
-# export QBIN="numactl --physcpubind=0-15 $QHOME/l64/qd"
-export QBIN=q
+export QHOME=/home/kx/
+export PATH=$PATH:$QHOME/l64
+export QBIN="$QHOME/l64/q"
 #
 REALDATE=`date +%m%d:%H%M`
 HOST=`uname -n`
@@ -23,9 +22,9 @@ then
 	echo "Usage: mthread-ro #numberthreads date-to-read"
 	exit
 fi
-if [ $1 -gt 32 ]
+if [ $1 -gt 64 ]
 then
-	echo "This test does not qualify results above 32 processes"
+	echo "This test does not qualify results above 64 processes"
 	exit
 fi
 
