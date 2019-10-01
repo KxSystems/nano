@@ -77,7 +77,7 @@ cd $HERE
 for i in `seq $NUMTHREADS`
 do
 	cd ${array[$j]}/${HOST}.${i}/${DATE}
-	q ${HERE}/io.q -read -threads $NUMTHREADS >> ${HERE}/RO-${REALDATE}/RES-${HOST}-${NUMTHREADS}t-${i} 2>&1  &
+	${QBIN} ${HERE}/io.q -read -threads $NUMTHREADS >> ${HERE}/RO-${REALDATE}/RES-${HOST}-${NUMTHREADS}t-${i} 2>&1  &
 	j=`expr $j + 1`
         if [ $j -ge $NUMSEGS ]
         then
@@ -122,7 +122,7 @@ cd $HERE
 for i in `seq $NUMTHREADS`
 do
 	cd ${array[$j]}/${HOST}.${i}/${DATE}
-	q ${HERE}/io.q -reread -threads $NUMTHREADS >> ${HERE}/RO-${REALDATE}/RES-${HOST}-${NUMTHREADS}t-${i} 2>&1  &
+	${QBIN} ${HERE}/io.q -reread -threads $NUMTHREADS >> ${HERE}/RO-${REALDATE}/RES-${HOST}-${NUMTHREADS}t-${i} 2>&1  &
 	j=`expr $j + 1`
         if [ $j -ge $NUMSEGS ]
         then
@@ -174,7 +174,7 @@ do
 	for i in `seq $NUMTHREADS`
 	do
 		cd ${array[$j]}/${HOST}.${i}/${DATE}
-		q ${HERE}/io.q -${FUNC} -threads $NUMTHREADS >> ${HERE}/RO-${REALDATE}/RES-${HOST}-${NUMTHREADS}t-${i} 2>&1  &
+		${QBIN} ${HERE}/io.q -${FUNC} -threads $NUMTHREADS >> ${HERE}/RO-${REALDATE}/RES-${HOST}-${NUMTHREADS}t-${i} 2>&1  &
 		j=`expr $j + 1`
 	        if [ $j -ge $NUMSEGS ]
 	        then
