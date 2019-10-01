@@ -1,4 +1,4 @@
-# v1.14
+# v1.16
 # the location where this is placed must be shareable between all nodes in the cluster
 # output files will be stored and cannot be the same directory under test as we will unmount that
 #
@@ -26,8 +26,9 @@ wait
 
 # summarise each of the aggregate scores into x host aggregate score
 grep '^Streaming Read' RO-${DATE}/aggregates-* | awk '{print $4}' | awk '{sum+=$1} END {print "Total Streaming Read Rate over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/RO-${DATE}/TOTAL
-grep '^Re-Read Cached' RO-${DATE}/aggregates-* | awk '{print $4}' | awk '{sum+=$1} END {print "Total Re-Read from cache, over all hosts: ", sum, "MiB/sec"}' | tee -a RO-${HERE}/${DATE}/TOTAL
-grep 'random1m ' RO-${DATE}/aggregates-* | awk '{print $4}' | awk '{sum+=$1} END {print "Total random1m, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/RO-${DATE}/TOTAL
-grep 'random1mu' RO-${DATE}/aggregates-* | awk '{print $4}' | awk '{sum+=$1} END {print "Total random1mu, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/RO-${DATE}/TOTAL
-grep 'random64k ' RO-${DATE}/aggregates-* | awk '{print $4}' | awk '{sum+=$1} END {print "Total random64k, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/RO-${DATE}/TOTAL
-grep 'random64ku' RO-${DATE}/aggregates-* | awk '{print $4}' | awk '{sum+=$1} END {print "Total random64ku, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/RO-${DATE}/TOTAL
+grep '^ReRead' RO-${DATE}/aggregates-* | awk '{print $4}' | awk '{sum+=$1} END {print "Total Re-Read from cache, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/RO-${DATE}/TOTAL
+grep 'Walking List Rate' RO-${DATE}/aggregates-* | awk '{print $4}' | awk '{sum+=$1} END {print "Total walking list rate, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/${DATE}/TOTAL
+grep 'random1m ' RO-${DATE}/aggregates-* | awk '{print $3}' | awk '{sum+=$1} END {print "Total random1m, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/RO-${DATE}/TOTAL
+grep 'random1mu' RO-${DATE}/aggregates-* | awk '{print $3}' | awk '{sum+=$1} END {print "Total random1mu, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/RO-${DATE}/TOTAL
+grep 'random64k ' RO-${DATE}/aggregates-* | awk '{print $3}' | awk '{sum+=$1} END {print "Total random64k, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/RO-${DATE}/TOTAL
+grep 'random64ku' RO-${DATE}/aggregates-* | awk '{print $3}' | awk '{sum+=$1} END {print "Total random64ku, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/RO-${DATE}/TOTAL
