@@ -1,4 +1,4 @@
-ioq:"1.15"
+ioq:"1.16"
 / Copyright Kx Systems 2017
 / q io.q [-read] [-meta] [-reread] [-random1m] [-random1m-u] [-random64k] [-random64k-u] [-prepare] [-cleanup] [-compress] [-threads] / hardware timings 
 STDOUT:-1
