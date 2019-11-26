@@ -2,8 +2,8 @@
 VERS=v1.17
 # usage mthread.sh numthreads keep|delete [compress]
 HERE=`pwd`
-# echo please set PATH and QHOME at top of this script, to include q dirs, then comment out these two lines and re-run mthread.sh
-# exit
+echo please set PATH and QHOME at top of this script, to include q dirs, then comment out these two lines and re-run mthread.sh
+exit
 export QHOME=/home/kx/3.6
 export PATH=$PATH:$QHOME/l64
 export QBIN="$QHOME/l64/q"
