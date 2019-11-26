@@ -1,4 +1,4 @@
-# nano benchmark README v1.16.  August 2019 
+# nano benchmark README v1.17.  November 2019 
 
 © Kx Systems 2019
 
