@@ -1,5 +1,5 @@
-ioq:"1.16"
-/ Copyright Kx Systems 2017
+ioq:"1.17"
+/ Copyright Kx Systems 2019
 / q io.q [-read] [-meta] [-reread] [-random1m] [-random1m-u] [-random64k] [-random64k-u] [-prepare] [-cleanup] [-compress] [-threads] / hardware timings 
 STDOUT:-1
 if[0=count .z.x;STDOUT">q ",(string .z.f)," -prepare -read -meta -reread -random1m|-random64k|-random64k-u|random1m-u -compress -cleanup -threads N -rl remotelocation";exit 1]
@@ -39,13 +39,13 @@ msstring:{(string x)," ms"}
 // and side-benefits by gaining more instance capability . so this is a lazy calc
 //
 ssm:"J"$(x where not null`$x:" "vs(system"free -b")[1])[3];
-ssm:(ssm-2 xexp 21)*0.40;
+ssm:`long$(ssm-2 xexp 24)*0.40;
 ssm:`long$(ssm-(ssm mod 1024*1024))%threadcount;
+
 / 8 bytes in a word (64bit version of kdb+ only)
 SAMPLESIZE:`long$ssm%8
 WSAMPLESIZE:`long$ssm%16
 random:71777214294589695;
-
 / throw a list of longs into shared mem prior to the prep phase write out
 / mixed data. so that some compression testing going on
 
@@ -158,13 +158,14 @@ if[PREPARE;
     STDOUT"v",ioq;
     STDOUT"list creation...";
     sT:.z.n;
-    privmem:random+til SAMPLESIZE;
+    privmem:til SAMPLESIZE;
     milly:(floor (`long$.z.n-sT)%10 xexp 6);
     STDOUT"create list"," - ",(string floor 0.5+(ssm%(2 xexp 20))%0.001*milly)," MiB/sec";
     sT:.z.n;
     lrfile set privmem;
+    system"sync";
     milly:(floor (`long$.z.n-sT)%10 xexp 6);
-    STDOUT"async write rate: "," - ",(string floor 0.5+(ssm%(2 xexp 20))%0.001*milly)," MiB/sec";
+    STDOUT"sync write rate: "," - ",(string floor 0.5+(ssm%(2 xexp 20))%0.001*milly)," MiB/sec";
     system"sleep 5";
     fileopsmem:`long$til `long$(2 xexp 14);
     ffileo set fileopsmem;
