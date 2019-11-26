@@ -1,10 +1,10 @@
 #!/bin/bash
-VERS=v1.16
+VERS=v1.17
 # usage mthread.sh numthreads keep|delete [compress]
 HERE=`pwd`
-echo please set PATH and QHOME at top of this script, to include q dirs, then comment out these two lines and re-run mthread.sh
-exit
-export QHOME=/home/kx/
+# echo please set PATH and QHOME at top of this script, to include q dirs, then comment out these two lines and re-run mthread.sh
+# exit
+export QHOME=/home/kx/3.6
 export PATH=$PATH:$QHOME/l64
 export QBIN="$QHOME/l64/q"
 #
@@ -122,10 +122,10 @@ done
 
 # air gap for any remote stats collection....
 cd ${HERE}
-THRU=$(grep 'async write' ${HERE}/${DATE}/RES-${HOST}-${NUMTHREADS}t-* | awk '{print $5}' | awk '{printf "%.0f\n",$1}' | sort -n | head -1)
+THRU=$(grep 'sync write' ${HERE}/${DATE}/RES-${HOST}-${NUMTHREADS}t-* | awk '{print $5}' | awk '{printf "%.0f\n",$1}' | sort -n | head -1)
 THRU=$(echo $THRU | awk '{printf "%.0f",$1}')
 THRU=$(expr $THRU \* $NUMTHREADS)
-echo "Total Write Rate(async): " $THRU  " MiB/sec" 2>&1 | tee -a ${HERE}/${DATE}/aggregates-${HOST}
+echo "Total Write Rate(sync): " $THRU  " MiB/sec" 2>&1 | tee -a ${HERE}/${DATE}/aggregates-${HOST}
 
 THRU=$(grep 'create list' ${HERE}/${DATE}/RES-${HOST}-${NUMTHREADS}t-* | awk '{print $4}' | awk '{printf "%.0f\n",$1}' | sort -n | head -1)
 THRU=$(echo $THRU | awk '{printf "%.0f",$1}')
