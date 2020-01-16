@@ -1,8 +1,8 @@
 #!/bin/bash
-VERS=v1.16
+VERS=v1.18
 HERE=`pwd`
-# echo please set PATH and QHOME at top of this script, to include q dirs, then comment out these two lines and re-run mthread-ro.sh
-# exit
+echo please set PATH and QHOME at top of this script, to include q dirs, then comment out these two lines and re-run mthread-ro.sh
+exit
 export QHOME=/home/kx/
 export PATH=$PATH:$QHOME/l64
 export QBIN="$QHOME/l64/q"

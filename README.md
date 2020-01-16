@@ -1,6 +1,6 @@
-# nano benchmark README v1.17.  November 2019 
+# nano benchmark README v1.18.  January 2020.
 
-© Kx Systems 2019
+© Kx Systems 2020
 
 
 "nano" calculates basic raw I/O capability of non-volatile storage, as measured from the perspective of kdb+
@@ -10,20 +10,20 @@ Servers can be attached either directly to storage, or connected to a
 distributed/shared storage system.
 
 The throughput and latency measurements are taken directly from kdb+/q, 
-results will include read/mmap allocation, creation and ingest of data. 
+results include read/mmap allocation, creation and ingest of data. 
 There is an option to test compressed data via algorithms on the client or, in the 
 case of a storage system supporting built-in compression, that compression can be 
 measured when being entirely off-loaded onto the target storage device.
 
 This utility is used to confirm the basic expectations for storage subsystem 
-prior to a more detailed testing regime.  This can be useful for chasing out issues 
-with OS settings, system parameters, and so on.
+prior to a more detailed testing regime.  
 
-"nano" does not simulate the creation of multi-column tick databases, but instead 
-shows both a maximum I/O capability for kdb+ lists on system under test, and is a
-useful utilty to examine scalability and pinch points of the storage.
+"nano" does not simulate parallel IO rates via the creation of multi-column tick databases, 
+but instead shows both a maximum I/O capability for kdb+ on the system under test, and is a
+useful utilty to examine OS settings, scalability, and identify any pinch points related 
+to the kdb+ I/O models.
 
-Multinode testing can be used to either test a single namespace solution, or to test read/write rates for multiple hosts using multiple different storage targets on a shared storage device.
+Multinode client testing can be used to either test a single namespace solution, or to test read/write rates for multiple hosts using multiple different storage targets on a shared storage device.
 
 
 ## Installing and configuring
@@ -31,10 +31,10 @@ Multinode testing can be used to either test a single namespace solution, or to 
 Place these scripts in a single working directory. 
 **Do not** place these scripts directly in the destination location being used for the IO testing, as that directory may be unmounted during the tests.
 
-The scripts should be run as root. If root is not available, the `flush.sh` scripts 
-will have to be placed in the sudo list by your systems administrator. Include the 
-q binary directory location in `PATH` and edit `QHOME` setting in the `mthread.sh` script, 
-by hand.  Set the variable `QHOME` to point to the q home directory and set to export 
+The scripts can best be run as root user. If root user is not available to you, the 
+`flush.sh` scripts will have to be placed in the sudo list by your systems administrator. 
+Include the q binary directory location in `PATH` and edit `QHOME` setting in the `mthread.sh` 
+script, by hand.  Set the variable `QHOME` to point to the q home directory and set to export 
 in the environment.
 
 Lack of super-user permissions or incorrect `$PATH` or incorrect `$QHOME` settings are 
@@ -45,7 +45,7 @@ If testing across multiple nodes in parallel, ensure that the above variables wi
 picked up on execution of the scripts on remote nodes as well as the head or 
 master/login nodes.
 
-Note that execution of the top level script `multihost.sh` will require `tty` control 
+Note that execution of the top level script `multihost.sh` may require `tty` control 
 to be added to the sudoers file if you are not already running as root. 
 
 Do not proceed if you do not have these privileges.
@@ -154,17 +154,15 @@ layer.
 
 ## Results & potential errors
 
-The results from running nano test are saved in ASCII text files. 
- 
-The results are saved in a sub-directory of the current working directory, which 
-by default should be the same directory containing these scripts. Each run of 
-the test script `mthread.sh` will save its results in a new directory, timestamped to the nearest minute.
+The results are saved as text files in a sub-directory of the working directory, which 
+by default should be the scripts directory. Each run of the `mthread.sh` will save 
+its results in a new directory, timestamped MMDD:HHMM, rounded to the nearest minute.
 
 If running across a cluster of nodes, each of the nodes must be time-synced 
 (e.g. ntp).
 
 The script itself will report some key results on the standard output. 
-But the aggregate files contain the real results data, sorted by host and process count, aggregated.
+But the "aggregate*" files contain the real results data, sorted by host and process count, aggregated.
 
 Other detailed results, including write rates, small IOPS tests, and so on, are 
 contained in the output files (one per system under test) in the results directory.

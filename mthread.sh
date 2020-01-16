@@ -1,10 +1,10 @@
 #!/bin/bash
-VERS=v1.17
+VERS=v1.18
 # usage mthread.sh numthreads keep|delete [compress]
 HERE=`pwd`
 echo please set PATH and QHOME at top of this script, to include q dirs, then comment out these two lines and re-run mthread.sh
 exit
-export QHOME=/home/kx/3.6
+export QHOME=$HOME/q
 export PATH=$PATH:$QHOME/l64
 export QBIN="$QHOME/l64/q"
 #
@@ -101,7 +101,7 @@ do
 		
 done
 wait
-echo "flushing buffer cache....."
+echo "Files created, flushing buffer cache....."
 if [ $MYID -eq 0 ]
 then
 	./flush.sh

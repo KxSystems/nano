@@ -1,4 +1,4 @@
-ioq:"1.17"
+ioq:"1.18"
 / Copyright Kx Systems 2019
 / q io.q [-read] [-meta] [-reread] [-random1m] [-random1m-u] [-random64k] [-random64k-u] [-prepare] [-cleanup] [-compress] [-threads] / hardware timings 
 STDOUT:-1
@@ -50,8 +50,6 @@ random:71777214294589695;
 / mixed data. so that some compression testing going on
 
 read:{[file]
-    fsize:hcount file;
-    STDOUT"filesize ",(string fsize%(1024*1024))," MiB";
     sT:.z.n;
     STDOUT("Start thread -23! mapped read ",string sT); 
     mapped:get [file];
@@ -166,13 +164,17 @@ if[PREPARE;
     system"sync";
     milly:(floor (`long$.z.n-sT)%10 xexp 6);
     STDOUT"sync write rate: "," - ",(string floor 0.5+(ssm%(2 xexp 20))%0.001*milly)," MiB/sec";
-    system"sleep 5";
+	/ pre read test sizing
+    fsize:hcount lrfile;
+    STDOUT"filesize ",(string fsize%(1024*1024))," MiB";
     fileopsmem:`long$til `long$(2 xexp 14);
     ffileo set fileopsmem;
     ffile1 set fileopsmem;
     ffile2 set fileopsmem;
     ffile3 set fileopsmem;
-    ffile4 set fileopsmem;
+    / more generous for hcount 
+    hcn:`long$til `long$(2 xexp 22);
+    ffile4 set hcn;
     ffile5 set fileopsmem;
     ffile6 set fileopsmem;
     ]

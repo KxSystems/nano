@@ -1,4 +1,4 @@
-# v1.17
+# v1.18
 # the location where this is placed must be shareable between all nodes in the cluster
 # output files will be stored and cannot be the same directory under test as we will unmount that
 #
@@ -28,7 +28,7 @@ wait
 grep '^Streaming Read' ${DATE}/aggregates-* | awk '{print $4}' | awk '{sum+=$1} END {print "Total Streaming Read Rate over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/${DATE}/TOTAL
 grep 'ReRead' ${DATE}/aggregates-* | awk '{print $4}' | awk '{sum+=$1} END {print "Total Re-Read from cache, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/${DATE}/TOTAL
 grep 'Walking List Rate' ${DATE}/aggregates-* | awk '{print $4}' | awk '{sum+=$1} END {print "Total walking list rate, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/${DATE}/TOTAL
-grep 'create List Rate' ${DATE}/aggregates-* | awk '{print $5}' | awk '{sum+=$1} END {print "Total create list rate, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/${DATE}/TOTAL
+grep 'create list rate' ${DATE}/aggregates-* | awk '{print $5}' | awk '{sum+=$1} END {print "Total create list rate, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/${DATE}/TOTAL
 grep 'random1m ' ${DATE}/aggregates-* | awk '{print $3}' | awk '{sum+=$1} END {print "Total random1m, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/${DATE}/TOTAL
 grep 'random1mu' ${DATE}/aggregates-* | awk '{print $3}' | awk '{sum+=$1} END {print "Total random1mu, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/${DATE}/TOTAL
 grep 'random64k ' ${DATE}/aggregates-* | awk '{print $3}' | awk '{sum+=$1} END {print "Total random64k, over all hosts: ", sum, "MiB/sec"}' | tee -a ${HERE}/${DATE}/TOTAL
