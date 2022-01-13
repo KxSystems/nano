@@ -1,6 +1,6 @@
 ioq:"1.18"
 / Copyright Kx Systems 2019
-/ q io.q [-read] [-meta] [-reread] [-random1m] [-random1m-u] [-random64k] [-random64k-u] [-prepare] [-cleanup] [-compress] [-threads] / hardware timings 
+/ q io.q [-read] [-meta] [-reread] [-random1m] [-random1m-u] [-random64k] [-random64k-u] [-prepare] [-cleanup] [-compress] [-threads] / hardware timings
 STDOUT:-1
 if[0=count .z.x;STDOUT">q ",(string .z.f)," -prepare -read -meta -reread -random1m|-random64k|-random64k-u|random1m-u -compress -cleanup -threads N -rl remotelocation";exit 1]
 argvk:key argv:.Q.opt .z.x
@@ -16,6 +16,7 @@ RANDOMREAD1M:`random1m in argvk
 RANDOMREAD1MU:`random1mu in argvk
 RANDOMREAD64K:`random64k in argvk
 RANDOMREAD64KU:`random64ku in argvk
+MEMUSAGERATE: 0.40;   // rate of the memory to be used, e.g. 40%
 ffileo:`:fileopsto / o of n local fileops test
 ffile1:`:fileopst1 / 1 of n local fileops test
 ffile2:`:fileopst2 / 2 of n local fileops test
@@ -39,7 +40,7 @@ msstring:{(string x)," ms"}
 // and side-benefits by gaining more instance capability . so this is a lazy calc
 //
 ssm:"J"$(x where not null`$x:" "vs(system"free -b")[1])[3];
-ssm:`long$(ssm-2 xexp 24)*0.40;
+ssm:`long$(ssm-2 xexp 24)*MEMUSAGERATE;
 ssm:`long$(ssm-(ssm mod 1024*1024))%threadcount;
 
 / 8 bytes in a word (64bit version of kdb+ only)
@@ -51,26 +52,26 @@ random:71777214294589695;
 
 read:{[file]
     sT:.z.n;
-    STDOUT("Start thread -23! mapped read ",string sT); 
+    STDOUT("Start thread -23! mapped read ",string sT);
     mapped:get [file];
     {-23!x;} mapped;
     milly:(floor (`long$.z.n-sT)%10 xexp 6);
-    STDOUT("End thread -23! mapped read ",string milly); 
+    STDOUT("End thread -23! mapped read ",string milly);
     sT:.z.n;
-    STDOUT("Start thread walklist",string sT); 
+    STDOUT("Start thread walklist",string sT);
     max mapped;
     milly:(floor (`long$.z.n-sT)%10 xexp 6);
-    STDOUT("End thread walklist ",string milly); 
+    STDOUT("End thread walklist ",string milly);
     }
 reread:{[file]
     sT:.z.n;
-    STDOUT("Start thread -23! mapped reread ",string sT); 
+    STDOUT("Start thread -23! mapped reread ",string sT);
     mapped:get [file];
     {-23!x;} mapped;
     milly:(floor (`long$.z.n-sT)%10 xexp 6);
-    STDOUT("End thread -23! mapped reread ",string milly); 
+    STDOUT("End thread -23! mapped reread ",string milly);
     }
-   
+
 / hopefully we flushed before this...
 
 randomread1m:{[file]
@@ -88,17 +89,17 @@ randomread64ku:{[file]
     {value[`:readtest]y+x}[til 65536]each 1600?-65536+hcount[`:readtest]div 8 ;
     }
 
-// for distributed file system with client side compression....don't use this 
+// for distributed file system with client side compression....don't use this
 if[COMPRESS;
     .z.zd:(18;1;0); ]
 
 
-/  this is deprecated... 
+/  this is deprecated...
 write:{[file]
     / this is to allow any 3rd party performance monotoring tools to see a time gap
     system"sleep 5";
     STDOUT(string .z.p);
-    STDOUT"write `",(string file)," - ",(string floor 0.5+(ssm%(2 xexp 20))%0.001*value "\\t `",(string file)," 1:WSAMPLESIZE#key 11+rand 111")," MiB/sec";hdel file; 
+    STDOUT"write `",(string file)," - ",(string floor 0.5+(ssm%(2 xexp 20))%0.001*value "\\t `",(string file)," 1:WSAMPLESIZE#key 11+rand 111")," MiB/sec";hdel file;
     STDOUT(string .z.p);
     }
 
@@ -172,7 +173,7 @@ if[PREPARE;
     ffile1 set fileopsmem;
     ffile2 set fileopsmem;
     ffile3 set fileopsmem;
-    / more generous for hcount 
+    / more generous for hcount
     hcn:`long$til `long$(2 xexp 22);
     ffile4 set hcn;
     ffile5 set fileopsmem;
@@ -188,7 +189,7 @@ if[RUNREAD;
     .Q.gc[];
  ]
 
-if[REREAD; 
+if[REREAD;
     STDOUT"v",ioq;
     STDOUT(string .z.p)," - ",(string `date$.z.p)," ",(string `minute$.z.p)," ",(string .z.h)," - times in ms for single execution";
     reread[lrfile];
@@ -209,7 +210,7 @@ if[RUNMETA;
     fileops6[ffile6];
     fileopslink[ffile6];
     fileopslock[ffile7];
- ] 
+ ]
 
 if[RANDOMREAD1M;
     randomread1m[lrfile];
