@@ -23,7 +23,7 @@ then
 	echo "Usage: mthread #numberthreads keep|delete [compress]"
 	exit
 fi
-if [ $1 -gt 64 ]
+if [ $1 -gt 128 ]
 then
 	echo "This test does not qualify results above 64 processes"
 	exit
@@ -38,7 +38,7 @@ else
 	exit
 fi
 
-echo "flushing buffer cache before file creations" 
+echo "flushing buffer cache before file creations"
 if [ $MYID -eq 0 ]
 then
 	echo umount and flush.sh
@@ -55,7 +55,7 @@ NUMTHREADS=$1
 j=0
 CW=$(expr 800 / $NUMTHREADS)
 
-mkdir -p ${HERE}/${DATE} 
+mkdir -p ${HERE}/${DATE}
 
 
 # WRITE TEST .......................
@@ -70,16 +70,16 @@ then
 	echo "Compressed data" >> ${HERE}/${DATE}/aggregates-${HOST}
 fi
 START=$(date +%s%3N)
-# important that this it outside this loop with "q prepare",  as first time after a mount as the 
+# important that this it outside this loop with "q prepare",  as first time after a mount as the
 # fs may take a long time to start (S3 sync) and we want the wrtte processes to run in parallel
 for i in `seq $NUMTHREADS`
 do
-	mkdir -p ${array[$j]}/${HOST}.${i}/${DATE} 
-	j=`expr $j + 1`	
+	mkdir -p ${array[$j]}/${HOST}.${i}/${DATE}
+	j=`expr $j + 1`
 	if [ $j -ge $NUMSEGS ]
 	then
 		j=0
-	fi 
+	fi
 done
 j=0
 for i in `seq $NUMTHREADS`
@@ -93,12 +93,12 @@ do
 		${QBIN} ${HERE}/io.q -prepare -threads $NUMTHREADS | tee ${HERE}/${DATE}/RES-${HOST}-${NUMTHREADS}t-${i} &
 	fi
 	cd -
-	j=`expr $j + 1`	
+	j=`expr $j + 1`
 	if [ $j -ge $NUMSEGS ]
 	then
 		j=0
-	fi 
-		
+	fi
+
 done
 wait
 echo "Files created, flushing buffer cache....."
@@ -138,7 +138,7 @@ sleep 5
 #
 echo Starting read tests...
 #
-# simple semaphore for completion checking for all hosts ... 
+# simple semaphore for completion checking for all hosts ...
 #
 touch ${HERE}/sync2-$HOST
 j=0
@@ -184,7 +184,7 @@ sleep 5
 #
 echo "Starting Re-Read (Cache) tests..."
 #
-# simple semaphore for completion checking for all hosts ... 
+# simple semaphore for completion checking for all hosts ...
 #
 touch ${HERE}/sync2-$HOST
 j=0
@@ -227,7 +227,7 @@ sleep 5
 #
 echo Starting metadata tests...
 #
-# simple semaphore for completion checking for all hosts ... 
+# simple semaphore for completion checking for all hosts ...
 #
 touch ${HERE}/sync2-$HOST
 j=0
@@ -281,13 +281,13 @@ do
 	START=$(date +%s%3N)
 	wait
 
-#	100 M longs x 8 bytes... 
+#	100 M longs x 8 bytes...
 
 	FINISH=$(date +%s%3N)
 	ELAPSED=$(expr $FINISH - $START)
 	SIZE=$(( 800 * $NUMTHREADS ))
 	echo $SIZE $ELAPSED | awk '{$1=sprintf("%5.2f",$1/($2/1000));print ":  ", $1," MiB/sec"}' | tee -a ${HERE}/${DATE}/aggregates-${HOST}
-	
+
 	rm ${HERE}/sync2-$HOST
 	while [ `ls -l ${HERE}/sync2-* 2> /dev/null | wc -l` -ne 0 ]
 	do
