@@ -202,7 +202,7 @@ The cache is flushed before each tests except reread.
 We detail each test in the next section.
 
 ### Prepare test (`prepare.q`)
-   1. `create list`: creates a list in memory (function `til`), i.e. allocating memory and fill it with consecutive longs. The length of the list depends on the
+   1. `create list`: creates a list in memory (function `til`), i.e. allocating memory and filling it with consecutive longs. The length of the list depends on the
       1. available free memory (returned by system command `free`)
       1. percentage of memory to use (variable `MEMUSAGERATE`, default 40%) and
       1. the thread count.
@@ -221,7 +221,7 @@ We detail each test in the next section.
 This is the same as the first two steps of test read. We do not flush cache before this test so the data pages are already in cache. Reread is not expected to involve any data copy so its execution (`mmap` and `madvise`) should be infinite or a very large number.
 
 ### Meta (`meta.q`)
-The meta operations are executed thousand (variable `N`) times and the average execution time is returned.
+The meta operations are executed (variable `N`) thousand times and the average execution time is returned.
 
    1. opening then closing a kdb file: `hclose hopen x`
    1. appending two integers to the end of list (this operation includes opening and closing a file): `[; (); ,; 2 3]`
