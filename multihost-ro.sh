@@ -19,8 +19,8 @@ then
 fi
 for i in `cat $HOSTLIST`
 do
-	echo $i	
-	ssh $i "cd ${HERE};./mthread-ro.sh $1 $2" &
+	echo $i
+	ssh $i "cd ${HERE};./mthread.sh $1 keep $2" &
 done
 wait
 

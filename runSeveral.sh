@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-DIRPREFIX=$(date +%m%d:)
+DIRPREFIX="results/$(date +%m%d:)"
 echo "cleaning ${DIRPREFIX}*"
 rm -rf ${DIRPREFIX}*
 
