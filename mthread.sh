@@ -85,11 +85,7 @@ if [ $READONLYTEST = false ]; then
   j=0
   for i in `seq $NUMTHREADS`; do
   	mkdir -p ${array[$j]}/${HOST}.${i}/${DATE}
-  	j=`expr $j + 1`
-  	if [ $j -ge $NUMSEGS ]
-  	then
-  		j=0
-  	fi
+  	j=$(( ($j + 1) % $NUMSEGS ))
   done
 
 
@@ -97,10 +93,7 @@ if [ $READONLYTEST = false ]; then
   for i in `seq $NUMTHREADS`; do
   	cd ${array[$j]}/${HOST}.${i}/${DATE}
   	${QBIN} ${HERE}/src/prepare.q -threads $NUMTHREADS | tee ${RESFILEPREFIX}${i} &
-  	j=`expr $j + 1`
-  	if [ $j -ge $NUMSEGS ]; then
-  		j=0
-  	fi
+  	j=$(( ($j + 1) % $NUMSEGS ))
   done
 
   wait
@@ -134,10 +127,7 @@ j=0
 for i in `seq $NUMTHREADS`; do
 	cd ${array[$j]}/${HOST}.${i}/${DATE}
 	${QBIN} ${HERE}/src/read.q >> ${RESFILEPREFIX}${i} 2>&1  &
-	j=`expr $j + 1`
-    if [ $j -ge $NUMSEGS ]; then
-        j=0
-	fi
+  j=$(( ($j + 1) % $NUMSEGS ))
 done
 wait
 
@@ -169,10 +159,7 @@ j=0
 for i in `seq $NUMTHREADS`; do
 	cd ${array[$j]}/${HOST}.${i}/${DATE}
 	${QBIN} ${HERE}/src/reread.q -threads $NUMTHREADS >> ${RESFILEPREFIX}${i} 2>&1  &
-	j=`expr $j + 1`
-    if [ $j -ge $NUMSEGS ]; then
-        j=0
-	fi
+  j=$(( ($j + 1) % $NUMSEGS ))
 done
 wait
 
@@ -202,10 +189,7 @@ if [ $READONLYTEST = false ]; then
   for i in `seq $NUMTHREADS`; do
   	cd ${array[$j]}/${HOST}.${i}/${DATE}
   	${QBIN} ${HERE}/src/meta.q -threads $NUMTHREADS >> ${RESFILEPREFIX}${i} 2>&1  &
-  	j=`expr $j + 1`
-      if [ $j -ge $NUMSEGS ]; then
-          j=0
-  	fi
+    j=$(( ($j + 1) % $NUMSEGS ))
   done
 
   wait
@@ -228,10 +212,7 @@ function runrandomread {
   for i in `seq $NUMTHREADS`; do
   	cd ${array[$j]}/${HOST}.${i}/${DATE}
   	${QBIN} ${HERE}/src/randomread.q -listsize ${listsize} ${mmap} -threads $NUMTHREADS >> ${RESFILEPREFIX}${i} 2>&1  &
-  	j=`expr $j + 1`
-      if [ $j -ge $NUMSEGS ]; then
-          j=0
-  	fi
+  	j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait
   THRU=$(grep "End random reads${mmapstring} ${listsize}" ${RESFILEPREFIX}* | cut -d" " -f ${residx} | awk '{printf "%.0f\n",$1}' | sort -n | head -1)
@@ -261,10 +242,7 @@ if [ "$2" = "delete" ]; then
 	j=0
 	for i in `seq $NUMTHREADS`; do
 		rm -rf ${array[$j]}/${HOST}.${i}/${DATE}
-		j=`expr $j + 1`
-	    if [ $j -ge $NUMSEGS ]; then
-	        j=0
-		fi
+		j=$(( ($j + 1) % $NUMSEGS ))
 	done
 fi
 rm -rf ${HERE}/sync-*
