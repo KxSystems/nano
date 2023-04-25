@@ -158,22 +158,20 @@ when testing files that you know are migrated to an object store, via the file s
 layer.
 
 ### Running several tests with different thread count
-If you are interested how the storage medium scales with the number of parallel requests, then you can run `runSeveral.sh`. It simply calls `mthread.sh` with different thread numbers and does a log processing to generate a result CSV file.
+If you are interested how the storage medium scales with the number of parallel requests, then you can run `runSeveral.sh`. It simply calls `mthread.sh` with different thread numbers and does a log processing to generate a result CSV file. The results are saved in file `results/aggr_total.csv` but this can be overwritten by a command line parameter.
 
 ## Results & potential errors
 
 The results are saved as text files in a sub-directory of directory `results` , which
 by default should be the scripts directory. Each run of the `mthread.sh` will save
-its results in a new directory, timestamped MMDD:HHMM, rounded to the nearest minute.
+its results in a new directory, timestamped `MMDD:HHMM`, rounded to the nearest minute.
 
-If running across a cluster of nodes, each of the nodes must be time-synced
-(e.g. ntp).
+If running across a cluster of nodes, each of the nodes must be time-synced (e.g. `ntp`).
 
-The script itself will report some key results on the standard output.
-But the "aggregate*" files contain the real results data, sorted by host and process count, aggregated.
+The script itself will report some key results on the standard output. Detailed results, including write rates, small IOPS tests, and so on, are
+contained in the output files (one per system under test) in the `results/MMDD:HHMM/RES-` files.
 
-Other detailed results, including write rates, small IOPS tests, and so on, are
-contained in the output files (one per system under test) in the results directory.
+File `results/MMDD:HHMM/aggregates-HOSTNAME` picks a few important metrics from the detailed result files.
 
 If the utility fails to run correctly, and there are no errors presented on the
 standard output, you should check in the results files for error messages from the
