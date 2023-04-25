@@ -2,16 +2,26 @@
 
 set -euo pipefail
 
-DIRPREFIX="results/$(date +%m%d:)"
-echo "cleaning ${DIRPREFIX}*"
-rm -rf ${DIRPREFIX}*
+if [ $# -gt 0 ]; then
+   OUTPUT=$1
+else
+   OUTPUT=./results/aggr_total.csv
+fi
+
+HOST=$(uname -n)
+DATES=()
 
 for i in {1,2,4,8,16,32,64,96}; do
-   ./mthread.sh $i full delete
+   DATE=$(date +%m%d:%H%M)
+   DATES+=($DATE)
+   ./mthread.sh $i full delete ${DATE}
+   ./postprocaggr.sh results/${DATE}/aggregates-${HOST} > results/${DATE}/aggr.csv;
 done
 
-for i in ${DIRPREFIX}*; do
-	./postprocaggr.sh $i/aggregates-$(hostname) > $i/aggr.csv;
+TMP="$(mktemp)"
+for DATE in ${DATES[@]}; do
+   cat results/${DATE}/aggr.csv >> ${TMP}
 done
 
-cat ${DIRPREFIX}*/aggr.csv | sort -n| uniq > aggr_total.csv
+sort -n ${TMP} | uniq > ${OUTPUT}
+rm ${TMP}
