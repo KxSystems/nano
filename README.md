@@ -187,13 +187,13 @@ The more memory the box has (hence the more data is used), the more marginal the
 The script calculates throughput (MiB/sec) of an operation by calculating the data size and the elapsed time of the operation.
 
 Script `./mthread.sh` executes 5 major tests:
-   1. prepare
-   1. read
-   1. reread
-   1. meta
-   1. random read
+   1. Prepare
+   1. Read
+   1. Reread
+   1. Meta
+   1. Random read
 
-In read-only tests (when DB dir parameter is passed to `mthread.sh` as a third parameter) the `prepare` and `meta` tests are omitted.
+In read-only tests (when DB dir parameter is passed to `mthread.sh` as a third parameter) the [Prepare](#Prepare) and [Meta](#Meta) tests are omitted.
 
 All tests start multiple kdb+ processes (set by the first parameter of `./mthread.sh`) each having its own working space on the disk.
 
@@ -201,7 +201,7 @@ The cache is flushed before each tests except reread.
 
 We detail each test in the next section.
 
-### Prepare test (`prepare.q`)
+### Prepare (`prepare.q`)
    1. `create list`: creates a list in memory (function `til`), i.e. allocating memory and filling it with consecutive longs. The length of the list depends on the
       1. available free memory (returned by system command `free`)
       1. percentage of memory to use (variable `MEMUSAGERATE`, default 40%) and
@@ -218,7 +218,7 @@ We detail each test in the next section.
    1. calls `max` on the `mapped` that sequentially marches through all pages
 
 ### Reread (`reread.q`)
-This is the same as the first two steps of test read. We do not flush cache before this test so the data pages are already in cache. Reread is not expected to involve any data copy so its execution (`mmap` and `madvise`) should be infinite or a very large number.
+This is the same as the first two steps of test read. We do not flush cache before this test so the data pages are already in cache. Reread is not expected to involve any data copy so its execution (`mmap` and `madvise`) should be much faster than [Read](#Read).
 
 ### Meta (`meta.q`)
 The meta operations are executed (variable `N`) thousand times and the average execution time is returned.
