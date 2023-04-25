@@ -7,7 +7,7 @@ echo "cleaning ${DIRPREFIX}*"
 rm -rf ${DIRPREFIX}*
 
 for i in {1,2,4,8,16,32,64,96}; do
-   ./mthread.sh $i delete
+   ./mthread.sh $i full delete
 done
 
 for i in ${DIRPREFIX}*; do

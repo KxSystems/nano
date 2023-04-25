@@ -124,20 +124,21 @@ Executes multiple processes of execution of the benchmark on the execution host
 This takes three arguments :
 
 1. The number of executions of q on each node, integer.
+1. `full|readonly` to select between full and read only test. Subtests `prepare` and `meta` are not executed in readonly tests.
 1. `delete | keep`. Flag, determines if the data created from each thread
    is kept on the filesystem. Useful for testing performance on a fuller
    filesystem, which could be modeled through running multiple iterations
    of `mthread.sh`.
-1. Optional: date for readonly test. This test assume that data was already generated (`keep` flag was used). Format of `%m%d:%H%M` is expected like `0404:1232`. Subtests `prepare` and `meta` are not executed in readonly tests.
+1. Optional: date. This test assume that data was already generated (`keep` flag was used the previous test). Format of `%m%d:%H%M` is expected like `0404:1232`.
 
 If you would like the data to be compressed then pass environment variable `COMPRESS` with the [kdb+ compression parameters](https://code.kx.com/q/kb/file-compression/#compression-parameters).
 
 Example usages
 
 ```bash
-$ ./mthread.sh $(nproc) delete
-$ COMPRESS="17 2 6" ./mthread.sh 8 keep
-$ ./mthread.sh 8 keep 0404:1232
+$ ./mthread.sh $(nproc) full delete
+$ COMPRESS="17 2 6" ./mthread.sh 8 full keep
+$ ./mthread.sh 8 readonly keep 0404:1232
 ```
 
 

@@ -1,16 +1,15 @@
 #!/bin/bash
 VERS=v2.0
-# usage mthread.sh numthreads keep|delete [date]
-HERE=`pwd`
-source ./env
-#
 
-if [ $# -lt 2 ]; then
-	echo "Usage: mthread #numberthreads keep|delete [date]"
+USAGE="Usage: mthread #numberthreads full|readonly keep|delete [date]"
+
+if [ $# -lt 3 ]; then
+  echo "At least three parameters are mandatory"
+	echo $USAGE
 	exit
 fi
 if [ $1 -le 0 ]; then
-	echo "Usage: mthread #numberthreads keep|delete [date]"
+	echo $USAGE
 	exit
 fi
 if [ $1 -gt 256 ]; then
@@ -20,23 +19,35 @@ fi
 
 if [ ! -f ./flush.sh ]; then
 	echo "flush.sh is missing"
-	echo "please copy and edit one of the supplied flush-* prototype scripts into the file flush.sh, edit it for your configuration,  and try again"
+	echo "please copy and edit one of the supplied flush-* prototype scripts into the file flush.sh, edit it for your configuration, and try again"
 	exit
 fi
 
-if [ "$#" -eq "3" ]; then
-    echo "Date is set to $3. Write and meta tests will be skipped"
-    DATE=$3
-	READONLYTEST=true
+NUMTHREADS=$1
+SCOPE="$2"
+if [ "$#" -eq "4" ]; then
+  echo "Date is set to $4"
+  DATE=$4
 else
-	DATE=`date +%m%d:%H%M`
-	READONLYTEST=false
+	DATE=$(date +%m%d:%H%M)
 fi
 
-HOST=`uname -n`
-PARLIST=${HERE}/partitions
-MYID=`id -u`
+HERE=$(pwd)
+source ./env
+HOST=$(uname -n)
+PARLIST="${HERE}/partitions"
+MYID=$(id -u)
 declare -a array
+
+NUMSEGS=`wc -l $PARLIST | awk '{print $1}'`
+array=(`cat $PARLIST`)
+
+RESDIR=${HERE}/results/${DATE}
+mkdir -p ${RESDIR}
+
+RESFILEPREFIX="${RESDIR}/RES-${HOST}-${NUMTHREADS}t-"
+AGGRFILE="${RESDIR}/aggregates-${HOST}"
+
 
 function flush() {
 	echo "flushing buffer cache....."
@@ -54,15 +65,8 @@ function syncAcrossHosts {
     done
 }
 
-NUMSEGS=`wc -l $PARLIST | awk '{print $1}'`
-array=(`cat $PARLIST`)
-NUMTHREADS=$1
-mkdir -p ${HERE}/results/${DATE}
 
-RESFILEPREFIX="${HERE}/results/${DATE}/RES-${HOST}-${NUMTHREADS}t-"
-AGGRFILE="${HERE}/results/${DATE}/aggregates-${HOST}"
-
-if [ $READONLYTEST = false ]; then
+if [ "$SCOPE" = "full" ]; then
   ######### WRITE TEST #########
   flush
 
@@ -178,7 +182,7 @@ syncAcrossHosts
 # air gap for any remote stats collection....
 sleep 5
 
-if [ $READONLYTEST = false ]; then
+if [ "$SCOPE" = "full" ]; then
   ######### META DATA TEST #########
   echo
   echo "STARTING META DATE TEST"
@@ -237,7 +241,7 @@ done
 # an air gap for any storage stats gathering before unlinks go out ...
 #
 sleep 5
-if [ "$2" = "delete" ]; then
+if [ "$3" = "delete" ]; then
 	echo "cleaning up DB..."
 	j=0
 	for i in `seq $NUMTHREADS`; do

@@ -20,7 +20,7 @@ fi
 for i in `cat $HOSTLIST`
 do
 	echo $i
-	ssh $i "cd ${HERE};./mthread.sh $1 keep $2" &
+	ssh $i "cd ${HERE};./mthread.sh $1 full keep $2" &
 done
 wait
 
