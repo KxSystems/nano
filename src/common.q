@@ -7,6 +7,7 @@ argvk:key argv:.Q.opt .z.x
 
 threadcount:string `$first argv`threads
 threadcount:"I"$threadcount
+DB: first argv `db
 
 tsToMsec: {floor (`long$x)%10 xexp 6}
 fix:{.Q.fmt[x+1+count string floor y;x;y]}
@@ -16,17 +17,17 @@ msstring:{(string x)," ms"}
 
 
 / note that compression does not work with a "dot" in the filename
-lrfile:`:readtest / local read file
-lwfile:`:writetest / local write file
+lrfile: hsym `$DB, "/readtest" / local read file
+lwfile: hsym `$DB, "/writetest" / local write file
 
-ffileo:`:fileopsto / o of n local fileops test
-ffile1:`:fileopst1 / 1 of n local fileops test
-ffile2:`:fileopst2 / 2 of n local fileops test
-ffile3:`:fileopst3 / 3 of n local fileops test
-ffile4:`:fileopst4 / 4 of n local fileops test
-ffile5:`:fileopst5 / 5 of n local fileops test
-ffile6:`:fileopst6 / 6 of n local fileops test
-ffile7:`:locktest  / 7 of n local fileops test
+ffileo: hsym `$DB, "/fileopsto" / o of n local fileops test
+ffile1: hsym `$DB, "/fileopst1" / 1 of n local fileops test
+ffile2: hsym `$DB, "/fileopst2" / 2 of n local fileops test
+ffile3: hsym `$DB, "/fileopst3" / 3 of n local fileops test
+ffile4: hsym `$DB, "/fileopst4" / 4 of n local fileops test
+ffile5: hsym `$DB, "/fileopst5" / 5 of n local fileops test
+ffile6: hsym `$DB, "/fileopst6" / 6 of n local fileops test
+ffile7: hsym `$DB, "/locktest"  / 7 of n local fileops test
 
 k: 1024
 M: k*k

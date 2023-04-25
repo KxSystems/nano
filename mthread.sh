@@ -95,8 +95,7 @@ if [ "$SCOPE" = "full" ]; then
 
   j=0
   for i in `seq $NUMTHREADS`; do
-  	cd ${array[$j]}/${HOST}.${i}/${DATE}
-  	${QBIN} ${HERE}/src/prepare.q -threads $NUMTHREADS | tee ${RESFILEPREFIX}${i} &
+  	${QBIN} ${HERE}/src/prepare.q -threads $NUMTHREADS -db ${array[$j]}/${HOST}.${i}/${DATE} | tee ${RESFILEPREFIX}${i} &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
 
@@ -129,8 +128,7 @@ touch ${HERE}/sync-$HOST
 
 j=0
 for i in `seq $NUMTHREADS`; do
-	cd ${array[$j]}/${HOST}.${i}/${DATE}
-	${QBIN} ${HERE}/src/read.q >> ${RESFILEPREFIX}${i} 2>&1  &
+	${QBIN} ${HERE}/src/read.q -db ${array[$j]}/${HOST}.${i}/${DATE} >> ${RESFILEPREFIX}${i} 2>&1  &
   j=$(( ($j + 1) % $NUMSEGS ))
 done
 wait
@@ -161,8 +159,7 @@ echo "STARTING RE-READ (CACHE) TEST"
 touch ${HERE}/sync-$HOST
 j=0
 for i in `seq $NUMTHREADS`; do
-	cd ${array[$j]}/${HOST}.${i}/${DATE}
-	${QBIN} ${HERE}/src/reread.q -threads $NUMTHREADS >> ${RESFILEPREFIX}${i} 2>&1  &
+	${QBIN} ${HERE}/src/reread.q -threads $NUMTHREADS -db ${array[$j]}/${HOST}.${i}/${DATE} >> ${RESFILEPREFIX}${i} 2>&1  &
   j=$(( ($j + 1) % $NUMSEGS ))
 done
 wait
@@ -191,8 +188,7 @@ if [ "$SCOPE" = "full" ]; then
   touch ${HERE}/sync-$HOST
   j=0
   for i in `seq $NUMTHREADS`; do
-  	cd ${array[$j]}/${HOST}.${i}/${DATE}
-  	${QBIN} ${HERE}/src/meta.q -threads $NUMTHREADS >> ${RESFILEPREFIX}${i} 2>&1  &
+  	${QBIN} ${HERE}/src/meta.q -threads $NUMTHREADS -db ${array[$j]}/${HOST}.${i}/${DATE} >> ${RESFILEPREFIX}${i} 2>&1  &
     j=$(( ($j + 1) % $NUMSEGS ))
   done
 
@@ -214,8 +210,7 @@ function runrandomread {
   j=0
   sleep 5
   for i in `seq $NUMTHREADS`; do
-  	cd ${array[$j]}/${HOST}.${i}/${DATE}
-  	${QBIN} ${HERE}/src/randomread.q -listsize ${listsize} ${mmap} -threads $NUMTHREADS >> ${RESFILEPREFIX}${i} 2>&1  &
+  	${QBIN} ${HERE}/src/randomread.q -listsize ${listsize} ${mmap} -threads $NUMTHREADS -db ${array[$j]}/${HOST}.${i}/${DATE} >> ${RESFILEPREFIX}${i} 2>&1  &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait
