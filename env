@@ -1,0 +1,29 @@
+export QHOME=$HOME/q
+
+###############################################
+#### You probably dont need to change this
+#### Automation to figure out your kdb+ environment
+
+if [ `uname -s` = "Darwin" ]
+then
+	QSUBDIR=w64
+else
+	QSUBDIR=l64
+fi
+
+export PATH=$PATH:$QHOME/$QSUBDIR
+export QBIN="$QHOME/$QSUBDIR/q"
+
+if ! type ${QBIN} >/dev/null 2>&1; then
+  echo "Variable QBIN is not set properly!"
+  if type qce >/dev/null 2>&1; then
+    export QBIN=$(which qce)
+    echo "Fixing QBIN automatically by setting assigning ${QBIN}"
+  elif type q >/dev/null 2>&1; then
+    export QBIN=$(which q)
+    echo "Fixing QBIN automatically by setting assigning ${QBIN}"
+  else
+    echo "QBIN cannot be fixed automatically. Exiting..."
+    exit 3
+  fi
+fi

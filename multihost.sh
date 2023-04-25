@@ -9,18 +9,18 @@ HOSTLIST=`pwd`/hostlist
 j=0
 if [ $# -lt 2 ]
 then
-	echo "Usage: multihost #numberthreads delete|keep [compress]"
+	echo "Usage: multihost #numberthreads delete|keep"
 	exit
 fi
 if [ $1 -le 0 ]
 then
-	echo "Usage: multihost #numberthreads delete|keep [compress]"
+	echo "Usage: multihost #numberthreads delete|keep"
 	exit
 fi
 for i in `cat $HOSTLIST`
 do
-	echo $i	
-	ssh $i "cd ${HERE};./mthread.sh $1 $2 $3" &
+	echo $i
+	ssh $i "cd ${HERE};./mthread.sh $1 full $2 $3" &
 done
 wait
 

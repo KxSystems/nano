@@ -10,13 +10,13 @@ if [ ! -f $AGGRFILE ]; then
 fi
 
 
-echo 'numproc,Write Rate,Streaming Read,random64k,random64ku,random1m,random1mu'
+echo 'numproc,Write Rate,Streaming Read,Random 64k,Random 64k with mmaps,Random 1M,Random 1M with mmaps'
 NUNMPROC=$(grep numprocs ${AGGRFILE} | cut -d " " -f 2)
 WRITERATE=$(grep 'Total Write Rate(sync)' ${AGGRFILE} | cut -d " " -f 5)
 STREAMINGRATE=$(grep 'Streaming Read(mapped) Rate' ${AGGRFILE} | cut -d " " -f 5)
-RAND64K=$(grep "random64k " ${AGGRFILE} | cut -d " " -f 5)
-RAND64KU=$(grep "random64ku " ${AGGRFILE} | cut -d " " -f 5)
-RAND1M=$(grep "random1m " ${AGGRFILE} | cut -d " " -f 5)
-RAND1MU=$(grep "random1mu " ${AGGRFILE} | cut -d " " -f 5)
+RAND64K=$(grep "Random 64k:" ${AGGRFILE} | cut -d " " -f 4)
+RAND64KMMAP=$(grep "Random 64k with mmaps:" ${AGGRFILE} | cut -d " " -f 6)
+RAND1M=$(grep "Random 1M:" ${AGGRFILE} | cut -d " " -f 4)
+RAND1MMMAP=$(grep "Random 1M with mmaps:" ${AGGRFILE} | cut -d " " -f 6)
 
-echo ${NUNMPROC},${WRITERATE},${STREAMINGRATE%.*},${RAND64K%.*},${RAND64KU%.*},${RAND1M%.*},${RAND1MU%.*}
+echo ${NUNMPROC},${WRITERATE},${STREAMINGRATE%.*},${RAND64K%.*},${RAND64KMMAP%.*},${RAND1M%.*},${RAND1MMMAP%.*}
