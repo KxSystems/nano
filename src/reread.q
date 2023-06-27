@@ -1,18 +1,18 @@
-include: {
-  curFile: value[{}][6];
-  system "l ", sublist[1+last where curFile = "/"; curFile], x;
-  }
-
-include "common.q";
-STDOUT"v",ioq;
-STDOUT(string .z.p)," - ",(string `date$.z.p)," ",(string `minute$.z.p)," ",(string .z.h)," - times in ms for single execution";
+system "l src/common.q";
 
 / read whole file, no write
+.qlog.info "Starting mmap read test";
 sT:.z.n;
-STDOUT("Start thread -23! mapped reread ",string sT);
-mapped: get lrfile;
+mapped: get fRead;
 {-23!x;} mapped;
-milly:tsToMsec .z.n-sT;
-STDOUT("End thread -23! mapped reread ",string milly);
+elapsed:tsToSec .z.n-sT;
+fsize:hcount fRead;
+resultH "read mem|reread|get,-23!|", fix[2;fsize%M*elapsed], "|MiB/sec\n";
+
+.qlog.info "starting read binary test";
+sT:.z.n;
+read1 fReadBinary;
+elapsed:tsToSec .z.n-sT;
+resultH "read mem|read binary|read1|", fix[2;hcount[fReadBinary]%M*elapsed], "|MiB/sec\n";
 
 if [not `debug in argvk; exit 0];

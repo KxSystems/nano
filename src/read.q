@@ -1,30 +1,25 @@
-include: {
-  curFile: value[{}][6];
-  system "l ", sublist[1+last where curFile = "/"; curFile], x;
-  }
+system "l src/common.q";
 
-include "common.q";
-
-STDOUT "v",ioq;
-STDOUT (string .z.p)," - ",(string `date$.z.p)," ",(string `minute$.z.p)," ",(string .z.h)," - times in ms for single execution";
+fsize:hcount fRead;
 
 / read whole file, no write
+.qlog.info "Starting mmap read test";
 sT:.z.n;
-STDOUT "Start thread -23! mapped read ",string sT;
-mapped:get [lrfile];
-mT: .z.n;
+mapped: get fRead;
 {-23!x;} mapped;
-milly:tsToMsec .z.n-sT;
-STDOUT "End thread -23! mapped read (get ratio ", fix[1; 100* tsToMsec[mT-sT] % milly],"%) ", string milly;
+elapsed:tsToSec .z.n-sT;
+resultH "read disk|read|get,-23!|", fix[2;fsize%M*elapsed], "|MiB/sec\n";
 
+.qlog.info "Starting aggregate test";
 sT:.z.n;
-STDOUT "Start thread walklist ",string sT;
 max mapped;
-milly:tsToMsec .z.n-sT;
-STDOUT "End thread walklist ",string milly;
+elapsed:tsToSec .z.n-sT;
+resultH "read mem|aggregate|max|", fix[2;fsize%M*elapsed], "|MiB/sec\n";
 
-// Why do we need this if we exit anyway?
-STDOUT"Clearing Heap....";
-.Q.gc[];
+.qlog.info "starting read binary test";
+sT:.z.n;
+read1 fReadBinary;
+elapsed:tsToSec .z.n-sT;
+resultH "read disk|read binary|read1|", fix[2;hcount[fReadBinary]%M*elapsed], "|MiB/sec\n";
 
 if [not `debug in argvk; exit 0];

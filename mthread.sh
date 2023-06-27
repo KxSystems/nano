@@ -1,120 +1,124 @@
-#!/bin/bash
-VERS=v2.0
+#!/usr/bin/env bash
 
-USAGE="Usage: mthread #numberthreads full|readonly keep|delete [date]"
+set -euo pipefail
+
+USAGE="Usage: $0 processnr full|readonly keep|delete [date]"
+
 
 if [ $# -lt 3 ]; then
   echo "At least three parameters are mandatory"
 	echo $USAGE
-	exit
+	exit 1
 fi
 if [ $1 -le 0 ]; then
 	echo $USAGE
-	exit
+	exit 2
 fi
 if [ $1 -gt 256 ]; then
 	echo "This test does not qualify results above 256 processes"
-	exit
+	exit 3
 fi
 
-if [ ! -f ./flush.sh ]; then
-	echo "flush.sh is missing"
-	echo "please copy and edit one of the supplied flush-* prototype scripts into the file flush.sh, edit it for your configuration, and try again"
-	exit
+if [ ! -f ${FLUSH} ]; then
+	echo "${FLUSH} is missing"
+	echo "please set environment varibale FLUSH to an existing flush scripts"
+	exit 4
 fi
 
-NUMTHREADS=$1
+NUMPROCESSES=$1
 SCOPE="$2"
 if [ "$#" -eq "4" ]; then
   echo "Date is set to $4"
   DATE=$4
 else
-	DATE=$(date +%m%d:%H%M)
+	DATE=$(date +%m%d_%H%M)
 fi
 
-HERE=$(pwd)
-source ./env
+REALDATE=$(date +%m%d_%H%M)
 HOST=$(uname -n)
-PARLIST="${HERE}/partitions"
-MYID=$(id -u)
+
+PARFILE="./partitions"
+NUMSEGS=`wc -l $PARFILE | awk '{print $1}'`
 declare -a array
+array=(`cat $PARFILE`)
 
-NUMSEGS=`wc -l $PARLIST | awk '{print $1}'`
-array=(`cat $PARLIST`)
-
-RESDIR=${HERE}/results/${DATE}
+RESDIR="${RESULTDIR}/${REALDATE}-${DATE}"
 mkdir -p ${RESDIR}
+echo "Results will be persisted in ${RESDIR}"
+CURRENTLOGDIR="${LOGDIR}/${REALDATE}-${DATE}"
+mkdir -p ${CURRENTLOGDIR}
 
-RESFILEPREFIX="${RESDIR}/RES-${HOST}-${NUMTHREADS}t-"
-AGGRFILE="${RESDIR}/aggregates-${HOST}"
+RESFILEPREFIX=${RESDIR}/detailed-${HOST}-
+AGGRRESFILE=${RESDIR}/aggregate-${HOST}.psv
 
-
-function flush() {
-	echo "flushing buffer cache....."
-	if [ $MYID -eq 0 ]; then
-		${HERE}/flush.sh
-	else
-		sudo ${HERE}/flush.sh
-	fi
-}
+LOGFILEPREFIX="${CURRENTLOGDIR}/RES-${HOST}-${NUMPROCESSES}t-"
 
 function syncAcrossHosts {
-	rm ${HERE}/sync-$HOST
-	while [ `ls -l ${HERE}/sync-* 2> /dev/null | wc -l` -ne 0 ]; do
+	rm ${CURRENTLOGDIR}/sync-$HOST
+	while [ `ls -l ./sync-* 2> /dev/null | wc -l` -ne 0 ]; do
 	  sleep 0.5
     done
 }
 
+function notObjStore {
+  if [[ $1 != s3://* && $1 != gs://* && $1 != ms://* ]]; then return 0; else return 1; fi
+}
+
+CONFIG=${RESDIR}/config.yaml
+touch $CONFIG
+yq -i ".env.COMPRESS=\"$COMPRESS\"" $CONFIG
+yq -i ".env.THREADNR=$THREADNR" $CONFIG
+yq -i ".env.PROCNR=$NUMPROCESSES" $CONFIG
+yq -i ".env.FLUSH=\"$(basename $FLUSH)\"" $CONFIG
+yq -i ".env.DBDIR=\"$(cat $PARFILE)\"" $CONFIG
+yq -i ".nano.VERSION=\"$(yq '.dev' version.yaml)\"" $CONFIG
+yq -i ".kdb.MAJOR=$($QBIN -q  <<< ".z.K" | tr -d f)" $CONFIG
+yq -i ".kdb.MINOR=\"$($QBIN -q  <<< ".z.k")\"" $CONFIG
+yq -i ".dbize.MEMUSAGETYPE=\"$MEMUSAGETYPE\"" $CONFIG
+yq -i ".dbize.MEMUSAGEVALUE=$MEMUSAGEVALUE" $CONFIG
+yq -i ".dbize.RANDOMREADFILESIZETYPE=\"$RANDOMREADFILESIZETYPE\"" $CONFIG
+yq -i ".dbize.RANDOMREADFILESIZEVALUE=$RANDOMREADFILESIZEVALUE" $CONFIG
+yq -i ".dbize.DBSIZE=\"$DBSIZE\"" $CONFIG
+yq -i ".dbize.RANDOMREADSIZE=\"$RANDOMREADSIZE\"" $CONFIG
+yq -i ".system.cpunr=$(nproc)" ${CONFIG}
+yq -i ".system.memsize=\"$(grep MemTotal /proc/meminfo |tr -s ' ' | cut -d ' ' -f 2,3)\"" ${CONFIG}
+
 
 if [ "$SCOPE" = "full" ]; then
   ######### WRITE TEST #########
-  flush
+  ${FLUSH}
 
   #
   # simple semaphore for completion checking for all hosts ...
   #
-  touch ${HERE}/sync-$HOST
+  touch ${CURRENTLOGDIR}/sync-$HOST
 
   echo
   echo "STARTING WRITE TEST"
-  echo "version $VERS" >> ${AGGRFILE}
-  echo "numprocs $NUMTHREADS" >> ${AGGRFILE}
-  echo "disk partitions $NUMSEGS" >> ${AGGRFILE}
-  if [ ! -z "$COMPRESS"]; then
-  	echo "Compressed data" >> ${AGGRFILE}
-  fi
 
-  # important that this it outside this loop with "q prepare",  as first time after a mount as the
+  # important that this it outside this loop with "q prepare", as first time after a mount as the
   # fs may take a long time to start (S3 sync) and we want the wrtte processes to run in parallel
   j=0
-  for i in `seq $NUMTHREADS`; do
-  	mkdir -p ${array[$j]}/${HOST}.${i}/${DATE}
+  for i in `seq $NUMPROCESSES`; do
+    if notObjStore ${array[$j]}; then
+  	  mkdir -p ${array[$j]}/${HOST}.${i}/${DATE}
+    fi
+    echo "testtype|test|qexpression|result|unit" > ${RESFILEPREFIX}${i}.psv
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
 
 
   j=0
-  for i in `seq $NUMTHREADS`; do
-  	${QBIN} ${HERE}/src/prepare.q -threads $NUMTHREADS -db ${array[$j]}/${HOST}.${i}/${DATE} | tee ${RESFILEPREFIX}${i} &
+  for i in `seq $NUMPROCESSES`; do
+  	${QBIN} ./src/prepare.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -s ${THREADNR} -q >> ${LOGFILEPREFIX}${i} 2 >&1 &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
 
+  wait -n
   wait
-  echo "Files created"
 
   sleep 1
   syncAcrossHosts
-
-  # air gap for any remote stats collection....
-  THRU=$(grep 'sync write' ${RESFILEPREFIX}* | awk '{print $8}' | awk '{printf "%.0f\n",$1}' | sort -n | head -1)
-  THRU=$(echo $THRU | awk '{printf "%.0f",$1}')
-  THRU=$(expr $THRU \* $NUMTHREADS)
-  echo "Total Write Rate(sync): " $THRU  " MiB/sec" 2>&1 | tee -a ${AGGRFILE}
-
-  THRU=$(grep 'create list' ${RESFILEPREFIX}* | awk '{print $4}' | awk '{printf "%.0f\n",$1}' | sort -n | head -1)
-  THRU=$(echo $THRU | awk '{printf "%.0f",$1}')
-  THRU=$(expr $THRU \* $NUMTHREADS)
-  echo  "Total create list rate:  " $THRU " MiB/sec" 2>&1 | tee -a ${AGGRFILE}
 
   sleep 5
 fi
@@ -122,28 +126,17 @@ fi
 ######### READ TEST #########
 
 echo
-echo "STARTING READ TEST"
-flush
-touch ${HERE}/sync-$HOST
+echo "STARTING SEQUENTIAL READ TEST"
+${FLUSH}
+touch ${CURRENTLOGDIR}/sync-$HOST
 
 j=0
-for i in `seq $NUMTHREADS`; do
-	${QBIN} ${HERE}/src/read.q -db ${array[$j]}/${HOST}.${i}/${DATE} >> ${RESFILEPREFIX}${i} 2>&1  &
+for i in `seq $NUMPROCESSES`; do
+	${QBIN} ./src/read.q -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -s ${THREADNR} >> ${LOGFILEPREFIX}${i} 2>&1 &
   j=$(( ($j + 1) % $NUMSEGS ))
 done
+wait -n
 wait
-
-ELAPSED=$(grep 'End thread -23! mapped read' ${RESFILEPREFIX}* | awk '{print $9}'| awk '{printf "%.3f\n",$1/1000}' | sort -nr | head -1)
-WALKIES=$(grep 'End thread walklist' ${RESFILEPREFIX}* | awk '{print $4}'| awk '{printf "%.3f\n",$1/1000}' | sort -nr | head -1)
-# Use filesize which is direct from real filesize from q, e.g compressed data
-SIZE=$(grep '^filesize' ${RESFILEPREFIX}1 | awk '{print $2}')
-SIZE=$(echo $SIZE | awk '{printf "%.0f",$1}')
-# this is where we catch the process aggregation...
-SIZE=$(expr $SIZE \* $NUMTHREADS )
-
-echo $SIZE " " $ELAPSED " " $WALKIES | tee -a ${AGGRFILE}
-echo $SIZE $ELAPSED | awk '{$1=sprintf("%5.2f",$1/$2);print "Streaming Read(mapped) Rate: ", $1," MiB/sec"}' | tee -a ${AGGRFILE}
-echo $SIZE $WALKIES | awk '{$1=sprintf("%5.2f",$1/$2);print "Walking List Rate: ", $1," MiB/sec"}' | tee -a ${AGGRFILE}
 
 syncAcrossHosts
 
@@ -154,25 +147,15 @@ sleep 5
 # without flush, cached in kernel buffer, re-mapped...
 
 echo
-echo "STARTING RE-READ (CACHE) TEST"
+echo "STARTING SEQUENTIAL RE-READ (CACHE) TEST"
 
-touch ${HERE}/sync-$HOST
+touch ${CURRENTLOGDIR}/sync-$HOST
 j=0
-for i in `seq $NUMTHREADS`; do
-	${QBIN} ${HERE}/src/reread.q -threads $NUMTHREADS -db ${array[$j]}/${HOST}.${i}/${DATE} >> ${RESFILEPREFIX}${i} 2>&1  &
+for i in `seq $NUMPROCESSES`; do
+	${QBIN} ./src/reread.q -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -s ${THREADNR} >> ${LOGFILEPREFIX}${i} 2>&1  &
   j=$(( ($j + 1) % $NUMSEGS ))
 done
 wait
-
-#
-ELAPSED=$(grep 'End thread -23! mapped reread' ${RESFILEPREFIX}* | awk '{print $6}'| awk '{printf "%.3f\n",$1/1000}' | sort -nr | head -1)
-# Use filesize which is direct from real filesize from q, e.g compressed data
-SIZE=$(grep '^filesize' ${RESFILEPREFIX}1 | awk '{print $2}')
-SIZE=$(echo $SIZE | awk '{printf "%.0f",$1}')
-# this is where we catch the process aggregation...
-SIZE=$(expr $SIZE \* $NUMTHREADS )
-echo $SIZE $ELAPSED
-echo $SIZE $ELAPSED | awk '{$1=sprintf("%5.2f",$1/$2);print "Streaming ReRead(mapped) Rate: ", $1," MiB/sec"}' | tee -a ${AGGRFILE}
 
 syncAcrossHosts
 
@@ -182,13 +165,13 @@ sleep 5
 if [ "$SCOPE" = "full" ]; then
   ######### META DATA TEST #########
   echo
-  echo "STARTING META DATE TEST"
-  flush
+  echo "STARTING META DATA TEST"
+  ${FLUSH}
 
-  touch ${HERE}/sync-$HOST
+  touch ${CURRENTLOGDIR}/sync-$HOST
   j=0
-  for i in `seq $NUMTHREADS`; do
-  	${QBIN} ${HERE}/src/meta.q -threads $NUMTHREADS -db ${array[$j]}/${HOST}.${i}/${DATE} >> ${RESFILEPREFIX}${i} 2>&1  &
+  for i in `seq $NUMPROCESSES`; do
+  	${QBIN} ./src/meta.q -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -s ${THREADNR} >> ${LOGFILEPREFIX}${i} 2>&1  &
     j=$(( ($j + 1) % $NUMSEGS ))
   done
 
@@ -201,36 +184,41 @@ fi
 function runrandomread {
   local listsize=$1
   local mmap=$2
-  local mmapstring=$3
-  local residx=$4
-  declare -A sizeMap=( [1000000]=1M [64000]=64k )
-  flush
+  ${FLUSH}
+  echo "test${mmap} with block size ${listsize}"
 
-  touch ${HERE}/sync-$HOST
+  touch ${CURRENTLOGDIR}/sync-$HOST
   j=0
   sleep 5
-  for i in `seq $NUMTHREADS`; do
-  	${QBIN} ${HERE}/src/randomread.q -listsize ${listsize} ${mmap} -threads $NUMTHREADS -db ${array[$j]}/${HOST}.${i}/${DATE} >> ${RESFILEPREFIX}${i} 2>&1  &
+  for i in `seq $NUMPROCESSES`; do
+  	${QBIN} ./src/randomread.q -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -testtype "read disk" -s ${THREADNR} -S ${SEED} >> ${LOGFILEPREFIX}${i} 2>&1  &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait
-  THRU=$(grep "End random reads${mmapstring} ${listsize}" ${RESFILEPREFIX}* | cut -d" " -f ${residx} | awk '{printf "%.0f\n",$1}' | sort -n | head -1)
-  THRU=$(echo $THRU | awk '{printf "%.0f",$1}')
-  THRU=$(expr $THRU \* $NUMTHREADS)
-  echo "Random ${sizeMap[${listsize}]}${mmapstring}: " $THRU  " MiB/sec" 2>&1 | tee -a ${AGGRFILE}
+
+  for i in `seq $NUMPROCESSES`; do
+  	${QBIN} ./src/randomread.q -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -testtype "read mem" -s ${THREADNR} -S ${SEED} >> ${LOGFILEPREFIX}${i} 2>&1  &
+  	j=$(( ($j + 1) % $NUMSEGS ))
+  done
+  wait
   syncAcrossHosts
 }
 
 echo
 echo "STARTING RANDOM READ TEST"
-
+SEED=1
 for listsize in 1000000 64000; do
-	runrandomread $listsize " " "" 6
+	runrandomread $listsize " "
+  SEED=$((SEED+1))
 done
 for listsize in 1000000 64000; do
-	runrandomread $listsize " -withmmap" " with mmaps" 8
+	runrandomread $listsize " -withmmap"
+  SEED=$((SEED+1))
 done
 
+
+echo "Aggregating results"
+${QBIN} ./src/postproc.q ${RESFILEPREFIX} ${NUMPROCESSES} ${AGGRRESFILE} -q
 
 #
 # an air gap for any storage stats gathering before unlinks go out ...
@@ -239,9 +227,25 @@ sleep 5
 if [ "$3" = "delete" ]; then
 	echo "cleaning up DB..."
 	j=0
-	for i in `seq $NUMTHREADS`; do
-		rm -rf ${array[$j]}/${HOST}.${i}/${DATE}
+	for i in `seq $NUMPROCESSES`; do
+    if notObjStore ${array[$j]}; then
+		  rm -rf ${array[$j]}/${HOST}.${i}/${DATE}
+    else
+      if [[ ${array[$j]} == s3://* ]]; then
+        aws s3 rm ${array[$j]}/${HOST}.${i}/${DATE} --recursive
+      elif [[ ${array[$j]} == gs://* ]]; then
+        gsutil rm -r ${array[$j]}/${HOST}.${i}/${DATE}
+      elif [[ ${array[$j]} == ms://* ]]; then
+        echo "Cleanup ${array[$j]}/${HOST}.${i}/${DATE} manually"
+        echo "az storage fs directory delete -f YOURCONTAINER -n ${HOST}.${i}/${DATE} --account-name YOURSTORAGEACCOUNT"
+      else
+        echo "Unknown object storage prefix ${array[$j]::2}"
+      fi
+    fi
 		j=$(( ($j + 1) % $NUMSEGS ))
 	done
 fi
-rm -rf ${HERE}/sync-*
+rm -rf ./sync-*
+
+sync ${RESDIR}
+sync ${CURRENTLOGDIR}
