@@ -1,9 +1,4 @@
-include: {
-  curFile: value[{}][6];
-  system "l ", sublist[1+last where curFile = "/"; curFile], x;
-  }
-
-include "common.q";
+system "l src/common.q";
 
 comm:{sx:string x;
   STDOUT"hclose hopen`",sx," ",msstring 0.001*value"\\t do[1000;hclose hopen`",sx,"]";

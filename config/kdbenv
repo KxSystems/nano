@@ -1,0 +1,16 @@
+if ! command -v q &> /dev/null
+then
+  export QHOME=$HOME/q     # SET QHOME MANUALLY
+
+  if [ `uname -s` = "Darwin" ]; then
+    QSUBDIR=w64
+  else
+    QSUBDIR=l64
+  fi
+  export QBIN="$QHOME/$QSUBDIR/q"
+else
+  export QBIN=$(which q)
+fi
+
+echo "QBIN is set to $QBIN"
+

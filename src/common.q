@@ -1,15 +1,21 @@
-ioq:"2.0"
+system "l src/log.q";
+argvk:key argv:first each .Q.opt .z.x
 
-STDOUT:-1
+if[not `db in argvk;
+  .qlog.error "parameter db is missing";
+  exit 6];
+DB: argv `db
+OBJSTORE: any DB like/: ("s3://*"; "gs://*"; "ms://*");
+if[OBJSTORE & not @[{x in key .comkxic.libs}; `objstor; 0b];
+    .qlog.error "kdb Insights is required for object storage support";
+    exit 7];
 
-MEMUSAGERATE: 0.40;   // rate of the memory to be used, e.g. 40%
-argvk:key argv:.Q.opt .z.x
+if[ not `result in argvk;
+  .qlog.error "parameter result is missing";
+  exit 8];
+resultH: hopen ":", argv `result;
 
-threadcount:string `$first argv`threads
-threadcount:"I"$threadcount
-DB: first argv `db
-
-tsToMsec: {floor (`long$x)%10 xexp 6}
+tsToSec: {(`long$x)%10 xexp 9}
 fix:{.Q.fmt[x+1+count string floor y;x;y]}
 msstring:{(string x)," ms"}
 
@@ -17,28 +23,20 @@ msstring:{(string x)," ms"}
 
 
 / note that compression does not work with a "dot" in the filename
-lrfile: hsym `$DB, "/readtest" / local read file
-lwfile: hsym `$DB, "/writetest" / local write file
+fRead: hsym `$DB, fReadFileName: "/seqread";
+fRandomRead: hsym `$DB, fRandomReadFileName: "/randomread";
 
-ffileo: hsym `$DB, "/fileopsto" / o of n local fileops test
-ffile1: hsym `$DB, "/fileopst1" / 1 of n local fileops test
-ffile2: hsym `$DB, "/fileopst2" / 2 of n local fileops test
-ffile3: hsym `$DB, "/fileopst3" / 3 of n local fileops test
-ffile4: hsym `$DB, "/fileopst4" / 4 of n local fileops test
-ffile5: hsym `$DB, "/fileopst5" / 5 of n local fileops test
-ffile6: hsym `$DB, "/fileopst6" / 6 of n local fileops test
-ffile7: hsym `$DB, "/locktest"  / 7 of n local fileops test
+fOpenClose: hsym `$DB, fOpenCloseFileName: "/openclose";
+fhcount: hsym `$DB, fHCountFileName: "/fhcount";
+fReadBinary: hsym `$DB, fHReadBinaryFileName: "/readbinary";
+fmmap: hsym `$DB, fHmmapFileName: "/mmap";
+flock: hsym `$DB, "/locktest";
 
 k: 1024
 M: k*k
 SIZEOFLONG: 8
+MEMRATIOMODIFIERS: `full`small`tiny!1 0.2 0.05
+MODIFIER: 1f^MEMRATIOMODIFIERS `$getenv `DBSIZE
 
-// threads are executed by multiple independent executions of io.q, via calling
-// script. threadcount is used to figure out how big to make each file
-// depending on the available memory
-// we go high with most memory settings in cloud as this mimics customer systems
-// and side-benefits by gaining more instance capability . so this is a lazy calc
-//
-ssm:"J"$(x where not null`$x:" "vs(system"free -b")[1])[3];
-ssm:`long$(ssm-2 xexp 24)*MEMUSAGERATE;
-ssm:`long$(ssm-(ssm mod 1024*1024))%threadcount;
+// Repeat number of some meta and write tests
+N: `long$MODIFIER*50*1000;
