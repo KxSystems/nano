@@ -19,7 +19,7 @@ docker-build-push:
       fi
 
     - mkdir -p $HOME/.docker && echo $DOCKER_AUTH_CONFIG > $HOME/.docker/config.json
-    - docker login ${INSIGHTS_DEV_NEXUS_REGISTRY} -u ${INT_NEXUS_USER_RW} --password-stdin
+    - echo ${INT_NEXUS_PASS_RW} | docker login ${INSIGHTS_DEV_NEXUS_REGISTRY} -u ${INT_NEXUS_USER_RW} --password-stdin
   script:
     - IMAGE_URL="$INSIGHTS_DEV_NEXUS_REGISTRY/benchmarking/nano:$(yq -r '.pub' version.yaml)"
     - docker build --pull -t "${IMAGE_URL}" .
