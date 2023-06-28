@@ -228,7 +228,7 @@ The meta operations are executed (variable `N`) thousand times and the average e
    1. locking file. [Enum extend](https://code.kx.com/q/ref/enum-extend/) is used for this which achieves more.
 
 ### Random read
-This test consists of four subtests. Each subtest random reads 800 MiB of data by indexing a list stored on disk. Consecutive integers are used for indexing. Each random read uses a different random offset ([deal](https://code.kx.com/q/ref/deal/#roll-and-deal)). 800 MiB is achieved either by either reading 100 times 1M or 1600 times 64k 8-byte integers. Each random read can also perform a `mmap`. This test is denoted by a `with mmaps` postfix, e.g. `mmaps,random read 64k` stands for random reading integer list of size 64k after a memory map.
+This test consists of four subtests. Each subtest random reads 800 MiB of data by indexing a list stored on disk. Consecutive integers are used for indexing. Each random read uses a different random offset ([deal](https://code.kx.com/q/ref/deal/#roll-and-deal)). 800 MiB is achieved either by either reading 100 times 1M or 1600 times 64k 8-byte integers. Each random read can also perform a `mmap`. This test is denoted by a `mmaps` postfix, e.g. `mmaps,random read 64k` stands for random reading integer list of size 64k after a memory map.
 
 In a typical `select` statement with a `where` clause kdb+ does random reads with memory mappings. If you started your kdb+ process with [.Q.MAP](https://code.kx.com/q/ref/dotq/#map-maps-partitions) then memory mapping is done during `.Q.MAP` and the select statement only does a random read.
 
