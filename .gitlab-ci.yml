@@ -21,6 +21,8 @@ docker-build-push:
     - mkdir -p $HOME/.docker && echo $DOCKER_AUTH_CONFIG > $HOME/.docker/config.json
     - echo ${INT_NEXUS_PASS_RW} | docker login ${INSIGHTS_DEV_NEXUS_REGISTRY} -u ${INT_NEXUS_USER_RW} --password-stdin
   script:
+    - wget https://${INT_NEXUS_USER_RO}:${INT_NEXUS_PASS_RO}@ext-nexus.kxi-dev.kx.com/repository/kx-insights-packages/kdbInsightsCore/0.41.1/kdb-insights-core.tar
+    - docker load < kdb-insights-core.tar
     - wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
     - chmod a+x /usr/local/bin/yq
     - IMAGE_URL="$INSIGHTS_DEV_NEXUS_REGISTRY/benchmarking/nano:$(yq -r '.pub' version.yaml)"
