@@ -26,7 +26,7 @@ docker-build-push:
     - wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
     - chmod a+x /usr/local/bin/yq
     - IMAGE_URL="$INSIGHTS_DEV_NEXUS_REGISTRY/benchmarking/nano:$(yq -r '.pub' version.yaml)"
-    - docker build --pull -t "${IMAGE_URL}" .
+    - docker build -t "${IMAGE_URL}" .
     - docker push "${IMAGE_URL}"
   after_script:
     - docker rmi "${IMAGE_URL}"
