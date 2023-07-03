@@ -6,8 +6,7 @@ default:
 stages:
   - build
 
-
-docker-build-push:
+.docker-beforescript:
   stage: build
   image: "docker:20.10.23"
   before_script:
@@ -25,11 +24,23 @@ docker-build-push:
     - docker load < kdb-insights-core.tar
     - wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
     - chmod a+x /usr/local/bin/yq
-    - IMAGE_URL="$INSIGHTS_DEV_NEXUS_REGISTRY/benchmarking/nano:$(yq -r '.pub' version.yaml)"
+    - IMAGE_URL="$INSIGHTS_DEV_NEXUS_REGISTRY/benchmarking/nano:$(yq -r ".${TARGET}" version.yaml)"
     - docker build -t "${IMAGE_URL}" .
     - docker push "${IMAGE_URL}"
-  after_script:
     - docker rmi "${IMAGE_URL}"
 
+docker-buildpub-push:
+  variables:
+    TARGET: "pub"
+  extends:
+    - .docker-beforescript
   rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+docker-builddev-push:
+  variables:
+    TARGET: "dev"
+  extends:
+    - .docker-beforescript
+  rules:
+    - if: '$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
