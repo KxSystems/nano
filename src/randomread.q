@@ -21,23 +21,27 @@ randomread:{[blocksize]
   .qlog.info "Indexing ", string[blockNr], " number of continuous blocks of length ", string blocksize;
   f:get fRandomRead;
   offsets: blockNr?neg[blocksize]+count f;
-  sT:.z.n;
-  blocksize {[f;blocksize;offset] f offset+til blocksize;}[f]/: offsets;
-  elapsed:tsToSec .z.n-sT;
-  resultH argv[`testtype], "|random read ",sizeM[blocksize],"|til,@|", fix[2;totalreadInB % M*elapsed], "|MiB/sec\n";
+  :{[f; offsets; blocksize; dontcare]
+    sT:.z.n;
+    blocksize {[f;blocksize;offset] f offset+til blocksize;}[f]/: offsets;
+    elapsed:tsToSec .z.n-sT;
+    resultH argv[`testtype], "|random read ",sizeM[blocksize],"|til,@|", fix[2;totalreadInB % M*elapsed], "|MiB/sec\n"
+    }[f; offsets; blocksize]
   };
 
 randomreadwithmmap:{[blocksize]
   blockNr: totalreadInB div SIZEOFLONG * blocksize;
   .qlog.info "Indexing ", string[blockNr], " number of continuous blocks of length ", string blocksize;
   offsets: blockNr?neg[blocksize]+(-14+hcount fRandomRead)div SIZEOFLONG;  // 14 bytes overhead
-  sT:.z.n;
-  blocksize {[blocksize; offset] get[fRandomRead] offset+til blocksize;}/: offsets;
-  elapsed:tsToSec .z.n-sT;
-  resultH argv[`testtype], "|mmap,random read ",sizeM[blocksize],"|get,til,@|", fix[2;totalreadInB % M* elapsed], "|MiB/sec\n";
+  :{[offsets; blocksize; dontcare]
+    sT:.z.n;
+    blocksize {[blocksize; offset] get[fRandomRead] offset+til blocksize;}/: offsets;
+    elapsed:tsToSec .z.n-sT;
+    resultH argv[`testtype], "|mmap,random read ",sizeM[blocksize],"|get,til,@|", fix[2;totalreadInB % M* elapsed], "|MiB/sec\n";
+    }[offsets; blocksize]
   };
 
 fn: $[`withmmap in argvk; randomreadwithmmap; randomread]
-fn "I"$argv `listsize;
+.test.randomread: fn "I"$argv `listsize;
 
-if [not `debug in argvk; exit 0];
+controller (`addWorker; ) .Q.dd[`.test;] each except[; `] key .test;

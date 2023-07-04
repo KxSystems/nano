@@ -6,7 +6,7 @@ output: hsym `$last .z.x;
 
 
 results: raze {("*S*FS"; enlist "|") 0:x} each `$resfileprefix cross string[1+til nproc] ,\: ".psv";
-aggregate: select numproc: count result, count[result] * min result, first unit by testtype, test, qexpression from results where not unit = `ms;
+aggregate: select numproc: count result, sum result, first unit by testtype, test, qexpression from results where not unit = `ms;
 
 output 0: "|" 0: `numproc xcols 0!aggregate;
 

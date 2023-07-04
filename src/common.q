@@ -15,6 +15,8 @@ if[ not `result in argvk;
   exit 8];
 resultH: hopen ":", argv `result;
 
+controller: hopen "J"$argv `controller;
+
 tsToSec: {(`long$x)%10 xexp 9}
 fix:{.Q.fmt[x+1+count string floor y;x;y]}
 msstring:{(string x)," ms"}
