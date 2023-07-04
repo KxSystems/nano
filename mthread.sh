@@ -104,7 +104,7 @@ if [ "$SCOPE" = "full" ]; then
     if notObjStore ${array[$j]}; then
   	  mkdir -p ${array[$j]}/${HOST}.${i}/${DATE}
     fi
-    echo "testtype|test|qexpression|result|unit" > ${RESFILEPREFIX}${i}.psv
+    echo "testtype|test|qexpression|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
 

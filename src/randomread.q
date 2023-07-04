@@ -24,8 +24,8 @@ randomread:{[blocksize]
   :{[f; offsets; blocksize; dontcare]
     sT:.z.n;
     blocksize {[f;blocksize;offset] f offset+til blocksize;}[f]/: offsets;
-    elapsed:tsToSec .z.n-sT;
-    resultH argv[`testtype], "|random read ",sizeM[blocksize],"|til,@|", fix[2;totalreadInB % M*elapsed], "|MiB/sec\n"
+    eT: .z.n;
+    writeRes[ argv[`testtype];"random read ",sizeM[blocksize];"til,@"; sT; eT; fix[2;totalreadInB % M*tsToSec eT-sT];"MiB/sec\n"]
     }[f; offsets; blocksize]
   };
 
@@ -36,8 +36,8 @@ randomreadwithmmap:{[blocksize]
   :{[offsets; blocksize; dontcare]
     sT:.z.n;
     blocksize {[blocksize; offset] get[fRandomRead] offset+til blocksize;}/: offsets;
-    elapsed:tsToSec .z.n-sT;
-    resultH argv[`testtype], "|mmap,random read ",sizeM[blocksize],"|get,til,@|", fix[2;totalreadInB % M* elapsed], "|MiB/sec\n";
+    eT: .z.n;
+    writeRes[argv[`testtype];"mmap,random read ",sizeM[blocksize];"get,til,@"; sT; eT; fix[2;totalreadInB % M* tsToSec eT-sT];"MiB/sec\n"];
     }[offsets; blocksize]
   };
 

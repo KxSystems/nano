@@ -21,7 +21,7 @@ if[ not OBJSTORE;
     do[N; .[fSmallAppend;();,;2 3 5 7]];
     eT: .z.n;
     fsize: hcount fSmallAppend;
-    resultH "write disk|open append small|.[;();,;2 3 5 7]|", fix[2; fsize%M*tsToSec eT - sT], "|MiB/sec\n";
+    writeRes["write disk"; "open append small"; ".[;();,;2 3 5 7]"; sT; eT; fix[2; fsize%M*tsToSec eT - sT]; "MiB/sec\n"];
   };
 
   .test.smallAppendToHandler: {[]
@@ -33,7 +33,7 @@ if[ not OBJSTORE;
     eT: .z.n;
     hclose H;
     fsize: hcount fSmallAppendFH;
-    resultH "write disk|append small|H 2 3 5 7|", fix[2; fsize%M*tsToSec eT - sT], "|MiB/sec\n";
+    writeRes["write disk"; "append small"; "H 2 3 5 7"; sT; eT; fix[2; fsize%M*tsToSec eT - sT]; "MiB/sec\n"];
   };
 
   .test.smallReplace: {[]
@@ -43,7 +43,7 @@ if[ not OBJSTORE;
     sT: .z.n;
     do[N; .[fSmallReplace;();:;42 7]];
     eT: .z.n;
-    resultH "write disk|open replace small|.[;();:;42 7]|", fix[3; (N*hcount fSmallReplace)%M*tsToSec eT - sT], "|MiB/sec\n";
+    writeRes["write disk"; "open replace small"; ".[;();:;42 7]"; sT; eT; fix[3; (N*hcount fSmallReplace)%M*tsToSec eT - sT]; "MiB/sec\n"];
   };
   ];
 
@@ -61,8 +61,8 @@ ssm:`long$(ssm-(ssm mod 1024*1024))%processcount;
   .qlog.info "starting list creation test of length ", string[`int$SAMPLESIZE % 1000 * 1000], " M";
   sT:.z.n;
   `privmem set til SAMPLESIZE;
-  elapsed:tsToSec .z.n-sT;
-  resultH "write mem|create list|til|",  string[floor 0.5+ssm%M*elapsed], "|MiB/sec\n";
+  eT: .z.n;
+  writeRes["write mem"; "create list"; "til"; sT; eT; string[floor 0.5+ssm%M*tsToSec eT-sT]; "MiB/sec\n"];
   }
 
 
@@ -108,7 +108,7 @@ $[OBJSTORE; [
     sT:.z.n;
     lrfileTmpH set privmem;
     eT: .z.n;
-    resultH "write disk|write rate|set,|",  fix[2; ssm%M*tsToSec eT - sT], "|MiB/sec\n";
+    writeRes["write disk"; "write rate"; "set"; sT; eT; fix[2; ssm%M*tsToSec eT - sT]; "MiB/sec\n"];
   };
   .test.cloudcmd: {[]
     sT:.z.n;
@@ -116,7 +116,7 @@ $[OBJSTORE; [
     eT: .z.n;
     .qlog.info "Write test finished";
     hdel lrfileTmpH;
-    resultH "write objstore|cli cp rate|vendor obj store cli cp|",  fix[2; ssm%M*tsToSec eT - sT], "|MiB/sec\n";
+    writeRes["write objstore";"cli cp rate";"vendor obj store cli cp"; sT; eT; fix[2; ssm%M*tsToSec eT - sT]; "MiB/sec\n"];
   };
   .test.prepare: {[]
     .qlog.info "creating files for read tests";
@@ -138,14 +138,14 @@ $[OBJSTORE; [
     sT:.z.n;
     fRead set privmem;
     eT: .z.n;
-    resultH "write disk|write rate|set|", fix[2; ssm%M*tsToSec eT - sT], "|MiB/sec\n";
+    writeRes["write disk";"write rate";"set";sT; eT; fix[2; ssm%M*tsToSec eT - sT]; "MiB/sec\n"];
   };
   .test.sync: {[]
     .qlog.info "starting sync test";
     sT: .z.n;
     system "sync ", DB, fReadFileName;
     eT: .z.n;
-    resultH "write disk|sync rate|system sync|", fix[2; ssm%M*tsToSec sT - eT], "|MiB/sec\n";
+    writeRes["write disk";"sync rate";"system sync"; sT; eT; fix[2; ssm%M*tsToSec eT - sT]; "MiB/sec\n"];
   };
   .test.appendMid: {[]
     .qlog.info "creating files for read tests";
@@ -162,7 +162,7 @@ $[OBJSTORE; [
     do[chunkNr; .[fRandomRead;();,;fileopsmem]];
     eT: .z.n;
     fsize: hcount fRandomRead;
-    resultH "write disk|open append mid|.[;();,;til 16*k]|", fix[2; fsize%M*tsToSec eT - sT], "|MiB/sec\n";
+    writeRes["write disk";"open append mid";".[;();,;til 16*k]";sT; eT; fix[2; fsize%M*tsToSec eT - sT]; "MiB/sec\n"];
 
   };
   .test.prepare: {[]

@@ -13,7 +13,12 @@ if[OBJSTORE & not @[{x in key .comkxic.libs}; `objstor; 0b];
 if[ not `result in argvk;
   .qlog.error "parameter result is missing";
   exit 8];
+
 resultH: hopen ":", argv `result;
+SEP: "|"
+writeRes: {[testtype; test; qexpression; starttime; endtime; result; unit]
+  resultH SEP sv (testtype; test; qexpression; string starttime; string endtime; result; unit);
+  }
 
 controller: hopen "J"$argv `controller;
 

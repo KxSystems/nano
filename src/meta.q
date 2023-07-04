@@ -10,8 +10,8 @@ $[OBJSTORE;
     .qlog.info "starting close open test";
     sT:.z.n;
     do[N; hclose hopen fOpenClose];
-    elapsed:tsToSec .z.n-sT;
-    resultH "meta|close open|hopen,hclose|", fix[4;1000 * elapsed%N], "|ms\n";
+    eT: .z.n;
+    writeRes["meta";"close open";"hopen,hclose"; sT; eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"];
   };
 
   .test.link: {[]
@@ -28,24 +28,24 @@ $[OBJSTORE;
     .qlog.info "starting lock test";
     sT:.z.n;
     do[N; flock?`aaa`bbb`ccc`ddd`eee];
-    elapsed:tsToSec .z.n-sT;
-    resultH "meta|lock|enum extend|", fix[4;1000 * elapsed%N], "|ms\n"
+    eT: .z.n;
+    writeRes["meta";"lock";"enum extend"; sT; eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"]
     }]];
 
 .test.size: {[]
   .qlog.info "starting size test";
   sT:.z.n;
   do[N; hcount fhcount];
-  elapsed:tsToSec .z.n-sT;
-  resultH "meta|size|hcount|", fix[4;1000 * elapsed%N], "|ms\n";
+  eT: .z.n;
+  writeRes["meta";"size";"hcount"; sT; eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"];
   }
 
 test.get: {[]
   .qlog.info "starting mmap test";
   sT:.z.n;
   do[N; get fmmap];
-  elapsed:tsToSec .z.n-sT;
-  resultH "read disk|mmap|get|", fix[4;1000 * elapsed%N], "|ms\n";
+  eT: .z.n;
+  writeRes["read disk";"mmap";"get"; sT; eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"];
   }
 
 controller (`addWorker; ) .Q.dd[`.test;] each except[; `] key .test;
