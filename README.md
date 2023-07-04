@@ -136,7 +136,9 @@ If you are interested how the storage medium scales with the number of parallel 
 
 The results are saved as text files in a sub-directory set by environment variable `RESULTDIR` (by default it is `results`). Each run of the `mthread.sh` saves
 its results in a new directory, timestamped `mmdd_HHMM`, rounded to the nearest minute. Detailed results, including write rates, small IOPS tests, and so on, are
-contained in the output files (one per system under test) in the `results/mmdd_HHMM-mmdd_HHMM/RES-` files. File `results/mmdd_HHMM-mmdd_HHMM/aggregates-HOSTNAME` picks a few important metrics from the detailed result files.
+contained in the output files (one per system under test) in the `results/mmdd_HHMM-mmdd_HHMM/RES-` files.
+
+File `results/mmdd_HHMM-mmdd_HHMM/aggregates-HOSTNAME` aggregates (calculates the average) the throughput metrics from the detailed result files. Column `accuracy` tries to capture the impact of [offset problem](#accuracy). For each test, it calculates the maximal difference of start times and divides it by the average test elapsed times.
 
 ### log files
 
