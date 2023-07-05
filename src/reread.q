@@ -7,7 +7,7 @@ system "l src/common.q";
   {-23!x;} mapped;
   eT: .z.n;
   fsize:hcount fRead;
-  writeRes["read mem";"reread";"get,-23!"; sT; eT; fix[2;ssm%M*tsToSec eT-sT]; "MiB/sec\n"];
+  writeRes["read mem";"sequential reread";"get,-23!"; sT; eT; fix[2;ssm%M*tsToSec eT-sT]; "MiB/sec\n"];
   }
 
 .test.readbinary: {[]
@@ -16,7 +16,7 @@ system "l src/common.q";
   read1 fReadBinary;
   eT: .z.n;
   // k%M is shortened to %k
-  writeRes["read mem";"read binary";"read1"; sT; eT; fix[2;SIZEOFLONG*16%k*tsToSec eT-sT]; "MiB/sec\n"];
+  writeRes["read mem";"sequential read binary";"read1"; sT; eT; fix[2;SIZEOFLONG*16%k*tsToSec eT-sT]; "MiB/sec\n"];
   }
 
 controller (`addWorker; ) .Q.dd[`.test;] each except[; `] key .test;
