@@ -134,7 +134,7 @@ touch ${CURRENTLOGDIR}/sync-$HOST
 ${QBIN} ./src/controller.q -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
 j=0
 for i in `seq $NUMPROCESSES`; do
-	${QBIN} ./src/read.q -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} >> ${LOGFILEPREFIX}${i} 2>&1 &
+	${QBIN} ./src/read.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} >> ${LOGFILEPREFIX}${i} 2>&1 &
   j=$(( ($j + 1) % $NUMSEGS ))
 done
 wait -n
@@ -155,7 +155,7 @@ touch ${CURRENTLOGDIR}/sync-$HOST
 ${QBIN} ./src/controller.q -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
 j=0
 for i in `seq $NUMPROCESSES`; do
-	${QBIN} ./src/reread.q -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} >> ${LOGFILEPREFIX}${i} 2>&1  &
+	${QBIN} ./src/reread.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} >> ${LOGFILEPREFIX}${i} 2>&1  &
   j=$(( ($j + 1) % $NUMSEGS ))
 done
 wait
