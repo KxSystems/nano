@@ -13,6 +13,7 @@ output 0: "|" 0: `numproc xcols 0!aggregate;
 if[ 0 < exec count i from aggregate where not numproc = nproc;
     .qlog.error "The following tests were not executed by all processes: ",
     "," sv string exec distinct test from aggregate where not numproc = nproc;
-    exit 1];
+    exit 1
+    ];
 
 exit 0
