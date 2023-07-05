@@ -225,7 +225,7 @@ done
 
 
 echo "Aggregating results"
-${QBIN} ./src/postproc.q ${RESFILEPREFIX} ${NUMPROCESSES} ${AGGRRESFILE} -q
+${QBIN} ./src/postproc.q -inputs ${RESFILEPREFIX} -processes ${NUMPROCESSES} -output ${AGGRRESFILE} -q
 
 #
 # an air gap for any storage stats gathering before unlinks go out ...

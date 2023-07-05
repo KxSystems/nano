@@ -1,8 +1,10 @@
 system "l src/log.q";
 
-resfileprefix: "," vs first .z.x;
-nproc: "I"$.z.x 1;
-output: hsym `$last .z.x;
+argvk:key argv:first each .Q.opt .z.x
+
+resfileprefix: "," vs argv `inputs;
+nproc: "I"$argv `processes;
+output: hsym `$argv `output;
 
 
 results: raze {("SS*NNFS"; enlist "|") 0:x} each `$resfileprefix cross string[1+til nproc] ,\: ".psv";
@@ -16,4 +18,4 @@ if[ 0 < exec count i from aggregate where not numproc = nproc;
     exit 1
     ];
 
-exit 0
+if[not `debug in argvk; exit 0];
