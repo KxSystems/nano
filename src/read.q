@@ -6,7 +6,7 @@ system "l src/common.q";
   `mapped set get fRead;
   {-23!x;} mapped;
   eT: .z.n;
-  writeRes["read disk";"sequential read";"get,-23!"; sT; eT; fix[2;ssm%M*tsToSec eT-sT]; "MiB/sec\n"];
+  writeRes["read disk";"sequential read";"get,-23!"; sT; eT; fix[2;SIZEOFLONG*count[mapped]%M*tsToSec eT-sT]; "MiB/sec\n"];
   }
 
 .test.aggregate: {[]
@@ -14,7 +14,7 @@ system "l src/common.q";
   sT:.z.n;
   max mapped;
   eT: .z.n;
-  writeRes["read mem";"aggregate";"max"; sT; eT; fix[2;ssm%M*tsToSec eT-sT]; "MiB/sec\n"];
+  writeRes["read mem";"aggregate";"max"; sT; eT; fix[2;SIZEOFLONG*count[mapped]%M*tsToSec eT-sT]; "MiB/sec\n"];
   }
 
 .test.readbinary: {[]
@@ -22,8 +22,7 @@ system "l src/common.q";
   sT:.z.n;
   read1 fReadBinary;
   eT: .z.n;
-  // k%M is shortened to %k
-  writeRes["read disk";"sequential read binary";"read1"; sT; eT; fix[2;SIZEOFLONG*16%k*tsToSec eT-sT]; "MiB/sec\n"];  // TODO: avoid recalculating theoretical read binary file size
+  writeRes["read disk";"sequential read binary";"read1"; sT; eT; fix[2;hcount[fReadBinary]%M*tsToSec eT-sT]; "MiB/sec\n"];  // TODO: avoid recalculating theoretical read binary file size
   }
 
 controller (`addWorker; ) .Q.dd[`.test;] each except[; `] key .test;

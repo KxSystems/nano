@@ -50,10 +50,3 @@ N: `long$MODIFIER*50*1000;
 
 processcount: string `$argv `processes
 processcount: "I"$processcount
-
-MEMUSAGERATEDEFAULT: 0.6;
-ssm: `long$MODIFIER * $["abs" ~ getenv `MEMUSAGETYPE;
-   1024*1024*"J"$getenv `MEMUSAGEVALUE;
-   0.5 * (MEMUSAGERATEDEFAULT^"F"$getenv `MEMUSAGEVALUE) * .Q.w[]`mphy];  // vectors can reserve memory twice the length of the vector
-
-ssm:`long$(ssm-(ssm mod 1024*1024))%processcount;

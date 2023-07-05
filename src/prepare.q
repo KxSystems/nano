@@ -47,6 +47,13 @@ if[ not OBJSTORE;
   ];
 
 
+MEMUSAGERATEDEFAULT: 0.6;
+ssm: `long$MODIFIER * $["abs" ~ getenv `MEMUSAGETYPE;
+   1024*1024*"J"$getenv `MEMUSAGEVALUE;
+   0.5 * (MEMUSAGERATEDEFAULT^"F"$getenv `MEMUSAGEVALUE) * .Q.w[]`mphy];  // vectors can reserve memory twice the length of the vector
+
+ssm:`long$(ssm-(ssm mod 1024*1024))%processcount;
+
 .test.createList: {[]
   / 8 bytes in a word (64bit version of kdb+ only)
   SAMPLESIZE:`long$ssm%SIZEOFLONG;
@@ -141,7 +148,6 @@ $[OBJSTORE; [
   };
   .test.appendMid: {[]
     .qlog.info "creating files for read tests";
-    fOpenClose set fileopsmem;
     .qlog.info "starting append mid test";
     chunkSize: count fileopsmem;
     DISKRATEDEFAULT: 3;
@@ -161,8 +167,9 @@ $[OBJSTORE; [
     / more generous for hcount
     hcn:`long$til `long$MODIFIER*4*M;
     fhcount set hcn;
-    fReadBinary set fileopsmem;
+    fReadBinary set raze 64#enlist fileopsmem;
     fmmap set fileopsmem;
+    fOpenClose set fileopsmem;
     .qlog.info "files created";
   };
   ]
