@@ -51,7 +51,7 @@ mkdir -p ${CURRENTLOGDIR}
 RESFILEPREFIX=${RESDIR}/detailed-${HOST}-
 AGGRRESFILE=${RESDIR}/aggregate-${HOST}.psv
 
-LOGFILEPREFIX="${CURRENTLOGDIR}/RES-${HOST}-${NUMPROCESSES}t-"
+LOGFILEPREFIX="${CURRENTLOGDIR}/${HOST}-${NUMPROCESSES}t-"
 
 function syncAcrossHosts {
 	rm ${CURRENTLOGDIR}/sync-$HOST
@@ -79,10 +79,10 @@ yq -i ".dbize.MEMUSAGEVALUE=$MEMUSAGEVALUE" $CONFIG
 yq -i ".dbize.RANDOMREADFILESIZETYPE=\"$RANDOMREADFILESIZETYPE\"" $CONFIG
 yq -i ".dbize.RANDOMREADFILESIZEVALUE=$RANDOMREADFILESIZEVALUE" $CONFIG
 yq -i ".dbize.DBSIZE=\"$DBSIZE\"" $CONFIG
-yq -i ".dbize.RANDOMREADSIZE=\"$RANDOMREADSIZE\"" $CONFIG
 yq -i ".system.cpunr=$(nproc)" ${CONFIG}
 yq -i ".system.memsize=\"$(grep MemTotal /proc/meminfo |tr -s ' ' | cut -d ' ' -f 2,3)\"" ${CONFIG}
 
+CONTROLLERPORT=7000
 
 if [ "$SCOPE" = "full" ]; then
   ######### WRITE TEST #########
@@ -103,14 +103,14 @@ if [ "$SCOPE" = "full" ]; then
     if notObjStore ${array[$j]}; then
   	  mkdir -p ${array[$j]}/${HOST}.${i}/${DATE}
     fi
-    echo "testtype|test|qexpression|result|unit" > ${RESFILEPREFIX}${i}.psv
+    echo "testtype|test|qexpression|repeat|length|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
 
-
+  ${QBIN} ./src/controller.q -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
   j=0
   for i in `seq $NUMPROCESSES`; do
-  	${QBIN} ./src/prepare.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -s ${THREADNR} -q >> ${LOGFILEPREFIX}${i} 2 >&1 &
+  	${QBIN} ./src/prepare.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -q >> ${LOGFILEPREFIX}${i} 2 >&1 &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
 
@@ -130,9 +130,10 @@ echo "STARTING SEQUENTIAL READ TEST"
 ${FLUSH}
 touch ${CURRENTLOGDIR}/sync-$HOST
 
+${QBIN} ./src/controller.q -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
 j=0
 for i in `seq $NUMPROCESSES`; do
-	${QBIN} ./src/read.q -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -s ${THREADNR} >> ${LOGFILEPREFIX}${i} 2>&1 &
+	${QBIN} ./src/read.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} >> ${LOGFILEPREFIX}${i} 2>&1 &
   j=$(( ($j + 1) % $NUMSEGS ))
 done
 wait -n
@@ -150,9 +151,10 @@ echo
 echo "STARTING SEQUENTIAL RE-READ (CACHE) TEST"
 
 touch ${CURRENTLOGDIR}/sync-$HOST
+${QBIN} ./src/controller.q -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
 j=0
 for i in `seq $NUMPROCESSES`; do
-	${QBIN} ./src/reread.q -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -s ${THREADNR} >> ${LOGFILEPREFIX}${i} 2>&1  &
+	${QBIN} ./src/reread.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} >> ${LOGFILEPREFIX}${i} 2>&1  &
   j=$(( ($j + 1) % $NUMSEGS ))
 done
 wait
@@ -169,9 +171,10 @@ if [ "$SCOPE" = "full" ]; then
   ${FLUSH}
 
   touch ${CURRENTLOGDIR}/sync-$HOST
+  ${QBIN} ./src/controller.q -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
   j=0
   for i in `seq $NUMPROCESSES`; do
-  	${QBIN} ./src/meta.q -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -s ${THREADNR} >> ${LOGFILEPREFIX}${i} 2>&1  &
+  	${QBIN} ./src/meta.q -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} >> ${LOGFILEPREFIX}${i} 2>&1  &
     j=$(( ($j + 1) % $NUMSEGS ))
   done
 
@@ -188,16 +191,19 @@ function runrandomread {
   echo "test${mmap} with block size ${listsize}"
 
   touch ${CURRENTLOGDIR}/sync-$HOST
+  ${QBIN} ./src/controller.q -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
   j=0
   sleep 5
   for i in `seq $NUMPROCESSES`; do
-  	${QBIN} ./src/randomread.q -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -testtype "read disk" -s ${THREADNR} -S ${SEED} >> ${LOGFILEPREFIX}${i} 2>&1  &
+  	${QBIN} ./src/randomread.q -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read disk" -s ${THREADNR} -S ${SEED} >> ${LOGFILEPREFIX}${i} 2>&1  &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait
 
+  ${QBIN} ./src/controller.q -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
+  j=0
   for i in `seq $NUMPROCESSES`; do
-  	${QBIN} ./src/randomread.q -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -testtype "read mem" -s ${THREADNR} -S ${SEED} >> ${LOGFILEPREFIX}${i} 2>&1  &
+  	${QBIN} ./src/randomread.q -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read mem" -s ${THREADNR} -S ${SEED} >> ${LOGFILEPREFIX}${i} 2>&1  &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait
@@ -218,7 +224,7 @@ done
 
 
 echo "Aggregating results"
-${QBIN} ./src/postproc.q ${RESFILEPREFIX} ${NUMPROCESSES} ${AGGRRESFILE} -q
+${QBIN} ./src/postproc.q -inputs ${RESFILEPREFIX} -processes ${NUMPROCESSES} -output ${AGGRRESFILE} -q
 
 #
 # an air gap for any storage stats gathering before unlinks go out ...

@@ -4,8 +4,17 @@ system "l src/common.q";
 system"sleep 5";
 
 
-fileopslink:{[];
-	/ go in symbolically
+$[OBJSTORE;
+  .qlog.info"Skipping hopen/append/symlink/enum extend meta tests"; [
+  .test.openclose: {[]
+    .qlog.info "starting close open test";
+    sT:.z.n;
+    do[N; hclose hopen fOpenClose];
+    eT: .z.n;
+    writeRes["meta";"close open";"hopen,hclose"; N; 0Nj; sT, eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"];
+  };
+
+  .test.link: {[]
     .qlog.info"symbolic link test...";
     system"rm -f ", DB, "/fileopstest.sym";
     system"ln -s ", DB, fHmmapFileName, " ", DB, "/fileopstest.sym";
@@ -13,35 +22,30 @@ fileopslink:{[];
     .qlog.info"hard link test...";
     system"rm -f ", DB, "/fileops.hard";
     system"ln ", DB, fHmmapFileName, " ", DB, "/fileops.hard";
-    }
+    };
 
-$[OBJSTORE;
-  .qlog.info"Skipping hopen/append/symlink/enum extend meta tests"; [
-  .qlog.info "starting close open test";
+  .test.lock: {[]
+    .qlog.info "starting lock test";
+    sT:.z.n;
+    do[N; flock?`aaa`bbb`ccc`ddd`eee];
+    eT: .z.n;
+    writeRes["meta";"lock";"enum extend"; N; 4; sT, eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"]
+    }]];
+
+.test.size: {[]
+  .qlog.info "starting size test";
   sT:.z.n;
-  do[N; hclose hopen fOpenClose];
-  elapsed:tsToSec .z.n-sT;
-  resultH "meta|close open|hopen,hclose|", fix[4;1000 * elapsed%N], "|ms\n";
+  do[N; hcount fhcount];
+  eT: .z.n;
+  writeRes["meta";"size";"hcount"; N; hcount fhcount; sT, eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"];
+  }
 
-  fileopslink[];
-
-  .qlog.info "starting lock test";
+.test.get: {[]
+  .qlog.info "starting mmap test";
   sT:.z.n;
-  do[N; flock?`aaa`bbb`ccc`ddd`eee];
-  elapsed:tsToSec .z.n-sT;
-  resultH "meta|lock|enum extend|", fix[4;1000 * elapsed%N], "|ms\n"]];
+  do[N; get fmmap];
+  eT: .z.n;
+  writeRes["read disk";"mmap";"get"; N; count get fmmap; sT, eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"];
+  }
 
-.qlog.info "starting size test";
-sT:.z.n;
-do[N; hcount fhcount];
-elapsed:tsToSec .z.n-sT;
-resultH "meta|size|hcount|", fix[4;1000 * elapsed%N], "|ms\n";
-
-.qlog.info "starting mmap test";
-sT:.z.n;
-do[N; get fmmap];
-elapsed:tsToSec .z.n-sT;
-resultH "read disk|mmap|get|", fix[4;1000 * elapsed%N], "|ms\n";
-
-
-if [not `debug in argvk; exit 0];
+controller (`addWorker; ) .Q.dd[`.test;] each except[; `] key .test;
