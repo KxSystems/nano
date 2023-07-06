@@ -3,7 +3,7 @@ FROM kdb-insights-core:0.41.1
 WORKDIR /opt/kx/app
 
 COPY src ./src
-COPY mthread.sh runSeveral.sh ./
+COPY mthread.sh runSeveral.sh version.yaml ./
 COPY flush ./flush
 
 ENV QBIN=/opt/kx/kdb/l64/q
