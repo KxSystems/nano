@@ -11,7 +11,7 @@ $[OBJSTORE;
     sT:.z.n;
     do[N; hclose hopen fOpenClose];
     eT: .z.n;
-    writeRes["meta";"close open";"hopen,hclose"; sT; eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"];
+    writeRes["meta";"close open";"hopen,hclose"; N; 0Nj; sT, eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"];
   };
 
   .test.link: {[]
@@ -29,7 +29,7 @@ $[OBJSTORE;
     sT:.z.n;
     do[N; flock?`aaa`bbb`ccc`ddd`eee];
     eT: .z.n;
-    writeRes["meta";"lock";"enum extend"; sT; eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"]
+    writeRes["meta";"lock";"enum extend"; N; 4; sT, eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"]
     }]];
 
 .test.size: {[]
@@ -37,15 +37,15 @@ $[OBJSTORE;
   sT:.z.n;
   do[N; hcount fhcount];
   eT: .z.n;
-  writeRes["meta";"size";"hcount"; sT; eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"];
+  writeRes["meta";"size";"hcount"; N; hcount fhcount; sT, eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"];
   }
 
-test.get: {[]
+.test.get: {[]
   .qlog.info "starting mmap test";
   sT:.z.n;
   do[N; get fmmap];
   eT: .z.n;
-  writeRes["read disk";"mmap";"get"; sT; eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"];
+  writeRes["read disk";"mmap";"get"; N; count get fmmap; sT, eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"];
   }
 
 controller (`addWorker; ) .Q.dd[`.test;] each except[; `] key .test;

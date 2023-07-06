@@ -7,7 +7,7 @@ nproc: "I"$argv `processes;
 output: hsym `$argv `output;
 
 
-results: raze {("SS*NNFS"; enlist "|") 0:x} each `$resfileprefix cross string[1+til nproc] ,\: ".psv";
+results: raze {("SS*IJNNFS"; enlist "|") 0:x} each `$resfileprefix cross string[1+til nproc] ,\: ".psv";
 aggregate: select numproc: count result, accuracy: 5 sublist string 100*1- (max[starttime] - min starttime) % avg endtime-starttime, sum result, first unit by testtype, test, qexpression from results where not unit = `ms;
 
 output 0: "|" 0: `numproc xcols 0!aggregate;

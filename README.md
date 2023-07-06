@@ -136,7 +136,7 @@ If you are interested how the storage medium scales with the number of parallel 
 
 The results are saved as text files in a sub-directory set by environment variable `RESULTDIR` (by default it is `results`). Each run of the `mthread.sh` saves
 its results in a new directory, timestamped `mmdd_HHMM`, rounded to the nearest minute. Detailed results, including write rates, small IOPS tests, and so on, are
-contained in the output files (one per system under test) in the `results/mmdd_HHMM-mmdd_HHMM/RES-` files.
+contained in the output files (one per system under test) in the `results/mmdd_HHMM-mmdd_HHMM/` files.
 
 File `results/mmdd_HHMM-mmdd_HHMM/aggregates-HOSTNAME` aggregates (calculates the average) the throughput metrics from the detailed result files. Column `accuracy` tries to capture the impact of [offset problem](#accuracy). For each test, it calculates the maximal difference of start times and divides it by the average test elapsed times.
 
@@ -154,8 +154,8 @@ The more memory the box has (hence the more data is used), the more marginal the
 A docker image is available for nano on gitlab and on nexus:
 
 ```bash
-$ docker pull registry.gitlab.com/kxdev/benchmarking/nano/nano:2.1
-$ docker pull ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.1
+$ docker pull registry.gitlab.com/kxdev/benchmarking/nano/nano:2.4.0
+$ docker pull ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.4.0
 ```
 
 The nano scripts are placed in docker directory `/opt/kx/app` -see `Dockerfile`
