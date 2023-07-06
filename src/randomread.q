@@ -10,9 +10,9 @@ if[0=count .z.x;STDOUT">q ",(string .z.f)," -listsize N [-withmmap] -db DBDIR -r
 
 / hopefully we flushed before this...
 
-RANDOMREADMODIFIER: 1f^MEMRATIOMODIFIERS `$getenv `RANDOMREADSIZE
+
 k64: 64*k
-totalreadInB: `long$RANDOMREADMODIFIER * SIZEOFLONG * 100*M;
+totalreadInB: `long$MODIFIER * SIZEOFLONG * 100*M;
 .qlog.info "Reading altogether ", string[totalreadInB], " bytes of data";
 sizeM: (64000 1000000 div SIZEOFLONG)!("64k"; "1M");  // good enough for now
 

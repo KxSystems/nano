@@ -51,7 +51,7 @@ mkdir -p ${CURRENTLOGDIR}
 RESFILEPREFIX=${RESDIR}/detailed-${HOST}-
 AGGRRESFILE=${RESDIR}/aggregate-${HOST}.psv
 
-LOGFILEPREFIX="${CURRENTLOGDIR}/RES-${HOST}-${NUMPROCESSES}t-"
+LOGFILEPREFIX="${CURRENTLOGDIR}/${HOST}-${NUMPROCESSES}t-"
 
 function syncAcrossHosts {
 	rm ${CURRENTLOGDIR}/sync-$HOST
@@ -79,7 +79,6 @@ yq -i ".dbize.MEMUSAGEVALUE=$MEMUSAGEVALUE" $CONFIG
 yq -i ".dbize.RANDOMREADFILESIZETYPE=\"$RANDOMREADFILESIZETYPE\"" $CONFIG
 yq -i ".dbize.RANDOMREADFILESIZEVALUE=$RANDOMREADFILESIZEVALUE" $CONFIG
 yq -i ".dbize.DBSIZE=\"$DBSIZE\"" $CONFIG
-yq -i ".dbize.RANDOMREADSIZE=\"$RANDOMREADSIZE\"" $CONFIG
 yq -i ".system.cpunr=$(nproc)" ${CONFIG}
 yq -i ".system.memsize=\"$(grep MemTotal /proc/meminfo |tr -s ' ' | cut -d ' ' -f 2,3)\"" ${CONFIG}
 
@@ -104,7 +103,7 @@ if [ "$SCOPE" = "full" ]; then
     if notObjStore ${array[$j]}; then
   	  mkdir -p ${array[$j]}/${HOST}.${i}/${DATE}
     fi
-    echo "testtype|test|qexpression|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
+    echo "testtype|test|qexpression|repeat|length|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
 

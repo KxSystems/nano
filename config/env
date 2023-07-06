@@ -32,12 +32,10 @@ export MEMUSAGEVALUE=0.6     # ratio to the physical memory
 
 # Disk space used for the mid append and randome read tests.
 export RANDOMREADFILESIZETYPE=ratio
-export RANDOMREADFILESIZEVALUE=3
+export RANDOMREADFILESIZEVALUE=2
 
 
 # Mainly for testing, you can generate small or tiny data
 export DBSIZE=full
-# Random reads test reads by default 800 MB data randomly. You might want to decrease that
-# by setting small or tiny values
-export RANDOMREADSIZE=full
+
 
