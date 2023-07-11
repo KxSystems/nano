@@ -46,4 +46,4 @@ randomreadwithmmap:{[blocksize]
 fn: $[`withmmap in argvk; randomreadwithmmap; randomread]
 .test.randomread: fn "I"$argv `listsize;
 
-controller (`addWorker; ) .Q.dd[`.test;] each except[; `] key .test;
+controller (`addWorker; address[]; tests[]);

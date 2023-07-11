@@ -175,8 +175,6 @@ $[OBJSTORE; [
   ]
   ];
 
-controller (`addWorker; ) .Q.dd[`.test;] each except[; `] key .test;
-
 //////////////////////////////////////////
 /  this is deprecated and currently unused...
 WSAMPLESIZE:`long$ssm%16
@@ -192,5 +190,7 @@ write:{[file]
 .z.exit: {
   .qlog.info "exiting prepare";
   if[OBJSTORE; hdel tmpdirH]};
+
+controller (`addWorker; address[]; tests[]);
 
 .qlog.info "Ready for test execution";

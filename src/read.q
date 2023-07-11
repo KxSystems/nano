@@ -25,4 +25,4 @@ system "l src/common.q";
   writeRes["read disk";"sequential read binary";"read1"; 1; hcount fReadBinary; sT, eT; fix[2;hcount[fReadBinary]%M*tsToSec eT-sT]; "MiB/sec\n"];  // TODO: avoid recalculating theoretical read binary file size
   }
 
-controller (`addWorker; ) .Q.dd[`.test;] each except[; `] key .test;
+controller (`addWorker; address[]; tests[]);
