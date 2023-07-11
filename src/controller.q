@@ -1,4 +1,5 @@
 system "l src/log.q";
+argvk:key argv:first each .Q.opt .z.x
 
 workerNr: system "s" // We assume that each worker has its own thread
 
@@ -7,13 +8,15 @@ workerNr: system "s" // We assume that each worker has its own thread
 
 executeTest: {[dontcare]
   if[workerNr = count workers;
+    system "t 0";
     if[ any 1_differ alltest; .qlog.error "Not all tests are the same!"; exit 1];
     {[t]
       .qlog.info "Executing test ", string t;
       @[; (t; ::)] peach workers} each first alltest;
     .qlog.info "All tests were executed. Sending exit message to workers.";
-    @[; "exit 0"; ::] each workers;
-    exit 0;
+    if[not `debug in argvk;
+      @[; "exit 0"; ::] each workers;
+      exit 0];
   ];
   }
 

@@ -66,6 +66,7 @@ function notObjStore {
 
 echo "Persisting config"
 CONFIG=${RESDIR}/config.yaml
+echo "Persisting config to $CONFIG"
 touch $CONFIG
 yq -i ".env.COMPRESS=\"$COMPRESS\"" $CONFIG
 yq -i ".env.THREADNR=$THREADNR" $CONFIG
@@ -85,6 +86,17 @@ yq -i ".system.memsize=\"$(grep MemTotal /proc/meminfo |tr -s ' ' | cut -d ' ' -
 
 CONTROLLERPORT=7000
 
+# important that this it outside this loop with "q prepare", as first time after a mount as the
+# fs may take a long time to start (S3 sync) and we want the wrtte processes to run in parallel
+j=0
+for i in `seq $NUMPROCESSES`; do
+  if notObjStore ${array[$j]}; then
+	  mkdir -p ${array[$j]}/${HOST}.${i}/${DATE}
+  fi
+  echo "testtype|test|qexpression|repeat|length|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
+	j=$(( ($j + 1) % $NUMSEGS ))
+done
+
 if [ "$SCOPE" = "full" ]; then
   ######### WRITE TEST #########
   ${FLUSH}
@@ -97,16 +109,6 @@ if [ "$SCOPE" = "full" ]; then
   echo
   echo "STARTING WRITE TEST"
 
-  # important that this it outside this loop with "q prepare", as first time after a mount as the
-  # fs may take a long time to start (S3 sync) and we want the wrtte processes to run in parallel
-  j=0
-  for i in `seq $NUMPROCESSES`; do
-    if notObjStore ${array[$j]}; then
-  	  mkdir -p ${array[$j]}/${HOST}.${i}/${DATE}
-    fi
-    echo "testtype|test|qexpression|repeat|length|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
-  	j=$(( ($j + 1) % $NUMSEGS ))
-  done
 
   ${QBIN} ./src/controller.q -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
   j=0
