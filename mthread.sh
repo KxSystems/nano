@@ -64,6 +64,7 @@ function notObjStore {
   if [[ $1 != s3://* && $1 != gs://* && $1 != ms://* ]]; then return 0; else return 1; fi
 }
 
+echo "Persisting config"
 CONFIG=${RESDIR}/config.yaml
 touch $CONFIG
 yq -i ".env.COMPRESS=\"$COMPRESS\"" $CONFIG
