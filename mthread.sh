@@ -84,7 +84,8 @@ yq -i ".dbize.DBSIZE=\"$DBSIZE\"" $CONFIG
 yq -i ".system.cpunr=$(nproc)" ${CONFIG}
 yq -i ".system.memsize=\"$(grep MemTotal /proc/meminfo |tr -s ' ' | cut -d ' ' -f 2,3)\"" ${CONFIG}
 
-CONTROLLERPORT=7000
+CONTROLLERPORT=6000
+WORKERBASEPORT=6500
 
 # important that this it outside this loop with "q prepare", as first time after a mount as the
 # fs may take a long time to start (S3 sync) and we want the wrtte processes to run in parallel
@@ -113,7 +114,7 @@ if [ "$SCOPE" = "full" ]; then
   ${QBIN} ./src/controller.q -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
   j=0
   for i in `seq $NUMPROCESSES`; do
-  	${QBIN} ./src/prepare.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -q >> ${LOGFILEPREFIX}${i} 2 >&1 &
+  	${QBIN} ./src/prepare.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -q -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i} 2 >&1 &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
 
@@ -136,7 +137,7 @@ touch ${CURRENTLOGDIR}/sync-$HOST
 ${QBIN} ./src/controller.q -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
 j=0
 for i in `seq $NUMPROCESSES`; do
-	${QBIN} ./src/read.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} >> ${LOGFILEPREFIX}${i} 2>&1 &
+	${QBIN} ./src/read.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i} 2>&1 &
   j=$(( ($j + 1) % $NUMSEGS ))
 done
 wait -n
@@ -157,7 +158,7 @@ touch ${CURRENTLOGDIR}/sync-$HOST
 ${QBIN} ./src/controller.q -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
 j=0
 for i in `seq $NUMPROCESSES`; do
-	${QBIN} ./src/reread.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} >> ${LOGFILEPREFIX}${i} 2>&1  &
+	${QBIN} ./src/reread.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i} 2>&1  &
   j=$(( ($j + 1) % $NUMSEGS ))
 done
 wait
@@ -177,7 +178,7 @@ if [ "$SCOPE" = "full" ]; then
   ${QBIN} ./src/controller.q -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
   j=0
   for i in `seq $NUMPROCESSES`; do
-  	${QBIN} ./src/meta.q -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} >> ${LOGFILEPREFIX}${i} 2>&1  &
+  	${QBIN} ./src/meta.q -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i} 2>&1  &
     j=$(( ($j + 1) % $NUMSEGS ))
   done
 
@@ -198,7 +199,7 @@ function runrandomread {
   j=0
   sleep 5
   for i in `seq $NUMPROCESSES`; do
-  	${QBIN} ./src/randomread.q -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read disk" -s ${THREADNR} -S ${SEED} >> ${LOGFILEPREFIX}${i} 2>&1  &
+  	${QBIN} ./src/randomread.q -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read disk" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i} 2>&1  &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait
@@ -206,7 +207,7 @@ function runrandomread {
   ${QBIN} ./src/controller.q -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
   j=0
   for i in `seq $NUMPROCESSES`; do
-  	${QBIN} ./src/randomread.q -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read mem" -s ${THREADNR} -S ${SEED} >> ${LOGFILEPREFIX}${i} 2>&1  &
+  	${QBIN} ./src/randomread.q -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read mem" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i} 2>&1  &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait

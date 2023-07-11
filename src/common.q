@@ -20,11 +20,13 @@ writeRes: {[testtype; test; qexpression; repeat; length; times; result; unit]
   resultH SEP sv (testtype; test; qexpression; string repeat; string length; string first times; string last times; result; unit);
   }
 
-controller: hopen "J"$argv `controller;
+controller: `$"::",argv `controller;
 
 tsToSec: {(`long$x)%10 xexp 9}
 fix:{.Q.fmt[x+1+count string floor y;x;y]}
 msstring:{(string x)," ms"}
+address: {string[.z.h],":", string system "p"}
+tests: {.Q.dd[`.test;] each except[; `] key .test}
 
 // for distributed file system with client side compression....don't use this
 

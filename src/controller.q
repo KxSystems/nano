@@ -20,10 +20,10 @@ executeTest: {[dontcare]
   ];
   }
 
-addWorker: {[tests]
-  .qlog.info "adding tests from handle ", string .z.w;
+addWorker: {[addr; tests]
+  .qlog.info "adding tests from address ", addr;
   alltest,: enlist tests;
-  workers,: .z.w;
+  workers,: hsym `$addr;
   }
 
 

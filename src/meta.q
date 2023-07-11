@@ -48,4 +48,4 @@ $[OBJSTORE;
   writeRes["read disk";"mmap";"get"; N; count get fmmap; sT, eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"];
   }
 
-controller (`addWorker; ) .Q.dd[`.test;] each except[; `] key .test;
+controller (`addWorker; address[]; tests[]);
