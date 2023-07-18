@@ -26,7 +26,7 @@ randomread:{[blocksize]
     sT:.z.n;
     blockLength {[f;blockLength;offset] f offset+til blockLength;}[f]/: offsets;
     eT: .z.n;
-    writeRes[ argv[`testtype];"random read ",sizeM[blockLength];"til,@"; count offsets; blockLength; sT, eT; fix[2;totalreadInB % M*tsToSec eT-sT];"MiB/sec\n"]
+    writeRes[ argv[`testtype];".randomread.", argv[`testname],"|random read ",sizeM[blockLength];"til,@"; count offsets; blockLength; sT, eT; fix[2;totalreadInB % M*tsToSec eT-sT];"MiB/sec\n"]
     }[f; offsets; blockLength]
   };
 
@@ -39,11 +39,11 @@ randomreadwithmmap:{[blocksize]
     sT:.z.n;
     blockLength {[blockLength; offset] get[fRandomRead] offset+til blockLength;}/: offsets;
     eT: .z.n;
-    writeRes[argv[`testtype];"mmap,random read ",sizeM[blockLength];"get,til,@"; count offsets; blockLength; sT, eT; fix[2;totalreadInB % M* tsToSec eT-sT];"MiB/sec\n"];
+    writeRes[argv[`testtype];".randomread.", argv[`testname], "|mmap,random read ",sizeM[blockLength];"get,til,@"; count offsets; blockLength; sT, eT; fix[2;totalreadInB % M* tsToSec eT-sT];"MiB/sec\n"];
     }[offsets; blockLength]
   };
 
 fn: $[`withmmap in argvk; randomreadwithmmap; randomread]
-.test.randomread: fn "I"$argv `listsize;
+.Q.dd[`.randomread; `$argv[`testname]] set fn "I"$argv `listsize;
 
-controller (`addWorker; address[]; tests[]);
+controller (`addWorker; address[]; getDisk[]; getTests[`.randomread]);

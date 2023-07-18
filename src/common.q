@@ -1,5 +1,6 @@
 system "l src/log.q";
 argvk:key argv:first each .Q.opt .z.x
+system "l src/util.q";
 
 if[not `db in argvk;
   .qlog.error "parameter db is missing";
@@ -22,11 +23,10 @@ writeRes: {[testtype; test; qexpression; repeat; length; times; result; unit]
 
 controller: `$"::",argv `controller;
 
-tsToSec: {(`long$x)%10 xexp 9}
-fix:{.Q.fmt[x+1+count string floor y;x;y]}
 msstring:{(string x)," ms"}
+getDisk: {last system "df --output=source ", DB}
 address: {string[.z.h],":", string system "p"}
-tests: {.Q.dd[`.test;] each except[; `] key .test}
+getTests: {[ns] .Q.dd[ns;] each except[; `] key ns}
 
 // for distributed file system with client side compression....don't use this
 
@@ -41,8 +41,6 @@ fReadBinary: hsym `$DB, fHReadBinaryFileName: "/readbinary";
 fmmap: hsym `$DB, fHmmapFileName: "/mmap";
 flock: hsym `$DB, "/locktest";
 
-k: 1024
-M: k*k
 SIZEOFLONG: 8
 MEMRATIOMODIFIERS: `full`small`tiny!1 0.2 0.05
 MODIFIER: 1f^MEMRATIOMODIFIERS `$getenv `DBSIZE

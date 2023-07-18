@@ -23,7 +23,8 @@ ENV FLUSH=/opt/kx/app/flush/directmount.sh
 
 RUN echo "/data" > ./partitions
 
-RUN yum install -y wget
+RUN yum upgrade -y
+RUN yum install -y wget sysstat
 RUN wget https://github.com/mikefarah/yq/releases/download/v4.34.1/yq_linux_386 -O /usr/bin/yq && chmod +x /usr/bin/yq
 
 ENTRYPOINT [ "/bin/bash", "mthread.sh" ]
