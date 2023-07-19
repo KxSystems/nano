@@ -25,7 +25,7 @@ executeTest: {[dontcare]
       sS: getKBRead[ddisks]; sT: .z.n;
       @[; (t; ::)] peach workers;
       eT: .z.n; eS: getKBRead[ddisks];
-      iostatH string[t], "|", fix[2; (eS-sS)%k*tsToSec eT-sT],"\n";
+      iostatH string[t], "|", fix[2; (eS-sS)%1000*tsToSec eT-sT],"\n";
       } each first alltest;
     .qlog.info "All tests were executed. Sending exit message to workers.";
     if[not `debug in argvk;

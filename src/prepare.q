@@ -20,7 +20,7 @@ if[ not OBJSTORE;
     do[N; .[fSmallAppend;();,; smallVec]];
     eT: .z.n;
     fsize: SIZEOFLONG * N * count smallVec;
-    writeRes["write disk"; ".prepare.smallAppend|open append small"; ".[;();,;", (" " sv string smallVec), "]"; N; count smallVec; sT, eT; fix[2; fsize%M*tsToSec eT - sT]; "MiB/sec\n"];
+    writeRes["write disk"; ".prepare.smallAppend|open append small"; ".[;();,;", (" " sv string smallVec), "]"; N; count smallVec; sT, eT; fix[2; getMBPerSec[N * count smallVec; eT-sT]]; "MB/sec\n"];
   };
 
   .prepare.smallAppendToHandler: {[]
@@ -32,7 +32,7 @@ if[ not OBJSTORE;
     eT: .z.n;
     hclose H;
     fsize: SIZEOFLONG * N * count smallVec;
-    writeRes["write disk"; ".prepare.smallAppendToHandler|append small"; "H ", " " sv string smallVec; N; count smallVec; sT, eT; fix[2; fsize%M*tsToSec eT - sT]; "MiB/sec\n"];
+    writeRes["write disk"; ".prepare.smallAppendToHandler|append small"; "H ", " " sv string smallVec; N; count smallVec; sT, eT; fix[2; getMBPerSec[N * count smallVec; eT-sT]]; "MB/sec\n"];
   };
 
   .prepare.smallReplace: {[]
@@ -42,7 +42,7 @@ if[ not OBJSTORE;
     sT: .z.n;
     do[N; .[fSmallReplace;();:; smallVec]];
     eT: .z.n;
-    writeRes["write disk"; ".prepare.smallReplace|open replace small"; ".[;();:;", (" " sv string smallVec), "]"; N; count smallVec; sT, eT; fix[3; (SIZEOFLONG * N* count smallVec)%M*tsToSec eT - sT]; "MiB/sec\n"];
+    writeRes["write disk"; ".prepare.smallReplace|open replace small"; ".[;();:;", (" " sv string smallVec), "]"; N; count smallVec; sT, eT; fix[3; getMBPerSec[N * count smallVec; eT-sT]]; "MB/sec\n"];
   };
   ];
 
@@ -53,15 +53,14 @@ ssm: `long$MODIFIER * $["abs" ~ getenv `MEMUSAGETYPE;
    0.5 * (MEMUSAGERATEDEFAULT^"F"$getenv `MEMUSAGEVALUE) * .Q.w[]`mphy];  // vectors can reserve memory twice the length of the vector
 
 ssm:`long$(ssm-(ssm mod 1024*1024))%processcount;
+SAMPLESIZE:`long$ssm%SIZEOFLONG;
 
 .prepare.createList: {[]
-  / 8 bytes in a word (64bit version of kdb+ only)
-  SAMPLESIZE:`long$ssm%SIZEOFLONG;
   .qlog.info "starting list creation test of length ", string[`int$SAMPLESIZE % 1000 * 1000], " M";
   sT:.z.n;
   `privmem set til SAMPLESIZE;
   eT: .z.n;
-  writeRes["write mem"; ".prepare.createList|create list"; "til"; 1; SAMPLESIZE; sT, eT; string[floor 0.5+ssm%M*tsToSec eT-sT]; "MiB/sec\n"];
+  writeRes["write mem"; ".prepare.createList|create list"; "til"; 1; SAMPLESIZE; sT, eT; fix[2; getMBPerSec[SAMPLESIZE; eT-sT]]; "MB/sec\n"];
   }
 
 
@@ -107,7 +106,7 @@ $[OBJSTORE; [
     sT:.z.n;
     lrfileTmpH set privmem;
     eT: .z.n;
-    writeRes["write disk"; ".prepare.set|write rate"; "set"; 1; count privmem; sT, eT; fix[2; ssm%M*tsToSec eT - sT]; "MiB/sec\n"];
+    writeRes["write disk"; ".prepare.set|write rate"; "set"; 1; count privmem; sT, eT; fix[2; getMBPerSec[SAMPLESIZE; eT-sT]]; "MB/sec\n"];
   };
   .prepare.cloudcmd: {[]
     sT:.z.n;
@@ -115,7 +114,7 @@ $[OBJSTORE; [
     eT: .z.n;
     .qlog.info "Write test finished";
     hdel lrfileTmpH;
-    writeRes["write objstore";".prepare.cloudcmd|cli cp rate";"vendor obj store cli cp"; 1; count lrfileTmp; sT, eT; fix[2; ssm%M*tsToSec eT - sT]; "MiB/sec\n"];
+    writeRes["write objstore";".prepare.cloudcmd|cli cp rate";"vendor obj store cli cp"; 1; count lrfileTmp; sT, eT; fix[2; getMBPerSec[SAMPLESIZE; eT-sT]]; "MB/sec\n"];
   };
   .prepare.prepare: {[]
     .qlog.info "creating files for read tests";
@@ -137,14 +136,14 @@ $[OBJSTORE; [
     sT:.z.n;
     fRead set privmem;
     eT: .z.n;
-    writeRes["write disk";".prepare.set|write rate";"set";1; count privmem; sT, eT; fix[2; ssm%M*tsToSec eT - sT]; "MiB/sec\n"];
+    writeRes["write disk";".prepare.set|write rate";"set";1; count privmem; sT, eT; fix[2; getMBPerSec[SAMPLESIZE; eT-sT]]; "MB/sec\n"];
   };
   .prepare.sync: {[]
     .qlog.info "starting sync test";
     sT: .z.n;
     system "sync ", DB, fReadFileName;
     eT: .z.n;
-    writeRes["write disk";".prepare.sync|sync rate";"system sync"; 1; count privmem; sT, eT; fix[2; ssm%M*tsToSec eT - sT]; "MiB/sec\n"];
+    writeRes["write disk";".prepare.sync|sync rate";"system sync"; 1; count privmem; sT, eT; fix[2; getMBPerSec[SAMPLESIZE; eT-sT]]; "MB/sec\n"];
   };
   .prepare.appendMid: {[]
     .qlog.info "creating files for read tests";
@@ -160,7 +159,7 @@ $[OBJSTORE; [
     do[chunkNr; .[fRandomRead;();,;fileopsmem]];
     eT: .z.n;
     fsize: SIZEOFLONG * chunkNr * chunkSize;
-    writeRes["write disk";".prepare.appendMid|open append mid";".[;();,;til 16*k]"; chunkNr; chunkSize; sT, eT; fix[2; fsize%M*tsToSec eT - sT]; "MiB/sec\n"];
+    writeRes["write disk";".prepare.appendMid|open append mid";".[;();,;til 16*k]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
 
   };
   .prepare.prepare: {[]
@@ -182,7 +181,7 @@ write:{[file]
     / this is to allow any 3rd party performance monotoring tools to see a time gap
   system"sleep 5";
   STDOUT(string .z.p);
-  STDOUT"write `",(string file)," - ",(string floor 0.5+(ssm%(2 xexp 20))%value "\\t `",(string file)," 1:WSAMPLESIZE#key 11+rand 111")," MiB/sec";hdel file;
+  STDOUT"write `",(string file)," - ",(string floor 0.5+(ssm%(2 xexp 20))%value "\\t `",(string file)," 1:WSAMPLESIZE#key 11+rand 111")," MB/sec";hdel file;
   STDOUT(string .z.p);
   }
 //////////////////////////////////////////

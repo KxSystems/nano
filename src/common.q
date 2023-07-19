@@ -41,7 +41,6 @@ fReadBinary: hsym `$DB, fHReadBinaryFileName: "/readbinary";
 fmmap: hsym `$DB, fHmmapFileName: "/mmap";
 flock: hsym `$DB, "/locktest";
 
-SIZEOFLONG: 8
 MEMRATIOMODIFIERS: `full`small`tiny!1 0.2 0.05
 MODIFIER: 1f^MEMRATIOMODIFIERS `$getenv `DBSIZE
 

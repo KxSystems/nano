@@ -50,7 +50,7 @@ mkdir -p ${CURRENTLOGDIR}
 
 RESFILEPREFIX=${RESDIR}/detailed-${HOST}-
 IOSTATFILE=${RESDIR}/iostat-${HOST}.psv
-AGGRRESFILE=${RESDIR}/aggregate-${HOST}.psv
+THROUGHPUTFILE=${RESDIR}/throughput-${HOST}.psv
 
 LOGFILEPREFIX="${CURRENTLOGDIR}/${HOST}-${NUMPROCESSES}t-"
 
@@ -219,18 +219,18 @@ function runrandomread {
 echo
 echo "STARTING RANDOM READ TEST"
 SEED=1
-for listsize in 1000000 64000; do
+for listsize in 1000000 64000 4000; do
 	runrandomread $listsize " "
   SEED=$((SEED+1))
 done
-for listsize in 1000000 64000; do
+for listsize in 1000000 64000 4000; do
 	runrandomread $listsize " -withmmap"
   SEED=$((SEED+1))
 done
 
 
 echo "Aggregating results"
-${QBIN} ./src/postproc.q -inputs ${RESFILEPREFIX} -iostatfile ${IOSTATFILE} -processes ${NUMPROCESSES} -output ${AGGRRESFILE} -q
+${QBIN} ./src/postproc.q -inputs ${RESFILEPREFIX} -iostatfile ${IOSTATFILE} -processes ${NUMPROCESSES} -output ${THROUGHPUTFILE} -q
 
 #
 # an air gap for any storage stats gathering before unlinks go out ...
