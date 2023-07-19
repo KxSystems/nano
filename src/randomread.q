@@ -12,9 +12,9 @@ if[0=count .z.x;STDOUT">q ",(string .z.f)," -listsize N [-withmmap] -db DBDIR -r
 
 
 k64: 64*k
-totalreadInB: `long$MODIFIER * SIZEOFLONG * 100*M;
+totalreadInB: `long$MODIFIER * SIZEOFLONG * 100*1000*1000;
 .qlog.info "Reading altogether ", string[totalreadInB], " bytes of data";
-sizeM: (64000 1000000 div SIZEOFLONG)!("64k"; "1M");  // good enough for now
+sizeM: (4000 64000 1000000 div SIZEOFLONG)!("4k"; "64k"; "1M");  // good enough for now
 
 randomread:{[blocksize]
   blockNr: totalreadInB div blocksize;
@@ -23,10 +23,11 @@ randomread:{[blocksize]
   f:get fRandomRead;
   offsets: blockNr?neg[blockLength]+count f;
   :{[f; offsets; blockLength; dontcare]
+    idxBase: til blockLength;
     sT:.z.n;
-    blockLength {[f;blockLength;offset] f offset+til blockLength;}[f]/: offsets;
+    idxBase {[f;idxBase;offset] f offset+idxBase;}[f]/: offsets;
     eT: .z.n;
-    writeRes[ argv[`testtype];"random read ",sizeM[blockLength];"til,@"; count offsets; blockLength; sT, eT; fix[2;totalreadInB % M*tsToSec eT-sT];"MiB/sec\n"]
+    writeRes[ argv[`testtype];".randomread.", argv[`testname],"|random read ",sizeM[blockLength];"+,@"; count offsets; blockLength; sT, eT; fix[2;getMBPerSec[blockLength*count offsets; eT-sT]];"MB/sec\n"]
     }[f; offsets; blockLength]
   };
 
@@ -36,14 +37,15 @@ randomreadwithmmap:{[blocksize]
   .qlog.info "Indexing ", string[blockNr], " number of continuous blocks of size ", string blocksize;
   offsets: blockNr?neg[blockLength]+(-14+hcount fRandomRead)div SIZEOFLONG;  // 14 bytes overhead
   :{[offsets; blockLength; dontcare]
+    idxBase: til blockLength;
     sT:.z.n;
-    blockLength {[blockLength; offset] get[fRandomRead] offset+til blockLength;}/: offsets;
+    idxBase {[idxBase; offset] get[fRandomRead] offset+idxBase;}/: offsets;
     eT: .z.n;
-    writeRes[argv[`testtype];"mmap,random read ",sizeM[blockLength];"get,til,@"; count offsets; blockLength; sT, eT; fix[2;totalreadInB % M* tsToSec eT-sT];"MiB/sec\n"];
+    writeRes[argv[`testtype];".randomread.", argv[`testname], "|mmap,random read ",sizeM[blockLength];"get,+,@"; count offsets; blockLength; sT, eT; fix[2;getMBPerSec[blockLength*count offsets; eT-sT]];"MB/sec\n"];
     }[offsets; blockLength]
   };
 
 fn: $[`withmmap in argvk; randomreadwithmmap; randomread]
-.test.randomread: fn "I"$argv `listsize;
+.Q.dd[`.randomread; `$argv[`testname]] set fn "I"$argv `listsize;
 
-controller (`addWorker; address[]; tests[]);
+controller (`addWorker; address[]; getDisk[]; getTests[`.randomread]);
