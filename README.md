@@ -28,6 +28,10 @@ Multi-node client testing can be used to either test a single namespace solution
 
 The script assumes that [kdb+ is installed](https://code.kx.com/q/learn/install/). If the q binary is not on the path or `QHOME` differs from `$HOME/q` then you need to set `QHOME` in `config/kdbenv`.
 
+The script assumes that the following commands are available - see `Dockerfile` for more information
+   * yq
+   * iostat
+
 ## Installing and configuring
 
 Place these scripts in a single working directory.
@@ -138,7 +142,7 @@ The results are saved as text files in a sub-directory set by environment variab
 its results in a new directory, timestamped `mmdd_HHMM`, rounded to the nearest minute. Detailed results, including write rates, small IOPS tests, and so on, are
 contained in the output files (one per system under test) in the `results/mmdd_HHMM-mmdd_HHMM/` files.
 
-File `results/mmdd_HHMM-mmdd_HHMM/aggregates-HOSTNAME` aggregates (calculates the average) the throughput metrics from the detailed result files. Column `accuracy` tries to capture the impact of [offset problem](#accuracy). For each test, it calculates the maximal difference of start times and divides it by the average test elapsed times.
+File `results/mmdd_HHMM-mmdd_HHMM/throughput-HOSTNAME` aggregates (calculates the average) the throughput metrics from the detailed result files. Column `accuracy` tries to capture the impact of [offset problem](#accuracy). For each test, it calculates the maximal difference of start times and divides it by the average test elapsed times.
 
 ### log files
 
