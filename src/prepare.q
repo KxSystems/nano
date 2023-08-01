@@ -10,15 +10,16 @@ system "l src/common.q";
 if[not "full" ~ getenv `DBSIZE;
   .qlog.warn "Test runs with ", getenv[`DBSIZE], " data. Reduce ratio is ", string MODIFIER];
 
-smallVec:`long$til 16*k;
-midVec: `long$til `long$MODIFIER*4*M;
+smallVec:`long$til 16*k
+MIDLENGTH: `long$MODIFIER*4*M
+midVec: `long$til MIDLENGTH
 
 .prepare.smallPermute: {[]
   .qlog.info "starting permute small test";
   sT: .z.n;
   `smallVec set 0N?smallVec;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.smallPermute|permute"; "0N?"; 1; count smallVec; sT, eT; fix[2; getMBPerSec[count smallVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read mem"; ".prepare.smallPermute|permute small"; "0N?"; 1; count smallVec; sT, eT; fix[2; getMBPerSec[count smallVec; eT-sT]]; "MB/sec\n"];
   }
 
 .prepare.smallSort: {[]
@@ -26,7 +27,7 @@ midVec: `long$til `long$MODIFIER*4*M;
   sT: .z.n;
   asc smallVec;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.smallSort|sort"; "asc"; 1; count smallVec; sT, eT; fix[2; getMBPerSec[count smallVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read mem"; ".prepare.smallSort|sort small"; "asc"; 1; count smallVec; sT, eT; fix[2; getMBPerSec[count smallVec; eT-sT]]; "MB/sec\n"];
   }
 
 .prepare.midPermute: {[]
@@ -34,7 +35,7 @@ midVec: `long$til `long$MODIFIER*4*M;
   sT: .z.n;
   `midVec set 0N?midVec;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.midPermute|permute"; "0N?"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read mem"; ".prepare.midPermute|permute mid"; "0N?"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
 .prepare.midDeltas: {[]
@@ -42,7 +43,7 @@ midVec: `long$til `long$MODIFIER*4*M;
   sT: .z.n;
   deltas midVec;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.midDeltas|deltas"; "deltas"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read mem"; ".prepare.midDeltas|deltas mid"; "deltas"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
 .prepare.midModWhere: {[]
@@ -50,7 +51,25 @@ midVec: `long$til `long$MODIFIER*4*M;
   sT: .z.n;
   where 0=midVec mod 7;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.midModWhere|where mod ="; "where 0=mod[;7]"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read mem"; ".prepare.midModWhere|where mod = mid"; "where 0=mod[;7]"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  }
+
+SYMNR: 10000  // maybe move out as a parameter
+.prepare.midRandSym: {[]
+  .qlog.info "starting rand symbol mid test";
+  syms: neg[SYMNR]?`4;
+  sT: .z.n;
+  `midSymVec set MIDLENGTH?syms;
+  eT: .z.n;
+  writeRes["read mem"; ".prepare.midRandSym|roll mid"; enlist "?"; 1; MIDLENGTH; sT, eT; fix[2; getMBPerSec[MIDLENGTH; eT-sT]]; "MB/sec\n"];
+  }
+
+.prepare.group: {[]
+  .qlog.info "starting group test";
+  sT: .z.n;
+  group midSymVec;
+  eT: .z.n;
+  writeRes["read mem"; ".prepare.group|group mid"; "group"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
 .prepare.midSort: {[]
@@ -58,7 +77,7 @@ midVec: `long$til `long$MODIFIER*4*M;
   sT: .z.n;
   asc midVec;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.midSort|sort"; "asc"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read mem"; ".prepare.midSort|sort mid"; "asc"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
 tinyVec: 2 3 5 7;
