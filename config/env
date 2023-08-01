@@ -1,0 +1,41 @@
+
+export COMPRESS=""
+
+# Number of threads each kdb+ process
+export THREADNR=1
+
+export FLUSH=./flush/directmount.sh
+
+##############
+# Settings for object storage
+# See this for more details: https://code.kx.com/insights/1.4/core/objstor/main.html
+export OBJSTORELOCTMPDIRBASE=/mnt/${USER}/OBJSTORETEST
+# Comment line below for testing without object storage cache
+export KX_OBJSTR_CACHE_PATH=/mnt/${USER}/OBJSTORECACHE
+
+export AWS_REGION=eu-west-1
+export GCLOUD_PROJECT_ID=myproject
+export AZURE_STORAGE_ACCOUNT=mystorageaccount
+export AZURE_STORAGE_SHARED_KEY=mysharedkey
+
+
+###############################################
+#### You probably dont need to change this
+
+export RESULTDIR="./results"
+export LOGDIR="./logs"
+
+# Memory used for the sequential read/write tests. This determines the size of the vector created in memory.
+# You can specify an absolute value in MB or the ratio to the physical memory size.
+export MEMUSAGETYPE=ratio    # Either ratio or abs
+export MEMUSAGEVALUE=0.6     # ratio to the physical memory
+
+# Disk space used for the mid append and randome read tests.
+export RANDOMREADFILESIZETYPE=ratio
+export RANDOMREADFILESIZEVALUE=2
+
+
+# Mainly for testing, you can generate small or tiny data
+export DBSIZE=full
+
+
