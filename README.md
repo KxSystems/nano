@@ -213,7 +213,8 @@ We detail each test in the next section.
       1. the process count.
    1. `write rate`: writes the list (`set`) to file `readtest`.
    1. `sync rate`: calling system command `sync` on `readtest`.
-   1. `open append mid`: appends a block of 16k many times to a file. The result file is used in random read test.
+   1. `open append small`: appends a block of 16k many times to a file. The result file is a column of a splayed table and is used in random read test.
+   1. `open append mid sym`: appends a block of 4M symbols many times to a file. The result file is the `sym` column of a splayed table used in the `xasc` test.
    1. saves files for meta test:
       1. two long lists of length 16 k (size 128 k)
       1. a long list of length 4 M (size 32 M)

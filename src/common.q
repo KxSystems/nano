@@ -32,8 +32,11 @@ getTests: {[ns] .Q.dd[ns;] each except[; `] key ns}
 
 
 / note that compression does not work with a "dot" in the filename
-fRead: hsym `$DB, fReadFileName: "/seqread";
-fRandomRead: hsym `$DB, fRandomReadFileName: "/randomread";
+fRead: hsym `$DB, fReadFileName: "/seqread"
+KDBDB: hsym `$DB, "/kdbdb"
+KDBTBL: .Q.dd[KDBDB; `tbl]
+fRandomRead: .Q.dd[KDBTBL; `randomread]
+fSymCol: .Q.dd[KDBTBL; `sym];
 
 fOpenClose: hsym `$DB, fOpenCloseFileName: "/openclose";
 fhcount: hsym `$DB, fHCountFileName: "/fhcount";
