@@ -19,7 +19,7 @@ midVec: `long$til MIDLENGTH
   sT: .z.n;
   `smallVec set 0N?smallVec;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.smallPermute|permute small"; "0N?"; 1; count smallVec; sT, eT; fix[2; getMBPerSec[count smallVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read write mem"; ".prepare.smallPermute|permute small"; "0N?"; 1; count smallVec; sT, eT; fix[2; getMBPerSec[count smallVec; eT-sT]]; "MB/sec\n"];
   }
 
 .prepare.smallSort: {[]
@@ -27,7 +27,7 @@ midVec: `long$til MIDLENGTH
   sT: .z.n;
   asc smallVec;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.smallSort|sort small"; "asc"; 1; count smallVec; sT, eT; fix[2; getMBPerSec[count smallVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read write mem"; ".prepare.smallSort|sort small"; "asc"; 1; count smallVec; sT, eT; fix[2; getMBPerSec[count smallVec; eT-sT]]; "MB/sec\n"];
   }
 
 .prepare.midPermute: {[]
@@ -35,7 +35,7 @@ midVec: `long$til MIDLENGTH
   sT: .z.n;
   `midVec set 0N?midVec;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.midPermute|permute mid"; "0N?"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read write mem"; ".prepare.midPermute|permute mid"; "0N?"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
 .prepare.midDeltas: {[]
@@ -43,7 +43,7 @@ midVec: `long$til MIDLENGTH
   sT: .z.n;
   deltas midVec;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.midDeltas|deltas mid"; "deltas"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read write mem"; ".prepare.midDeltas|deltas mid"; "deltas"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
 .prepare.midModWhere: {[]
@@ -51,7 +51,7 @@ midVec: `long$til MIDLENGTH
   sT: .z.n;
   where 0=midVec mod 7;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.midModWhere|where mod = mid"; "where 0=mod[;7]"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read write mem"; ".prepare.midModWhere|where mod = mid"; "where 0=mod[;7]"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
 SYMNR: 10000  // maybe move out as a parameter
@@ -61,7 +61,7 @@ sym: `u#neg[SYMNR]?`4;
   sT: .z.n;
   `midSymVec set MIDLENGTH?sym;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.midRandSym|roll mid"; enlist "?"; 1; MIDLENGTH; sT, eT; fix[2; getMBPerSec[MIDLENGTH; eT-sT]]; "MB/sec\n"];
+  writeRes["write mem"; ".prepare.midRandSym|roll mid"; enlist "?"; 1; MIDLENGTH; sT, eT; fix[2; getMBPerSec[MIDLENGTH; eT-sT]]; "MB/sec\n"];
   }
 
 .prepare.group: {[]
@@ -69,7 +69,7 @@ sym: `u#neg[SYMNR]?`4;
   sT: .z.n;
   group midSymVec;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.group|group mid"; "group"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read write mem"; ".prepare.group|group mid"; "group"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
 .prepare.midSort: {[]
@@ -77,7 +77,7 @@ sym: `u#neg[SYMNR]?`4;
   sT: .z.n;
   asc midVec;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.midSort|sort mid"; "asc"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read write mem"; ".prepare.midSort|sort mid"; "asc"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
 tinyVec: 2 3 5 7;

@@ -182,12 +182,13 @@ $ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/
 
 The script calculates the throughput (MiB/sec) of an operation by calculating the data size and the elapsed time of the operation.
 
-Script `./mthread.sh` executes 5 major tests:
+Script `./mthread.sh` executes 6 major tests:
    1. Prepare
    1. Read
    1. Reread
    1. Meta
    1. Random read
+   1. xasc
 
 In read-only tests (when DB dir parameter is passed to `mthread.sh` as a third parameter) the [Prepare](#Prepare) and [Meta](#Meta) tests are omitted.
 
@@ -243,3 +244,6 @@ This test consists of four subtests. Each subtest random reads 800 MiB of data b
 In a typical `select` statement with a `where` clause kdb+ does random reads with memory mappings. If you started your kdb+ process with [.Q.MAP](https://code.kx.com/q/ref/dotq/#map-maps-partitions) then memory mapping is done during `.Q.MAP` and the select statement only does a random read.
 
 The throughput is based on the *useful* data read. For example, if you index a vector of long by 8000 consecutive numbers then the useful data size is 8x8000 bytes (the size of a long is 8 bytes). In reality, Linux may read much more data from the disk due to e.g. the prefetch technique. Just change the content of  `/sys/block/DBDEVICE/queue/read_ahead_kb` and see how the throughput changes. The disk may be fully saturated but the useful throughput is smaller.
+
+### xasc
+The script does an on-disk sort by `xasc` on `sym`. The second test is applying attribute `p` on column `sym`.
