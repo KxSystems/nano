@@ -7,7 +7,7 @@ system "l src/common.q";
 // and side-benefits by gaining more instance capability. So this is a lazy calc
 //
 
-if[not "full" ~ getenv `DBSIZE;
+if[not "full" ~ lower getenv `DBSIZE;
   .qlog.warn "Test runs with ", getenv[`DBSIZE], " data. Reduce ratio is ", string MODIFIER];
 
 smallVec: 0N?`long$til 16*k
@@ -87,6 +87,7 @@ if[ not OBJSTORE;
     ftinyAppend: hsym `$DB, "/tinyAppend";
     sT: .z.n;
     do[N; .[ftinyAppend;();,; tinyVec]];
+    system "sync ", DB, "/tinyAppend";
     eT: .z.n;
     writeRes["write disk"; ".prepare.tinyAppend|open append tiny"; ".[;();,;", (" " sv string tinyVec), "]"; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
   };
@@ -97,6 +98,7 @@ if[ not OBJSTORE;
     H: hopen ftinyAppendFH;
     sT: .z.n;
     do[N; H tinyVec];
+    system "sync ", DB, "/tinyAppendFH";
     eT: .z.n;
     hclose H;
     writeRes["write disk"; ".prepare.tinyAppendToHandler|append tiny"; "H ", " " sv string tinyVec; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
@@ -108,6 +110,7 @@ if[ not OBJSTORE;
     ftinyReplace set smallVec;
     sT: .z.n;
     do[N; .[ftinyReplace;();:; tinyVec]];
+    system "sync ", DB, "/tinyReplace";
     eT: .z.n;
     writeRes["write disk"; ".prepare.tinyReplace|open replace tiny"; ".[;();:;", (" " sv string tinyVec), "]"; N; count tinyVec; sT, eT; fix[3; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
   };
@@ -213,7 +216,7 @@ $[OBJSTORE; [
   };
 
   DISKRATEDEFAULT: 2;
-  disksize: $["abs" ~ getenv `RANDOMREADFILESIZETYPE;
+  disksize: $["abs" ~ lower getenv `RANDOMREADFILESIZETYPE;
       1024*1024*"J"$getenv `RANDOMREADFILESIZEVALUE;
       (DISKRATEDEFAULT^"F"$getenv `RANDOMREADFILESIZEVALUE) * MODIFIER * .Q.w[]`mphy];
 
@@ -225,6 +228,7 @@ $[OBJSTORE; [
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
     do[chunkNr; .[fRandomRead;();,;smallVec]];
+    system "sync ", 1_string fRandomRead;
     eT: .z.n;
     writeRes["write disk";".prepare.appendSmall|open append small";".[;();,;til 16*k]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
   };
@@ -236,6 +240,7 @@ $[OBJSTORE; [
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
     do[chunkNr; .[fSymCol;();,;`sym$midSymVec]];
+    system "sync ", 1_string fSymCol;
     eT: .z.n;
     writeRes["write disk";".prepare.appendMidSym|open append mid sym";".[;();,;`sym$]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
   };
@@ -244,7 +249,8 @@ $[OBJSTORE; [
     // force equal length of the columns
     .[fSymCol;();,;`sym$(div[; SIZEOFLONG] hcount[fRandomRead]-hcount fSymCol)#midSymVec];
     .Q.dd[KDBDB; `sym] set sym;
-    .Q.dd[KDBTBL; `.d] set `sym`randomread
+    .Q.dd[KDBTBL; `.d] set `sym`randomread;
+    system "sync ", 1_string KDBTBL;
   };
   .prepare.prepare: {[]
     / more generous for hcount
