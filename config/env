@@ -6,6 +6,10 @@ export THREADNR=1
 
 export FLUSH=./flush/directmount.sh
 
+# tests that wont be executed
+# whitespace separated list
+export EXCLUDETESTS=".xasc.xasc .xasc.phash"
+
 ##############
 # Settings for object storage
 # See this for more details: https://code.kx.com/insights/1.4/core/objstor/main.html
@@ -39,6 +43,6 @@ export RANDOMREADFILESIZEVALUE=2
 
 
 # Mainly for testing, you can generate small or tiny data
-export DBSIZE=full
+export DBSIZE=small
 
 

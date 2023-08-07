@@ -26,7 +26,7 @@ executeTest: {[dontcare]
       @[; (t; ::)] peach workers;
       eT: .z.n; eS: getKBRead[ddisks];
       iostatH string[t], SEP, (SEP sv value fix[2; (eS-sS)%1000*tsToSec eT-sT]),"\n";
-      } each first alltest;
+      } each first[alltest] except exclusetests;
     .qlog.info "All tests were executed. Sending exit message to workers.";
     if[not `debug in argvk;
       @[; "exit 0"; ::] each workers;
@@ -44,5 +44,7 @@ addWorker: {[addr; disk; tests]
 
 .z.ts: executeTest;
 system "t 200";
+
+exclusetests: `$" " vs getenv `EXCLUDETESTS
 
 .qlog.info "controller started";
