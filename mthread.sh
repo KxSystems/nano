@@ -99,7 +99,7 @@ for i in `seq $NUMPROCESSES`; do
 	j=$(( ($j + 1) % $NUMSEGS ))
 done
 
-echo "testid|disk read throughput" > ${IOSTATFILE}
+echo "testid|iostat read throughput|iostat write throughput|" > ${IOSTATFILE}
 
 if [ "$SCOPE" = "full" ]; then
   ######### WRITE TEST #########

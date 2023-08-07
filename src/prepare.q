@@ -54,7 +54,7 @@ midVec: `long$til MIDLENGTH
   writeRes["read write mem"; ".prepare.midModWhere|where mod = mid"; "where 0=mod[;7]"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
-SYMNR: 10000  // maybe move out as a parameter
+SYMNR: "J"$getenv `SYMNR
 sym: `u#neg[SYMNR]?`4;
 .prepare.midRandSym: {[]
   .qlog.info "starting rand symbol mid test";
@@ -269,8 +269,7 @@ write:{[file]
   }
 //////////////////////////////////////////
 
-.z.exit: {
-  .qlog.info "exiting prepare";
+exitcustom: {[]
   if[OBJSTORE; hdel tmpdirH]};
 
 controller (`addWorker; address[]; getDisk[]; getTests[`.prepare]);

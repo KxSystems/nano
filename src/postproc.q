@@ -10,7 +10,7 @@ output: hsym `$argv `output;
 
 results: raze {("SSS*IJNNFS"; enlist "|") 0:x} each `$resfileprefix cross string[1+til nproc] ,\: ".psv";
 aggregate: select numproc: count result, accuracy: 5 sublist string 100*1- (max[starttime] - min starttime) % avg endtime-starttime, sum result, first unit by testid, testtype, test, qexpression from results where not unit = `ms;
-iostat: ("SF"; enlist "|") 0: `$iostatfile;
+iostat: ("SFF"; enlist "|") 0: `$iostatfile;
 
 output 0: "|" 0: `numproc xcols delete testid from 0!aggregate lj `testid xkey iostat;
 

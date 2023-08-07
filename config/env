@@ -22,6 +22,9 @@ export AZURE_STORAGE_SHARED_KEY=mysharedkey
 ###############################################
 #### You probably dont need to change this
 
+# number of distinct symbols
+export SYMNR=10000
+
 export RESULTDIR="./results"
 export LOGDIR="./logs"
 
