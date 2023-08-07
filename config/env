@@ -6,6 +6,10 @@ export THREADNR=1
 
 export FLUSH=./flush/directmount.sh
 
+# tests that wont be executed
+# whitespace separated list
+export EXCLUDETESTS=".xasc.xasc .xasc.phash"
+
 ##############
 # Settings for object storage
 # See this for more details: https://code.kx.com/insights/1.4/core/objstor/main.html
@@ -21,6 +25,9 @@ export AZURE_STORAGE_SHARED_KEY=mysharedkey
 
 ###############################################
 #### You probably dont need to change this
+
+# number of distinct symbols
+export SYMNR=10000
 
 export RESULTDIR="./results"
 export LOGDIR="./logs"

@@ -142,7 +142,7 @@ The results are saved as text files in a sub-directory set by the environment va
 its results in a new directory, timestamped `mmdd_HHMM`, rounded to the nearest minute. Detailed results, including write rates, small IOPS tests, and so on, are
 contained in the output files (one per system under test) in the `results/mmdd_HHMM-mmdd_HHMM/` files.
 
-File `results/mmdd_HHMM-mmdd_HHMM/throughput-HOSTNAME` aggregates (calculates the average) the throughput metrics from the detailed result files. Column `accuracy` tries to capture the impact of [offset problem](#accuracy). For each test, it calculates the maximal difference of start times and divides it by the average test elapsed times.
+File `results/mmdd_HHMM-mmdd_HHMM/throughput-HOSTNAME` aggregates (calculates the average) the throughput metrics from the detailed result files. Column `throughput` displays the throughput of the test from kdb+ perspective. The read/write throughput based on `iostat` is also displayed. Column `accuracy` tries to capture the impact of [offset problem](#accuracy). For each test, it calculates the maximal difference of start times and divides it by the average test elapsed times.
 
 ### log files
 
@@ -182,12 +182,13 @@ $ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/
 
 The script calculates the throughput (MiB/sec) of an operation by calculating the data size and the elapsed time of the operation.
 
-Script `./mthread.sh` executes 5 major tests:
+Script `./mthread.sh` executes 6 major tests:
    1. Prepare
    1. Read
    1. Reread
    1. Meta
    1. Random read
+   1. xasc
 
 In read-only tests (when DB dir parameter is passed to `mthread.sh` as a third parameter) the [Prepare](#Prepare) and [Meta](#Meta) tests are omitted.
 
@@ -213,7 +214,8 @@ We detail each test in the next section.
       1. the process count.
    1. `write rate`: writes the list (`set`) to file `readtest`.
    1. `sync rate`: calling system command `sync` on `readtest`.
-   1. `open append mid`: appends a block of 16k many times to a file. The result file is used in random read test.
+   1. `open append small`: appends a block of 16k many times to a file. The result file is a column of a splayed table and is used in random read test.
+   1. `open append mid sym`: appends a block of 4M symbols many times to a file. The result file is the `sym` column of a splayed table used in the `xasc` test.
    1. saves files for meta test:
       1. two long lists of length 16 k (size 128 k)
       1. a long list of length 4 M (size 32 M)
@@ -242,3 +244,6 @@ This test consists of four subtests. Each subtest random reads 800 MiB of data b
 In a typical `select` statement with a `where` clause kdb+ does random reads with memory mappings. If you started your kdb+ process with [.Q.MAP](https://code.kx.com/q/ref/dotq/#map-maps-partitions) then memory mapping is done during `.Q.MAP` and the select statement only does a random read.
 
 The throughput is based on the *useful* data read. For example, if you index a vector of long by 8000 consecutive numbers then the useful data size is 8x8000 bytes (the size of a long is 8 bytes). In reality, Linux may read much more data from the disk due to e.g. the prefetch technique. Just change the content of  `/sys/block/DBDEVICE/queue/read_ahead_kb` and see how the throughput changes. The disk may be fully saturated but the useful throughput is smaller.
+
+### xasc
+The script does an on-disk sort by `xasc` on `sym`. The second test is applying attribute `p` on column `sym`.
