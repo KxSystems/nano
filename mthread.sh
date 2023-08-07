@@ -99,7 +99,7 @@ for i in `seq $NUMPROCESSES`; do
 	j=$(( ($j + 1) % $NUMSEGS ))
 done
 
-echo "testid|disk read throughput" > ${IOSTATFILE}
+echo "testid|iostat read throughput|iostat write throughput|" > ${IOSTATFILE}
 
 if [ "$SCOPE" = "full" ]; then
   ######### WRITE TEST #########
@@ -228,6 +228,23 @@ for listsize in 1000000 64000 4000; do
   SEED=$((SEED+1))
 done
 
+######### XASC TEST #########
+
+echo
+echo "STARTING XASC"
+${FLUSH}
+touch ${CURRENTLOGDIR}/sync-$HOST
+
+${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
+j=0
+for i in `seq $NUMPROCESSES`; do
+	${QBIN} ./src/xasc.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i} 2>&1 &
+  j=$(( ($j + 1) % $NUMSEGS ))
+done
+wait -n
+wait
+
+syncAcrossHosts
 
 echo "Aggregating results"
 ${QBIN} ./src/postproc.q -inputs ${RESFILEPREFIX} -iostatfile ${IOSTATFILE} -processes ${NUMPROCESSES} -output ${THROUGHPUTFILE} -q

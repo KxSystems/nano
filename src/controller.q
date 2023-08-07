@@ -12,7 +12,7 @@ iostatH: hopen ":", argv `iostatfile
 getKBRead: {[disks]
   iostatcmd: "iostat -dk -o JSON ", " " sv disks;
   r: raze system iostatcmd;
-  :exec `long$sum kB_read from @[; `disk] first @[; `statistics] first first first value flip value .j.k r
+  :exec `long$sum kB_read, `long$sum kB_wrtn from @[; `disk] first @[; `statistics] first first first value flip value .j.k r
   }
 
 executeTest: {[dontcare]
@@ -25,8 +25,8 @@ executeTest: {[dontcare]
       sS: getKBRead[ddisks]; sT: .z.n;
       @[; (t; ::)] peach workers;
       eT: .z.n; eS: getKBRead[ddisks];
-      iostatH string[t], "|", fix[2; (eS-sS)%1000*tsToSec eT-sT],"\n";
-      } each first alltest;
+      iostatH string[t], SEP, (SEP sv value fix[2; (eS-sS)%1000*tsToSec eT-sT]),"\n";
+      } each first[alltest] except exclusetests;
     .qlog.info "All tests were executed. Sending exit message to workers.";
     if[not `debug in argvk;
       @[; "exit 0"; ::] each workers;
@@ -44,5 +44,7 @@ addWorker: {[addr; disk; tests]
 
 .z.ts: executeTest;
 system "t 200";
+
+exclusetests: `$" " vs getenv `EXCLUDETESTS
 
 .qlog.info "controller started";

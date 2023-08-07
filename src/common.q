@@ -16,7 +16,6 @@ if[ not `result in argvk;
   exit 8];
 
 resultH: hopen ":", argv `result;
-SEP: "|"
 writeRes: {[testtype; test; qexpression; repeat; length; times; result; unit]
   resultH SEP sv (testtype; test; qexpression; string repeat; string length; string first times; string last times; result; unit);
   }
@@ -32,8 +31,11 @@ getTests: {[ns] .Q.dd[ns;] each except[; `] key ns}
 
 
 / note that compression does not work with a "dot" in the filename
-fRead: hsym `$DB, fReadFileName: "/seqread";
-fRandomRead: hsym `$DB, fRandomReadFileName: "/randomread";
+fRead: hsym `$DB, fReadFileName: "/seqread"
+KDBDB: hsym `$DB, "/kdbdb"
+KDBTBL: .Q.dd[KDBDB; `tbl]
+fRandomRead: .Q.dd[KDBTBL; `randomread]
+fSymCol: .Q.dd[KDBTBL; `sym];
 
 fOpenClose: hsym `$DB, fOpenCloseFileName: "/openclose";
 fhcount: hsym `$DB, fHCountFileName: "/fhcount";
@@ -42,10 +44,16 @@ fmmap: hsym `$DB, fHmmapFileName: "/mmap";
 flock: hsym `$DB, "/locktest";
 
 MEMRATIOMODIFIERS: `full`small`tiny!1 0.2 0.05
-MODIFIER: 1f^MEMRATIOMODIFIERS `$getenv `DBSIZE
+MODIFIER: 1f^MEMRATIOMODIFIERS `$lower getenv `DBSIZE
 
 // Repeat number of some meta and write tests
 N: `long$MODIFIER*50*1000;
 
 processcount: string `$argv `processes
 processcount: "I"$processcount
+
+.z.exit: {
+  .qlog.info "exiting worker";
+  if[`exitcustom in key `.; exitcustom[]];
+  exit x;
+  };

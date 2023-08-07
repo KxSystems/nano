@@ -7,18 +7,19 @@ system "l src/common.q";
 // and side-benefits by gaining more instance capability. So this is a lazy calc
 //
 
-if[not "full" ~ getenv `DBSIZE;
+if[not "full" ~ lower getenv `DBSIZE;
   .qlog.warn "Test runs with ", getenv[`DBSIZE], " data. Reduce ratio is ", string MODIFIER];
 
-smallVec:`long$til 16*k;
-midVec: `long$til `long$MODIFIER*4*M;
+smallVec: 0N?`long$til 16*k
+MIDLENGTH: `long$MODIFIER*4*M
+midVec: `long$til MIDLENGTH
 
 .prepare.smallPermute: {[]
   .qlog.info "starting permute small test";
   sT: .z.n;
   `smallVec set 0N?smallVec;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.smallPermute|permute"; "0N?"; 1; count smallVec; sT, eT; fix[2; getMBPerSec[count smallVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read write mem"; ".prepare.smallPermute|permute small"; "0N?"; 1; count smallVec; sT, eT; fix[2; getMBPerSec[count smallVec; eT-sT]]; "MB/sec\n"];
   }
 
 .prepare.smallSort: {[]
@@ -26,7 +27,7 @@ midVec: `long$til `long$MODIFIER*4*M;
   sT: .z.n;
   asc smallVec;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.smallSort|sort"; "asc"; 1; count smallVec; sT, eT; fix[2; getMBPerSec[count smallVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read write mem"; ".prepare.smallSort|sort small"; "asc"; 1; count smallVec; sT, eT; fix[2; getMBPerSec[count smallVec; eT-sT]]; "MB/sec\n"];
   }
 
 .prepare.midPermute: {[]
@@ -34,7 +35,7 @@ midVec: `long$til `long$MODIFIER*4*M;
   sT: .z.n;
   `midVec set 0N?midVec;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.midPermute|permute"; "0N?"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read write mem"; ".prepare.midPermute|permute mid"; "0N?"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
 .prepare.midDeltas: {[]
@@ -42,7 +43,7 @@ midVec: `long$til `long$MODIFIER*4*M;
   sT: .z.n;
   deltas midVec;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.midDeltas|deltas"; "deltas"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read write mem"; ".prepare.midDeltas|deltas mid"; "deltas"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
 .prepare.midModWhere: {[]
@@ -50,7 +51,25 @@ midVec: `long$til `long$MODIFIER*4*M;
   sT: .z.n;
   where 0=midVec mod 7;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.midModWhere|where mod ="; "where 0=mod[;7]"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read write mem"; ".prepare.midModWhere|where mod = mid"; "where 0=mod[;7]"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  }
+
+SYMNR: "J"$getenv `SYMNR
+sym: `u#neg[SYMNR]?`4;
+.prepare.midRandSym: {[]
+  .qlog.info "starting rand symbol mid test";
+  sT: .z.n;
+  `midSymVec set MIDLENGTH?sym;
+  eT: .z.n;
+  writeRes["write mem"; ".prepare.midRandSym|roll mid"; enlist "?"; 1; MIDLENGTH; sT, eT; fix[2; getMBPerSec[MIDLENGTH; eT-sT]]; "MB/sec\n"];
+  }
+
+.prepare.group: {[]
+  .qlog.info "starting group test";
+  sT: .z.n;
+  group midSymVec;
+  eT: .z.n;
+  writeRes["read write mem"; ".prepare.group|group mid"; "group"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
 .prepare.midSort: {[]
@@ -58,7 +77,7 @@ midVec: `long$til `long$MODIFIER*4*M;
   sT: .z.n;
   asc midVec;
   eT: .z.n;
-  writeRes["read mem"; ".prepare.midSort|sort"; "asc"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  writeRes["read write mem"; ".prepare.midSort|sort mid"; "asc"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
 tinyVec: 2 3 5 7;
@@ -68,8 +87,8 @@ if[ not OBJSTORE;
     ftinyAppend: hsym `$DB, "/tinyAppend";
     sT: .z.n;
     do[N; .[ftinyAppend;();,; tinyVec]];
+    system "sync ", DB, "/tinyAppend";
     eT: .z.n;
-    fsize: SIZEOFLONG * N * count tinyVec;
     writeRes["write disk"; ".prepare.tinyAppend|open append tiny"; ".[;();,;", (" " sv string tinyVec), "]"; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
   };
 
@@ -79,9 +98,9 @@ if[ not OBJSTORE;
     H: hopen ftinyAppendFH;
     sT: .z.n;
     do[N; H tinyVec];
+    system "sync ", DB, "/tinyAppendFH";
     eT: .z.n;
     hclose H;
-    fsize: SIZEOFLONG * N * count tinyVec;
     writeRes["write disk"; ".prepare.tinyAppendToHandler|append tiny"; "H ", " " sv string tinyVec; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
   };
 
@@ -91,6 +110,7 @@ if[ not OBJSTORE;
     ftinyReplace set smallVec;
     sT: .z.n;
     do[N; .[ftinyReplace;();:; tinyVec]];
+    system "sync ", DB, "/tinyReplace";
     eT: .z.n;
     writeRes["write disk"; ".prepare.tinyReplace|open replace tiny"; ".[;();:;", (" " sv string tinyVec), "]"; N; count tinyVec; sT, eT; fix[3; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
   };
@@ -194,22 +214,43 @@ $[OBJSTORE; [
     eT: .z.n;
     writeRes["write disk";".prepare.sync|sync rate";"system sync"; 1; count privmem; sT, eT; fix[2; getMBPerSec[SAMPLESIZE; eT-sT]]; "MB/sec\n"];
   };
-  .prepare.appendSmall: {[]
-    .qlog.info "creating files for read tests";
-    .qlog.info "starting append small test";
-    chunkSize: count smallVec;
-    DISKRATEDEFAULT: 3;
-    disksize: $["abs" ~ getenv `RANDOMREADFILESIZETYPE;
+
+  DISKRATEDEFAULT: 2;
+  disksize: $["abs" ~ lower getenv `RANDOMREADFILESIZETYPE;
       1024*1024*"J"$getenv `RANDOMREADFILESIZEVALUE;
       (DISKRATEDEFAULT^"F"$getenv `RANDOMREADFILESIZEVALUE) * MODIFIER * .Q.w[]`mphy];
+
+  .prepare.appendSmall: {[]
+    .qlog.info "creating files for random read and xasc tests";
+    .qlog.info "starting append small test";
+    chunkSize: count smallVec;
     chunkNr: `long$disksize % SIZEOFLONG * chunkSize * processcount;
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
     do[chunkNr; .[fRandomRead;();,;smallVec]];
+    system "sync ", 1_string fRandomRead;
     eT: .z.n;
-    fsize: SIZEOFLONG * chunkNr * chunkSize;
-    writeRes["write disk";".prepare.appendSmall|open append mid";".[;();,;til 16*k]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
-
+    writeRes["write disk";".prepare.appendSmall|open append small";".[;();,;til 16*k]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
+  };
+  .prepare.appendMidSym: {[]
+    .qlog.info "creating files for xasc tests";
+    .qlog.info "starting append mid sym vector test";
+    chunkSize: count midSymVec;
+    chunkNr: `long$disksize % SIZEOFLONG * chunkSize * processcount; // enumerated symbols are stored as longs
+    .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
+    sT: .z.n;
+    do[chunkNr; .[fSymCol;();,;`sym$midSymVec]];
+    system "sync ", 1_string fSymCol;
+    eT: .z.n;
+    writeRes["write disk";".prepare.appendMidSym|open append mid sym";".[;();,;`sym$]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
+  };
+  .prepare.makeTable: {[]
+    .qlog.info "make ", (1_string KDBDB), " a normal kdb+ database (for e.g. xasc test)";
+    // force equal length of the columns
+    .[fSymCol;();,;`sym$(div[; SIZEOFLONG] hcount[fRandomRead]-hcount fSymCol)#midSymVec];
+    .Q.dd[KDBDB; `sym] set sym;
+    .Q.dd[KDBTBL; `.d] set `sym`randomread;
+    system "sync ", 1_string KDBTBL;
   };
   .prepare.prepare: {[]
     / more generous for hcount
@@ -234,8 +275,7 @@ write:{[file]
   }
 //////////////////////////////////////////
 
-.z.exit: {
-  .qlog.info "exiting prepare";
+exitcustom: {[]
   if[OBJSTORE; hdel tmpdirH]};
 
 controller (`addWorker; address[]; getDisk[]; getTests[`.prepare]);
