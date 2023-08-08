@@ -43,6 +43,6 @@ export RANDOMREADFILESIZEVALUE=2
 
 
 # Mainly for testing, you can generate small or tiny data
-export DBSIZE=small
+export DBSIZE=full
 
 
