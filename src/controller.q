@@ -12,7 +12,8 @@ iostatH: hopen ":", argv `iostatfile
 getKBRead: {[disks]
   iostatcmd: "iostat -dk -o JSON ", " " sv disks;
   r: raze system iostatcmd;
-  :exec `long$sum kB_read, `long$sum kB_wrtn from @[; `disk] first @[; `statistics] first first first value flip value .j.k r
+  iostats: @[; `disk] first @[; `statistics] first first first value flip value .j.k r;
+  :$[count iostats; exec `long$sum kB_read, `long$sum kB_wrtn from iostats; `kB_read`kB_wrtn!2#0Nj]
   }
 
 executeTest: {[dontcare]
@@ -35,7 +36,7 @@ executeTest: {[dontcare]
   }
 
 addWorker: {[addr; disk; tests]
-  .qlog.info "adding tests from address ", addr;
+  .qlog.info "adding tests from address ", addr, " using disk ", disk;
   alltest,: enlist tests;
   workers,: hsym `$addr;
   disks,: enlist disk;
@@ -48,3 +49,4 @@ system "t 200";
 exclusetests: `$" " vs getenv `EXCLUDETESTS
 
 .qlog.info "controller started";
+
