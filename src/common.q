@@ -27,27 +27,23 @@ getDisk: {last system "df --output=source ", DB}
 address: {string[.z.h],":", string system "p"}
 getTests: {[ns] .Q.dd[ns;] each except[; `] key ns}
 
-// for distributed file system with client side compression....don't use this
-
-
-/ note that compression does not work with a "dot" in the filename
 fRead: hsym `$DB, fReadFileName: "/seqread"
 KDBDB: hsym `$DB, "/kdbdb"
 KDBTBL: .Q.dd[KDBDB; `tbl]
 fRandomRead: .Q.dd[KDBTBL; `randomread]
-fSymCol: .Q.dd[KDBTBL; `sym];
+fSymCol: .Q.dd[KDBTBL; `sym]
 
-fOpenClose: hsym `$DB, fOpenCloseFileName: "/openclose";
-fhcount: hsym `$DB, fHCountFileName: "/fhcount";
-fReadBinary: hsym `$DB, fHReadBinaryFileName: "/readbinary";
-fmmap: hsym `$DB, fHmmapFileName: "/mmap";
-flock: hsym `$DB, "/locktest";
+fOpenClose: hsym `$DB, fOpenCloseFileName: "/openclose"
+fhcount: hsym `$DB, fHCountFileName: "/fhcount"
+fReadBinary: hsym `$DB, fHReadBinaryFileName: "/readbinary"
+fmmap: hsym `$DB, fHmmapFileName: "/mmap"
+flock: hsym `$DB, "/locktest"
 
 MEMRATIOMODIFIERS: `full`small`tiny!1 0.2 0.05
 MODIFIER: 1f^MEMRATIOMODIFIERS `$lower getenv `DBSIZE
 
 // Repeat number of some meta and write tests
-N: `long$MODIFIER*50*1000;
+N: `long$MODIFIER*50*1000
 
 processcount: string `$argv `processes
 processcount: "I"$processcount

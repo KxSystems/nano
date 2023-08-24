@@ -10,11 +10,11 @@ if [ $# -lt 3 ]; then
 	echo $USAGE
 	exit 1
 fi
-if [ $1 -le 0 ]; then
+if [ "$1" -le 0 ]; then
 	echo $USAGE
 	exit 2
 fi
-if [ $1 -gt 256 ]; then
+if [ "$1" -gt 256 ]; then
 	echo "This test does not qualify results above 256 processes"
 	exit 3
 fi
@@ -29,7 +29,7 @@ NUMPROCESSES=$1
 SCOPE="$2"
 if [ "$#" -eq "4" ]; then
   echo "Date is set to $4"
-  DATE=$4
+  DATE="$4"
 else
 	DATE=$(date +%m%d_%H%M)
 fi
