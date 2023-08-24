@@ -2,9 +2,9 @@ default:
   tags:
     - kxi-gitlab-runner
 
-
 stages:
   - build
+  - test
 
 .docker-beforescript:
   stage: build
@@ -28,6 +28,7 @@ stages:
     - docker build -t "${IMAGE_URL}" .
     - docker push "${IMAGE_URL}"
     - docker rmi "${IMAGE_URL}"
+    - echo "IMAGE_URL=${IMAGE_URL}" > img.env
 
 docker-buildpub-push:
   variables:
@@ -42,5 +43,45 @@ docker-builddev-push:
     TARGET: "dev"
   extends:
     - .docker-beforescript
+  artifacts:
+    reports:
+      dotenv: img.env
   rules:
     - if: '$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
+
+.mthread:
+  stage: test
+  image:
+    name: "${IMAGE_URL}"
+    entrypoint: [""]
+    pull_policy: always
+  needs:
+    - job: docker-builddev-push
+  variables:
+    DBSIZE: tiny
+    APPDIR: /opt/kx/app
+    FLUSH: ${APPDIR}/flush/directmount.sh
+    QLIC: /tmp/qlic
+    RESULTDIR: ${APPDIR}/results
+    LOGDIR: ${APPDIR}/logs
+  before_script:
+    - mkdir -p "$QLIC"
+    - echo -n "$KDB_LICENSE_B64" | base64 -d > "$QLIC/kc.lic"
+    - cd ${APPDIR}
+  rules:
+    - if: '$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
+
+mthread-single:
+  extends:
+    - .mthread
+  script:
+    - echo "${APPDIR}/data" > ./partitions
+    - ./mthread.sh 1 full delete
+
+mthread-multi:
+  extends:
+    - .mthread
+  script:
+    - echo "${APPDIR}/data0" > ./partitions
+    - echo "${APPDIR}/data1" >> ./partitions
+    - ./mthread.sh 3 full delete
