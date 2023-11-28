@@ -9,11 +9,14 @@ iostatH: hopen ":", argv `iostatfile
 `workers set ();
 `disks set ();
 
+iostatError: `kB_read`kB_wrtn!2#0Nj;
 getKBRead: {[disks]
-  iostatcmd: "iostat -dk -o JSON ", " " sv disks;
-  r: raze system iostatcmd;
-  iostats: @[; `disk] first @[; `statistics] first first first value flip value .j.k r;
-  :$[count iostats; exec `long$sum kB_read, `long$sum kB_wrtn from iostats; `kB_read`kB_wrtn!2#0Nj]
+  iostatcmd: "iostat -dk -o JSON ", (" " sv disks), " 2>&1";
+  r: @[system; iostatcmd; .qlog.error];
+  :$[10h ~ type r; [
+  	iostats: @[; `disk] first @[; `statistics] first first first value flip value .j.k raze r;
+  	$[count iostats; exec `long$sum kB_read, `long$sum kB_wrtn from iostats; iostatError]];
+	iostatError]
   }
 
 executeTest: {[dontcare]
@@ -49,4 +52,3 @@ system "t 200";
 exclusetests: `$" " vs getenv `EXCLUDETESTS
 
 .qlog.info "controller started";
-

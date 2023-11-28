@@ -50,6 +50,5 @@ processcount: "I"$processcount
 
 .z.exit: {
   .qlog.info "exiting worker";
-  if[`exitcustom in key `.; exitcustom[]];
-  exit x;
+  if[`exitcustom in key `.; exitcustom[]]
   };
