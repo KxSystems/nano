@@ -10,6 +10,7 @@ iostatH: hopen ":", argv `iostatfile
 `disks set ();
 
 iostatError: `kB_read`kB_wrtn!2#0Nj;
+
 getKBReadMac: {[x] iostatError}
 getKBReadLinux: {[disks]
   iostatcmd: "iostat -dk -o JSON ", (" " sv disks), " 2>&1";
