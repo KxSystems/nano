@@ -130,7 +130,13 @@ You can also use this to drive the results from one server, by simply adding
 run `mthread.sh` directly.
 
 Note that the execution of the top-level script `multihost.sh` may require `tty` control
-to be added to the sudoers file if you are not already running as root.
+to be added to the sudoers file if you are not already running as root. `multihost.sh` does ssh to the remote host, so you may need to use `~/.ssh/config` to set passwords or identity files.
+
+```bash
+$ source ./config/kdbenv
+$ source ./config/env
+$ ./multihost.sh $(nproc) full delete
+```
 
 ### Running several tests with different process count
 If you are interested how the storage medium scales with the number of parallel requests, then you can run `runSeveral.sh`. It simply calls `mthread.sh` with different process numbers and does a log processing to generate a result CSV file. The results are saved in file `results/aggr_total.csv` but this can be overwritten by a command line parameter.
