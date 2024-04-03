@@ -14,19 +14,17 @@ then
 	exit 1
 fi
 
-source ./env
-
 NUMPROCESSES=$1
 HERE=$(pwd)
 DATE=$(date +%m%dD%H%M)
 
 RESDIR="./results/${DATE}-${DATE}"
 RESFILEPREFIX=""
-for HOST in $(cat $HOSTLIST); do
+for HOST in $(cat hostlist); do
 	echo $HOST
 	RESFILEPREFIX+="${RESDIR}/detailed-${HOST}-,"
-	ssh $HOST "cd ${HERE};./mthread.sh ${NUMPROCESSES} $2 $3 ${DATE}" &
+	ssh $HOST "cd ${HERE};source ./config/kdbenv;source ./config/env;./mthread.sh ${NUMPROCESSES} $2 $3 ${DATE}" &
 done
 wait
 
-${QBIN} ${HERE}/src/postproc.q ${RESFILEPREFIX::-1} ${NUMPROCESSES} ${RESDIR}/total.psv -q
+${QBIN} ${HERE}/src/postproc.q -inputs ${RESFILEPREFIX::-1} -processes ${NUMPROCESSES} -output ${RESDIR}/total.psv -q

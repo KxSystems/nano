@@ -10,7 +10,8 @@ iostatH: hopen ":", argv `iostatfile
 `disks set ();
 
 iostatError: `kB_read`kB_wrtn!2#0Nj;
-getKBRead: {[disks]
+getKBReadMac: {[x] iostatError}
+getKBReadLinux: {[disks]
   iostatcmd: "iostat -dk -o JSON ", (" " sv disks), " 2>&1";
   r: @[system; iostatcmd; .qlog.error];
   :$[10h ~ type r; [
@@ -18,6 +19,8 @@ getKBRead: {[disks]
   	$[count iostats; exec `long$sum kB_read, `long$sum kB_wrtn from iostats; iostatError]];
 	iostatError]
   }
+
+getKBRead: $["Darwin" ~ first system "uname -s"; getKBReadMac; getKBReadLinux]
 
 executeTest: {[dontcare]
   if[workerNr = count workers;
