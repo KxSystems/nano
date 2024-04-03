@@ -23,8 +23,8 @@ writeRes: {[testtype; test; qexpression; repeat; length; times; result; unit]
 controller: `$"::",argv `controller;
 
 msstring:{(string x)," ms"}
-getDisk: {last system "df --output=source ", DB}
-address: {string[.z.h],":", string system "p"}
+getDisk: {first " " vs last system "df ", DB}
+address: {string[.Q.host .z.a],":", string system "p"}
 getTests: {[ns] .Q.dd[ns;] each except[; `] key ns}
 
 fRead: hsym `$DB, fReadFileName: "/seqread"
