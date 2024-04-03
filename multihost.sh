@@ -16,15 +16,13 @@ fi
 
 NUMPROCESSES=$1
 HERE=$(pwd)
-DATE=$(date +%m%dD%H%M)
+DATE=$(date +%m%d_%H%M)
 
 RESDIR="./results/${DATE}-${DATE}"
-RESFILEPREFIX=""
 for HOST in $(cat hostlist); do
 	echo $HOST
-	RESFILEPREFIX+="${RESDIR}/detailed-${HOST}-,"
-	ssh $HOST "cd ${HERE};source ./config/kdbenv;source ./config/env;./mthread.sh ${NUMPROCESSES} $2 $3 ${DATE}" &
+	ssh $HOST "cd ${HERE}; source ./config/kdbenv;source ./config/env;./mthread.sh ${NUMPROCESSES} $2 $3 ${DATE}" &
 done
 wait
 
-${QBIN} ${HERE}/src/postproc.q -inputs ${RESFILEPREFIX::-1} -processes ${NUMPROCESSES} -output ${RESDIR}/total.psv -q
+${QBIN} ${HERE}/src/postprocmulti.q -inputs "${RESDIR}/throughput-" -output ${RESDIR}/total.psv -q
