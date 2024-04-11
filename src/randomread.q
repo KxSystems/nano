@@ -48,4 +48,4 @@ randomreadwithmmap:{[blocksize]
 fn: $[`withmmap in argvk; randomreadwithmmap; randomread]
 .Q.dd[`.randomread; `$argv[`testname]] set fn "I"$argv `listsize;
 
-controller (`addWorker; address[]; getDisk[]; getTests[`.randomread]);
+controller (`addWorker; system "p"; getDisk[]; getTests[`.randomread]);

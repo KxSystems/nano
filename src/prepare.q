@@ -278,6 +278,6 @@ write:{[file]
 exitcustom: {[]
   if[OBJSTORE; hdel tmpdirH]};
 
-controller (`addWorker; address[]; getDisk[]; getTests[`.prepare]);
+controller (`addWorker; system "p"; getDisk[]; getTests[`.prepare]);
 
 .qlog.info "Ready for test execution";
