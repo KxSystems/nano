@@ -25,4 +25,4 @@ system "l src/common.q";
   writeRes["read disk";".read.readbinary|sequential read binary";"read1"; 1; hcount fReadBinary; sT, eT; fix[2;getMBPerSec[div[; 8] -16+hcount fReadBinary; eT-sT]]; "MB/sec\n"];  // TODO: avoid recalculating theoretical read binary file size
   }
 
-controller (`addWorker; address[]; getDisk[]; getTests[`.read]);
+controller (`addWorker; system "p"; getDisk[]; getTests[`.read]);

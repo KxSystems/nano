@@ -42,7 +42,16 @@ executeTest: {[dontcare]
   ];
   }
 
-addWorker: {[addr; disk; tests]
+handleToIP: (`int$())!()
+
+.z.po: {
+  handleToIP[x]:"." sv string "i"$0x0 vs .z.a;
+  .qlog.info "Connection mapping to ", handleToIP[x], " was added";
+  }
+.z.pc: {handleToIP:: handleToIP cut x}
+
+addWorker: {[port; disk; tests]
+  addr:handleToIP[.z.w],":",string port;
   .qlog.info "adding tests from address ", addr, " using disk ", disk;
   alltest,: enlist tests;
   workers,: hsym `$addr;
