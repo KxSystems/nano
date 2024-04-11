@@ -24,7 +24,6 @@ controller: `$"::",argv `controller;
 
 msstring:{(string x)," ms"}
 getDisk: {first " " vs last system "df ", DB}
-address: {string[.Q.host .z.a],":", string system "p"}
 getTests: {[ns] .Q.dd[ns;] each except[; `] key ns}
 
 fRead: hsym `$DB, fReadFileName: "/seqread"

@@ -17,4 +17,4 @@ system "l src/common.q";
   writeRes["read write disk";".xasc.phash|add attribute";"@[; `sym; `p#]"; 1; count get KDBTBL; sT, eT; fix[2;getMBPerSec[count get KDBTBL; eT-sT]]; "MB/sec\n"];
   }
 
-controller (`addWorker; address[]; getDisk[]; getTests[`.xasc])
+controller (`addWorker; system "p"; getDisk[]; getTests[`.xasc])

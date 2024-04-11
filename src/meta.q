@@ -48,4 +48,4 @@ $[OBJSTORE;
   writeRes["read disk";".meta.get|mmap";"get"; N; count get fmmap; sT, eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"];
   }
 
-controller (`addWorker; address[]; getDisk[]; getTests[`.meta]);
+controller (`addWorker; system "p"; getDisk[]; getTests[`.meta]);
