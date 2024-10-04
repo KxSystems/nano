@@ -50,7 +50,7 @@ mkdir -p ${CURRENTLOGDIR}
 
 RESFILEPREFIX=${RESDIR}/detailed-${HOST}-
 IOSTATFILE=${RESDIR}/iostat-${HOST}.psv
-THROUGHPUTFILE=${RESDIR}/throughput-${HOST}.psv
+AGGRFILEPREFIX=${RESDIR}/${HOST}-
 
 LOGFILEPREFIX="${CURRENTLOGDIR}/${HOST}-${NUMPROCESSES}t-"
 
@@ -247,7 +247,7 @@ wait
 syncAcrossHosts
 
 echo "Aggregating results"
-${QBIN} ./src/postproc.q -inputs ${RESFILEPREFIX} -iostatfile ${IOSTATFILE} -processes ${NUMPROCESSES} -output ${THROUGHPUTFILE} -q
+${QBIN} ./src/postproc.q -inputs ${RESFILEPREFIX} -iostatfile ${IOSTATFILE} -processes ${NUMPROCESSES} -outputprefix ${AGGRFILEPREFIX} -q
 
 #
 # an air gap for any storage stats gathering before unlinks go out ...
