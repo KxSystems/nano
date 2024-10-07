@@ -65,6 +65,12 @@ function notObjStore {
   if [[ $1 != s3://* && $1 != gs://* && $1 != ms://* ]]; then return 0; else return 1; fi
 }
 
+if [[ $(uname) == "Linux" ]]; then
+    CORECOUNT=$(nproc)
+else
+    CORECOUNT=$(sysctl -n hw.ncpu)
+fi
+
 echo "Persisting config"
 CONFIG=${RESDIR}/config.yaml
 echo "Persisting config to $CONFIG"
@@ -82,7 +88,8 @@ yq -i ".dbize.MEMUSAGEVALUE=$MEMUSAGEVALUE" $CONFIG
 yq -i ".dbize.RANDOMREADFILESIZETYPE=\"$RANDOMREADFILESIZETYPE\"" $CONFIG
 yq -i ".dbize.RANDOMREADFILESIZEVALUE=$RANDOMREADFILESIZEVALUE" $CONFIG
 yq -i ".dbize.DBSIZE=\"$DBSIZE\"" $CONFIG
-yq -i ".system.cpunr=$(nproc)" ${CONFIG}
+yq -i ".system.os=\"$(uname)\"" $CONFIG
+yq -i ".system.cpunr=$CORECOUNT" ${CONFIG}
 yq -i ".system.memsize=\"$(grep MemTotal /proc/meminfo |tr -s ' ' | cut -d ' ' -f 2,3)\"" ${CONFIG}
 
 CONTROLLERPORT=6000
