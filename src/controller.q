@@ -21,7 +21,7 @@ getKBReadLinux: {[disks]
 	iostatError]
   }
 
-getKBRead: $["Darwin" ~ first system "uname -s"; getKBReadMac; getKBReadLinux]
+getKBRead: $[.z.o ~ `m64; getKBReadMac; getKBReadLinux]
 
 executeTest: {[dontcare]
   if[workerNr = count workers;
