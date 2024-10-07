@@ -113,10 +113,10 @@ if [ "$SCOPE" = "full" ]; then
   echo
   echo "STARTING WRITE TEST"
 
-  ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
+  ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_prepare.log 2 >&1 &
   j=0
   for i in `seq $NUMPROCESSES`; do
-  	${QBIN} ./src/prepare.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -q -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i} 2 >&1 &
+  	${QBIN} ./src/prepare.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -q -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_prepare.log 2 >&1 &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
 
@@ -136,10 +136,10 @@ echo "STARTING SEQUENTIAL READ TEST"
 ${FLUSH}
 touch ${CURRENTLOGDIR}/sync-$HOST
 
-${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
+${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_read.log 2 >&1 &
 j=0
 for i in `seq $NUMPROCESSES`; do
-	${QBIN} ./src/read.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i} 2>&1 &
+	${QBIN} ./src/read.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_read.log 2>&1 &
   j=$(( ($j + 1) % $NUMSEGS ))
 done
 wait -n
@@ -157,10 +157,10 @@ echo
 echo "STARTING SEQUENTIAL RE-READ (CACHE) TEST"
 
 touch ${CURRENTLOGDIR}/sync-$HOST
-${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
+${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_reread.log 2 >&1 &
 j=0
 for i in `seq $NUMPROCESSES`; do
-	${QBIN} ./src/reread.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i} 2>&1  &
+	${QBIN} ./src/reread.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_reread.log 2>&1  &
   j=$(( ($j + 1) % $NUMSEGS ))
 done
 wait
@@ -177,10 +177,10 @@ if [ "$SCOPE" = "full" ]; then
   ${FLUSH}
 
   touch ${CURRENTLOGDIR}/sync-$HOST
-  ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
+  ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_meta.log 2 >&1 &
   j=0
   for i in `seq $NUMPROCESSES`; do
-  	${QBIN} ./src/meta.q -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i} 2>&1  &
+  	${QBIN} ./src/meta.q -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_meta.log 2>&1  &
     j=$(( ($j + 1) % $NUMSEGS ))
   done
 
@@ -197,19 +197,19 @@ function runrandomread {
   echo "test${mmap} with block size ${listsize}"
 
   touch ${CURRENTLOGDIR}/sync-$HOST
-  ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
+  ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_randomread.log 2 >&1 &
   j=0
   sleep 5
   for i in `seq $NUMPROCESSES`; do
-  	${QBIN} ./src/randomread.q -testname randomread -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read disk" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i} 2>&1  &
+  	${QBIN} ./src/randomread.q -testname randomread -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read disk" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_randomread.log 2>&1  &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait
 
-  ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
+  ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_randomreread.log 2 >&1 &
   j=0
   for i in `seq $NUMPROCESSES`; do
-  	${QBIN} ./src/randomread.q -testname randomreread -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read mem" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i} 2>&1  &
+  	${QBIN} ./src/randomread.q -testname randomreread -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read mem" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_randomreread.log 2>&1  &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait
