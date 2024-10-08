@@ -48,4 +48,7 @@ randomreadwithmmap:{[blocksize]
 fn: $[`withmmap in argvk; randomreadwithmmap; randomread]
 .Q.dd[`.randomread; `$argv[`testname]] set fn "I"$argv `listsize;
 
-controller (`addWorker; system "p"; getDisk[]; getTests[`.randomread]);
+@[controller; (`addWorker; system "p"; getDisk[]; getTests[`.randomread]); 
+  {.qlog.error "Error sending randomread tests to the controller: ", x; exit 1}]
+
+.qlog.info "Ready for test execution";

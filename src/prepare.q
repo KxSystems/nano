@@ -278,6 +278,7 @@ write:{[file]
 exitcustom: {[]
   if[OBJSTORE; hdel tmpdirH]};
 
-controller (`addWorker; system "p"; getDisk[]; getTests[`.prepare]);
+@[controller; (`addWorker; system "p"; getDisk[]; getTests[`.prepare]); 
+  {.qlog.error "Error sending prepare tests to the controller. Error: ", x; exit 1}]
 
 .qlog.info "Ready for test execution";
