@@ -5,18 +5,21 @@ argvk:key argv:first each .Q.opt .z.x
 resfileprefix: "," vs argv `inputs;
 iostatfile: argv `iostatfile
 nproc: "I"$argv `processes;
-output: hsym `$argv `output;
-
+outputprefix: argv `outputprefix;
+outthroughput: hsym `$outputprefix,"throughput.psv"
+outlatency: hsym `$outputprefix,"latency.psv"
 
 results: raze {("SSS*IJNNFS"; enlist "|") 0:x} each `$resfileprefix cross string[1+til nproc] ,\: ".psv";
-aggregate: select numproc: count result, accuracy: 5 sublist string 100*1- (max[starttime] - min starttime) % avg endtime-starttime, throughput: sum result, first unit by testid, testtype, test, qexpression from results where not unit = `ms;
+throughput: select numproc: count result, accuracy: 5 sublist string 100*1- (max[starttime] - min starttime) % avg endtime-starttime, throughput: sum result, first unit by testid, testtype, test, qexpression from results where not unit = `ms;
+latency: select numproc: count result, accuracy: 5 sublist string 100*1- (max[starttime] - min starttime) % avg endtime-starttime, avgLatency: avg result, maxLatency: max result, first unit by testid, testtype, test, qexpression from results where unit = `ms;
 iostat: ("SFF"; enlist "|") 0: `$iostatfile;
 
-output 0: "|" 0: `numproc xcols delete testid from 0!aggregate lj `testid xkey iostat;
+outthroughput 0: "|" 0: `numproc xcols delete testid from 0!throughput lj `testid xkey iostat;
+outlatency 0: "|" 0: `numproc xcols delete testid from 0!latency;
 
-if[ 0 < exec count i from aggregate where not numproc = nproc;
+if[ 0 < exec count i from throughput where not numproc = nproc;
     .qlog.error "The following tests were not executed by all processes: ",
-    "," sv string exec distinct test from aggregate where not numproc = nproc;
+    "," sv string exec distinct test from throughput where not numproc = nproc;
     exit 1
     ];
 

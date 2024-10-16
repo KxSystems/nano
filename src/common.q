@@ -23,7 +23,19 @@ writeRes: {[testtype; test; qexpression; repeat; length; times; result; unit]
 controller: `$"::",argv `controller;
 
 msstring:{(string x)," ms"}
-getDisk: {first " " vs last system "df ", DB}
+// df returns partition like /dev/nvme0n1p1
+getPartition: {first " " vs last system "df ", DB}
+
+// disk is looked up from partition by e.g. /sys/class/block/nvme0n1p1
+getDevice:{
+  p: ssr[;"/dev/";""] getPartition[];
+  if[not (`$p) in key `$":/sys/class/block";
+    .qlog.warn "Unable to map partition ", p, " to a device";
+    :""];
+  l:first system "readlink /sys/class/block/", p;
+  "/dev",deltas[-2#l ss "/"] sublist l
+  }
+
 getTests: {[ns] .Q.dd[ns;] each except[; `] key ns}
 
 fRead: hsym `$DB, fReadFileName: "/seqread"

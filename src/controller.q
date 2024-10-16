@@ -5,39 +5,47 @@ system "l src/util.q";
 workerNr: system "s" // We assume that each worker has its own thread
 iostatH: hopen ":", argv `iostatfile
 
-`alltest set ();
-`workers set ();
-`disks set ();
+Alltest:Workers:Decives: ();
 
-iostatError: `kB_read`kB_wrtn!2#0Nj;
+iostatError: `kB_read`kB_wrtn!2#0Nj
+Start: 0Np
+
 getKBReadMac: {[x] iostatError}
-getKBReadLinux: {[disks]
-  iostatcmd: "iostat -dk -o JSON ", (" " sv disks), " 2>&1";
+getKBReadLinux: {[devices]
+  iostatcmd: "iostat -dk -o JSON ", (" " sv devices), " 2>&1";
   r: @[system; iostatcmd; .qlog.error];
-  :$[10h ~ type r; [
+  :$[0h ~ type r; [
   	iostats: @[; `disk] first @[; `statistics] first first first value flip value .j.k raze r;
   	$[count iostats; exec `long$sum kB_read, `long$sum kB_wrtn from iostats; iostatError]];
 	iostatError]
   }
 
-getKBRead: $["Darwin" ~ first system "uname -s"; getKBReadMac; getKBReadLinux]
+getKBRead: $[.z.o ~ `m64; getKBReadMac; getKBReadLinux]
 
+finish: {[x]
+  .qlog.info "Sending exit message to workers";
+  @[; "exit 0"; ::] each Workers;
+  exit x
+  }
+
+TIMEOUT: 0D00:01
 executeTest: {[dontcare]
-  if[workerNr = count workers;
+  if[TIMEOUT < .z.p - Start;
+    .qlog.error "Waiting for workers timed out.";
+    finish 3];
+  if[workerNr = count Workers;
     system "t 0";
-    if[ any 1_differ alltest; .qlog.error "Not all tests are the same!"; exit 1];
+    if[ any 1_differ Alltest; .qlog.error "Not all tests are the same!"; exit 1];
     {[t]
       .qlog.info "Executing test ", string t;
-      ddisks: distinct disks;
-      sS: getKBRead[ddisks]; sT: .z.n;
-      @[; (t; ::)] peach workers;
-      eT: .z.n; eS: getKBRead[ddisks];
+      ddevices: distinct Decives;
+      sS: getKBRead[ddevices]; sT: .z.n;
+      @[; (t; ::)] peach Workers;
+      eT: .z.n; eS: getKBRead[ddevices];
       iostatH string[t], SEP, (SEP sv value fix[2; (eS-sS)%1000*tsToSec eT-sT]),"\n";
-      } each first[alltest] except exclusetests;
-    .qlog.info "All tests were executed. Sending exit message to workers.";
-    if[not `debug in argvk;
-      @[; "exit 0"; ::] each workers;
-      exit 0];
+      } each first[Alltest] except exclusetests;
+    .qlog.info "All tests were executed.";
+    if[not `debug in argvk; finish 0];
   ];
   }
 
@@ -49,12 +57,13 @@ handleToIP: (`int$())!()
   }
 .z.pc: {handleToIP:: handleToIP cut x}
 
-addWorker: {[port; disk; tests]
+addWorker: {[port; decive; tests]
   addr:handleToIP[.z.w],":",string port;
-  .qlog.info "adding tests from address ", addr, " using disk ", disk;
-  alltest,: enlist tests;
-  workers,: hsym `$addr;
-  disks,: enlist disk;
+  .qlog.info "adding tests from address ", addr, " using decive ", decive;
+  if[0=count Workers; Start:: .z.p];
+  Alltest,: enlist tests;
+  Workers,: hsym `$addr;
+  Decives,: enlist decive;
   }
 
 
