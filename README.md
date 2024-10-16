@@ -26,7 +26,7 @@ Multi-node client testing can be used to either test a single namespace solution
 
 ## Prerequisite
 
-The script assumes that [kdb+ is installed](https://code.kx.com/q/learn/install/). If the q binary is not on the path or `QHOME` differs from `$HOME/q` then you need to set `QHOME` in `config/kdbenv`.
+The script assumes that [kdb+ is installed](https://code.kx.com/q/learn/install/). If the q home differs from `$HOME/q` then you need to set `QHOME` in `config/kdbenv`.
 
 The script assumes that the following commands are available - see `Dockerfile` for more information
    * yq
@@ -139,7 +139,7 @@ $ ./multihost.sh $(nproc) full delete
 ```
 
 ### Running several tests with different process count
-If you are interested how the storage medium scales with the number of parallel requests, then you can run `runSeveral.sh`. It simply calls `mthread.sh` with different process numbers and does a log processing to generate a result CSV file. The results are saved in file `results/aggr_total.csv` but this can be overwritten by a command line parameter.
+If you are interested how the storage medium scales with the number of parallel requests, then you can run `runSeveral.sh`. It simply calls `mthread.sh` with different process numbers and does a log processing to generate a result CSV file. The results are saved in file `results/throughput_total.csv` but this can be overwritten by a command line parameter.
 
 
 ### Results
@@ -162,8 +162,8 @@ The bash script starts a controller kdb+ process that is responsible to start ea
 A docker image is available for nano on Gitlab and on nexus:
 
 ```bash
-$ docker pull registry.gitlab.com/kxdev/benchmarking/nano/nano:2.4.2
-$ docker pull ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.4.2
+$ docker pull registry.gitlab.com/kxdev/benchmarking/nano/nano:2.5.4
+$ docker pull ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.5.4
 ```
 
 The nano scripts are placed in the docker directory `/opt/kx/app` -see `Dockerfile`
@@ -180,8 +180,8 @@ By default `flush/directmount.sh` is selected as the flush script which requires
 Example usages:
 
 ```bash
-$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/$USER/nanodata:/data --privileged ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.5.1 4 full delete
-$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/storage1/nanodata:/data1 -v /mnt/storage2/nanodata:/data2 -v ${PWD}/partitions_2disks:/opt/kx/app/partitions:ro -e FLUSH=/opt/kx/app/flush/noflush.sh -e THREADNR=5 ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.5.1 4 full delete
+$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/$USER/nanodata:/data --privileged ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.5.4 4 full delete
+$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/storage1/nanodata:/data1 -v /mnt/storage2/nanodata:/data2 -v ${PWD}/partitions_2disks:/opt/kx/app/partitions:ro -e FLUSH=/opt/kx/app/flush/noflush.sh -e THREADNR=5 ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.5.4 4 full delete
 ```
 
 ## Technical Details
