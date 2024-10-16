@@ -27,8 +27,11 @@ msstring:{(string x)," ms"}
 getPartition: {first " " vs last system "df ", DB}
 
 // disk is looked up from partition by e.g. /sys/class/block/nvme0n1p1
-getDisk:{
+getDevice:{
   p: ssr[;"/dev/";""] getPartition[];
+  if[not (`$p) in key `$":/sys/class/block";
+    .qlog.warn "Unable to map partition ", p, " to a device";
+    :""];
   l:first system "readlink /sys/class/block/", p;
   "/dev",deltas[-2#l ss "/"] sublist l
   }

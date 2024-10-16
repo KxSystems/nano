@@ -5,14 +5,14 @@ system "l src/util.q";
 workerNr: system "s" // We assume that each worker has its own thread
 iostatH: hopen ":", argv `iostatfile
 
-Alltest:Workers:Disks: ();
+Alltest:Workers:Decives: ();
 
 iostatError: `kB_read`kB_wrtn!2#0Nj
 Start: 0Np
 
 getKBReadMac: {[x] iostatError}
-getKBReadLinux: {[disks]
-  iostatcmd: "iostat -dk -o JSON ", (" " sv disks), " 2>&1";
+getKBReadLinux: {[devices]
+  iostatcmd: "iostat -dk -o JSON ", (" " sv devices), " 2>&1";
   r: @[system; iostatcmd; .qlog.error];
   :$[0h ~ type r; [
   	iostats: @[; `disk] first @[; `statistics] first first first value flip value .j.k raze r;
@@ -38,10 +38,10 @@ executeTest: {[dontcare]
     if[ any 1_differ Alltest; .qlog.error "Not all tests are the same!"; exit 1];
     {[t]
       .qlog.info "Executing test ", string t;
-      ddisks: distinct Disks;
-      sS: getKBRead[ddisks]; sT: .z.n;
+      ddevices: distinct Decives;
+      sS: getKBRead[ddevices]; sT: .z.n;
       @[; (t; ::)] peach Workers;
-      eT: .z.n; eS: getKBRead[ddisks];
+      eT: .z.n; eS: getKBRead[ddevices];
       iostatH string[t], SEP, (SEP sv value fix[2; (eS-sS)%1000*tsToSec eT-sT]),"\n";
       } each first[Alltest] except exclusetests;
     .qlog.info "All tests were executed.";
@@ -57,13 +57,13 @@ handleToIP: (`int$())!()
   }
 .z.pc: {handleToIP:: handleToIP cut x}
 
-addWorker: {[port; disk; tests]
+addWorker: {[port; decive; tests]
   addr:handleToIP[.z.w],":",string port;
-  .qlog.info "adding tests from address ", addr, " using disk ", disk;
+  .qlog.info "adding tests from address ", addr, " using decive ", decive;
   if[0=count Workers; Start:: .z.p];
   Alltest,: enlist tests;
   Workers,: hsym `$addr;
-  Disks,: enlist disk;
+  Decives,: enlist decive;
   }
 
 
