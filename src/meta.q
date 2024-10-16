@@ -48,4 +48,7 @@ $[OBJSTORE;
   writeRes["read disk";".meta.get|mmap";"get"; N; count get fmmap; sT, eT; fix[4;1000 * tsToSec[eT-sT]%N];"ms\n"];
   }
 
-controller (`addWorker; system "p"; getDisk[]; getTests[`.meta]);
+@[controller; (`addWorker; system "p"; getDevice[]; getTests[`.meta]); 
+  {.qlog.error "Error sending meta tests to the controller: ", x; exit 1}]
+
+.qlog.info "Ready for test execution";
