@@ -7,7 +7,7 @@ output: hsym `$argv `output;
 
 
 results: raze {("ISS*FFSFF"; enlist "|") 0:x} each `$resfileprefix cross read0[`hostlist] ,\: ".psv";
-aggregate: select sum numproc, sum throughput, sum iostat_read_throughput, sum iostat_write_throughput, first unit
+aggregate: select sum numproc, sum throughput, sum iostat_read_throughput, sum iostat_write_throughput, sum iostat_readwrite_throughput, first unit
     by testtype, test, qexpression from results
 
 

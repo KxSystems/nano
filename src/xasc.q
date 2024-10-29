@@ -17,7 +17,6 @@ system "l src/common.q";
   writeRes["read write disk";".xasc.phash|add attribute";"@[; `sym; `p#]"; 1; count get KDBTBL; sT, eT; fix[2;getMBPerSec[count get KDBTBL; eT-sT]]; "MB/sec\n"];
   }
 
-@[controller; (`addWorker; system "p"; getDevice[]; getTests[`.xasc]); 
-  {.qlog.error "Error sending xasc tests to the controller: ", x; exit 1}]
+sendTests[controller;DB;`.xasc]
 
 .qlog.info "Ready for test execution";
