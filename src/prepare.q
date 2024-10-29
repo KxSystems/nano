@@ -89,19 +89,34 @@ if[ not OBJSTORE;
     do[N; .[ftinyAppend;();,; tinyVec]];
     system "sync ", DB, "/tinyAppend";
     eT: .z.n;
-    writeRes["write disk"; ".prepare.tinyAppend|open append tiny"; ".[;();,;", (" " sv string tinyVec), "]"; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
+    writeRes["write disk"; ".prepare.tinyAppend|open append tiny, sync once"; ".[;();,;", (" " sv string tinyVec), "]"; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
   };
 
   .prepare.tinyAppendToHandler: {[]
     .qlog.info "starting handler append tiny test";
     ftinyAppendFH: hsym `$DB, "/tinyAppendFH";
+    ftinyAppendFH set 0#tinyVec;
     H: hopen ftinyAppendFH;
     sT: .z.n;
     do[N; H tinyVec];
     system "sync ", DB, "/tinyAppendFH";
     eT: .z.n;
     hclose H;
-    writeRes["write disk"; ".prepare.tinyAppendToHandler|append tiny"; "H ", " " sv string tinyVec; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
+    writeRes["write disk"; ".prepare.tinyAppendToHandler|append tiny, sync once"; "H ", " " sv string tinyVec; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
+  };
+
+  .prepare.smallAppendToHandler: {[]
+    .qlog.info "starting handler append small test";
+    fsmallAppendFH: hsym `$DB, "/smallAppendFH";
+    fsmallAppendFH set 0#smallVec;
+    H: hopen fsmallAppendFH;
+    M: N div 10;
+    sT: .z.n;
+    do[M; H smallVec];
+    system "sync ", DB, "/smallAppendFH";
+    eT: .z.n;
+    hclose H;
+    writeRes["write disk"; ".prepare.smallAppendToHandler|append small, sync once"; "H til 16*k"; M; count smallVec; sT, eT; fix[2; getMBPerSec[M * count smallVec; eT-sT]]; "MB/sec\n"];
   };
 
   .prepare.tinyReplace: {[]
@@ -112,7 +127,7 @@ if[ not OBJSTORE;
     do[N; .[ftinyReplace;();:; tinyVec]];
     system "sync ", DB, "/tinyReplace";
     eT: .z.n;
-    writeRes["write disk"; ".prepare.tinyReplace|open replace tiny"; ".[;();:;", (" " sv string tinyVec), "]"; N; count tinyVec; sT, eT; fix[3; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
+    writeRes["write disk"; ".prepare.tinyReplace|open replace tiny, sync once"; ".[;();:;", (" " sv string tinyVec), "]"; N; count tinyVec; sT, eT; fix[3; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
   };
   ];
 
@@ -230,7 +245,7 @@ $[OBJSTORE; [
     do[chunkNr; .[fRandomRead;();,;smallVec]];
     system "sync ", 1_string fRandomRead;
     eT: .z.n;
-    writeRes["write disk";".prepare.appendSmall|open append small";".[;();,;til 16*k]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
+    writeRes["write disk";".prepare.appendSmall|open append small, sync once";".[;();,;til 16*k]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
   };
   .prepare.appendMidSym: {[]
     .qlog.info "creating files for xasc tests";
@@ -242,7 +257,7 @@ $[OBJSTORE; [
     do[chunkNr; .[fSymCol;();,;`sym$midSymVec]];
     system "sync ", 1_string fSymCol;
     eT: .z.n;
-    writeRes["write disk";".prepare.appendMidSym|open append mid sym";".[;();,;`sym$]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
+    writeRes["write disk";".prepare.appendMidSym|open append mid sym, sync once";".[;();,;`sym$]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
   };
   .prepare.makeTable: {[]
     .qlog.info "make ", (1_string KDBDB), " a normal kdb+ database (for e.g. xasc test)";
@@ -278,7 +293,6 @@ write:{[file]
 exitcustom: {[]
   if[OBJSTORE; hdel tmpdirH]};
 
-@[controller; (`addWorker; system "p"; getDevice[]; getTests[`.prepare]); 
-  {.qlog.error "Error sending prepare tests to the controller. Error: ", x; exit 1}]
+sendTests[controller;DB;`.prepare]
 
 .qlog.info "Ready for test execution";

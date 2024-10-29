@@ -16,7 +16,7 @@ if[ not `result in argvk;
   exit 8];
 
 resultH: hopen ":", argv `result;
-writeRes: {[testtype; test; qexpression; repeat; length; times; result; unit]
+ writeRes: {[testtype:`C; test:`C; qexpression:`C; repeat:`j; length:`j; times:`N; result:`C; unit:`C]
   resultH SEP sv (testtype; test; qexpression; string repeat; string length; string first times; string last times; result; unit);
   }
 
@@ -24,11 +24,20 @@ controller: `$"::",argv `controller;
 
 msstring:{(string x)," ms"}
 // df returns partition like /dev/nvme0n1p1
-getPartition: {first " " vs last system "df ", DB}
+getPartition: {[db:`C] first " " vs last system "df ", db}
 
-// disk is looked up from partition by e.g. /sys/class/block/nvme0n1p1
-getDevice:{
-  p: ssr[;"/dev/";""] getPartition[];
+getDeviceOSX:{
+  $[1 = count system "diskutil list|grep physical";
+    first[system "iostat -d"] except " "; [
+    .qlog.warm "multi-disk systems are not supported";
+    ""]]
+  }
+
+getDevice:{[db:`C]
+  if[.z.o=`m64;:getDeviceOSX[]];
+
+  p: ssr[;"/dev/";""] getPartition[db];
+  // disk is looked up from partition by e.g. /sys/class/block/nvme0n1p1
   if[not (`$p) in key `$":/sys/class/block";
     .qlog.warn "Unable to map partition ", p, " to a device";
     :""];
@@ -36,7 +45,7 @@ getDevice:{
   "/dev",deltas[-2#l ss "/"] sublist l
   }
 
-getTests: {[ns] .Q.dd[ns;] each except[; `] key ns}
+getTests: {[ns:`s] .Q.dd[ns;] each except[; `] key ns}
 
 fRead: hsym `$DB, fReadFileName: "/seqread"
 KDBDB: hsym `$DB, "/kdbdb"
@@ -58,6 +67,17 @@ N: `long$MODIFIER*50*1000
 
 processcount: string `$argv `processes
 processcount: "I"$processcount
+
+TASKSENDTIMEOUT:0D00:01
+sendTests:{[c:`s;db:`C;nm:`s]
+  .qlog.info "Sending tests to the controller";
+  s:.z.p;
+  while[not (::)~@[c; (`addWorker; system "p"; getDevice[db]; getTests[nm]); 
+      {.qlog.debug "Unable to send tests to the controller: ", x, ". Waiting a second before retry.";0b}];
+    if[.z.p > s+TASKSENDTIMEOUT; .qlog.error "Timeout sending tests to the controller"; exit 1];
+    system "sleep 1"];
+    .qlog.info "Tests were successfully sent to the controller";
+  }
 
 .z.exit: {
   .qlog.info "exiting worker";

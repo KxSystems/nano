@@ -31,10 +31,24 @@ if [ "$#" -eq "4" ]; then
   echo "Date is set to $4"
   DATE="$4"
 else
-	DATE=$(date +%m%d_%H%M)
+	DATE=$(date +%m%d_%H%M%S)
 fi
 
-REALDATE=$(date +%m%d_%H%M)
+CONTROLLERPORT=5100
+if nc -z 127.0.0.1 $CONTROLLERPORT 2>&1 > /dev/null; then
+  echo "Port $CONTROLLERPORT is used. Maybe leftover kdb+ processes are running. Cannot start the controller. Exiting."
+  exit 12
+fi
+
+WORKERBASEPORT=5500
+for i in $(seq $NUMPROCESSES); do
+  if nc -z  127.0.0.1 $((WORKERBASEPORT+i)); then
+    echo "Port $((WORKERBASEPORT+i)) is used. Maybe leftover kdb+ processes are running. Exiting."
+    exit 13
+  fi
+done
+
+
 HOST=$(uname -n)
 
 PARFILE="./partitions"
@@ -42,10 +56,10 @@ NUMSEGS=`wc -l $PARFILE | awk '{print $1}'`
 declare -a array
 array=(`cat $PARFILE`)
 
-RESDIR="${RESULTDIR}/${REALDATE}-${DATE}"
+RESDIR="${RESULTDIR}/${DATE}"
 mkdir -p ${RESDIR}
 echo "Results will be persisted in ${RESDIR}"
-CURRENTLOGDIR="${LOGDIR}/${REALDATE}-${DATE}"
+CURRENTLOGDIR="${LOGDIR}/${DATE}"
 mkdir -p ${CURRENTLOGDIR}
 
 RESFILEPREFIX=${RESDIR}/detailed-${HOST}-
@@ -90,23 +104,25 @@ yq -i ".dbize.RANDOMREADFILESIZEVALUE=$RANDOMREADFILESIZEVALUE" $CONFIG
 yq -i ".dbize.DBSIZE=\"$DBSIZE\"" $CONFIG
 yq -i ".system.os=\"$(uname)\"" $CONFIG
 yq -i ".system.cpunr=$CORECOUNT" ${CONFIG}
-yq -i ".system.memsize=\"$(grep MemTotal /proc/meminfo |tr -s ' ' | cut -d ' ' -f 2,3)\"" ${CONFIG}
+yq -i ".system.memsizeGB=$($QBIN -q <<<'.Q.w[][`mphy] div 1024 * 1024 * 1024')" ${CONFIG}
 
-CONTROLLERPORT=6000
-WORKERBASEPORT=6500
 
 # important that this it outside this loop with "q prepare", as first time after a mount as the
 # fs may take a long time to start (S3 sync) and we want the wrtte processes to run in parallel
 j=0
-for i in `seq $NUMPROCESSES`; do
+for i in $(seq $NUMPROCESSES); do
   if notObjStore ${array[$j]}; then
+    if [ -d ${array[$j]}/${HOST}.${i} ]; then
+      echo "${array[$j]}/${HOST}.${i} directory already exists. Please remove it and rerun."
+      exit 7
+    fi
 	  mkdir -p ${array[$j]}/${HOST}.${i}/${DATE}
   fi
   echo "testtype|testid|test|qexpression|repeat|length|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
 	j=$(( ($j + 1) % $NUMSEGS ))
 done
 
-echo "testid|iostat_read_throughput|iostat_write_throughput|" > ${IOSTATFILE}
+echo "testid|iostat_read_throughput|iostat_write_throughput|iostat_readwrite_throughput" > ${IOSTATFILE}
 
 if [ "$SCOPE" = "full" ]; then
   ######### WRITE TEST #########
@@ -122,7 +138,7 @@ if [ "$SCOPE" = "full" ]; then
 
   ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_prepare.log 2 >&1 &
   j=0
-  for i in `seq $NUMPROCESSES`; do
+  for i in $(seq $NUMPROCESSES); do
   	${QBIN} ./src/prepare.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -q -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_prepare.log 2 >&1 &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
@@ -145,7 +161,7 @@ touch ${CURRENTLOGDIR}/sync-$HOST
 
 ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_read.log 2 >&1 &
 j=0
-for i in `seq $NUMPROCESSES`; do
+for i in $(seq $NUMPROCESSES); do
 	${QBIN} ./src/read.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_read.log 2>&1 &
   j=$(( ($j + 1) % $NUMSEGS ))
 done
@@ -166,7 +182,7 @@ echo "STARTING SEQUENTIAL RE-READ (CACHE) TEST"
 touch ${CURRENTLOGDIR}/sync-$HOST
 ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_reread.log 2 >&1 &
 j=0
-for i in `seq $NUMPROCESSES`; do
+for i in $(seq $NUMPROCESSES); do
 	${QBIN} ./src/reread.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_reread.log 2>&1  &
   j=$(( ($j + 1) % $NUMSEGS ))
 done
@@ -186,7 +202,7 @@ if [ "$SCOPE" = "full" ]; then
   touch ${CURRENTLOGDIR}/sync-$HOST
   ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_meta.log 2 >&1 &
   j=0
-  for i in `seq $NUMPROCESSES`; do
+  for i in $(seq $NUMPROCESSES); do
   	${QBIN} ./src/meta.q -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_meta.log 2>&1  &
     j=$(( ($j + 1) % $NUMSEGS ))
   done
@@ -207,7 +223,7 @@ function runrandomread {
   ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller_randomread_$listsize.log 2 >&1 &
   j=0
   sleep 5
-  for i in `seq $NUMPROCESSES`; do
+  for i in $(seq $NUMPROCESSES); do
   	${QBIN} ./src/randomread.q -testname randomread -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read disk" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i}_randomread_$listsize.log 2>&1  &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
@@ -215,7 +231,7 @@ function runrandomread {
 
   ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller_randomreread_$listsize.log 2 >&1 &
   j=0
-  for i in `seq $NUMPROCESSES`; do
+  for i in $(seq $NUMPROCESSES); do
   	${QBIN} ./src/randomread.q -testname randomreread -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read mem" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i}_randomreread_$listsize.log 2>&1  &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
@@ -244,7 +260,7 @@ touch ${CURRENTLOGDIR}/sync-$HOST
 
 ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
 j=0
-for i in `seq $NUMPROCESSES`; do
+for i in $(seq $NUMPROCESSES); do
 	${QBIN} ./src/xasc.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i} 2>&1 &
   j=$(( ($j + 1) % $NUMSEGS ))
 done
@@ -263,9 +279,10 @@ sleep 5
 if [ "$3" = "delete" ]; then
 	echo "cleaning up DB..."
 	j=0
-	for i in `seq $NUMPROCESSES`; do
+	for i in $(seq $NUMPROCESSES); do
     if notObjStore ${array[$j]}; then
 		  rm -rf ${array[$j]}/${HOST}.${i}/${DATE}
+      rmdir ${array[$j]}/${HOST}.${i}
     else
       if [[ ${array[$j]} == s3://* ]]; then
         aws s3 rm ${array[$j]}/${HOST}.${i}/${DATE} --recursive
