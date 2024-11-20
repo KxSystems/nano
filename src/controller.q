@@ -18,16 +18,12 @@ getKBReadMac: {[devices]
   @[iostatError;`kB_sum;:;1000*`long$"F"$l last where not "" ~/: l:" " vs last r]
   }
 
-getKBReadLinux: {[devices]
-  iostatcmd: "iostat -dk -o JSON ", (" " sv devices), " 2>&1";
-  r: @[system; iostatcmd; .qlog.error];
-  :$[0h ~ type r; [
-  	iostats: @[; `disk] first @[; `statistics] first first first value flip value .j.k raze r;
-  	$[count iostats; [m:exec `long$sum kB_read, `long$sum kB_wrtn from iostats;m,([kB_sum: sum m])]; iostatError]];
-	iostatError]
-  }
+Alltest:Workers:Decives: ();
 
-getKBRead: $[.z.o ~ `m64; getKBReadMac; getKBReadLinux]
+iostatError: `kB_read`kB_wrtn!2#0Nj
+Start: 0Np
+
+getKBReadMac: {[x] iostatError}
 
 finish: {[x:`j]
   .qlog.info "Sending exit message to workers";

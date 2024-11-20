@@ -106,7 +106,6 @@ yq -i ".system.os=\"$(uname)\"" $CONFIG
 yq -i ".system.cpunr=$CORECOUNT" ${CONFIG}
 yq -i ".system.memsizeGB=$($QBIN -q <<<'.Q.w[][`mphy] div 1024 * 1024 * 1024')" ${CONFIG}
 
-
 # important that this it outside this loop with "q prepare", as first time after a mount as the
 # fs may take a long time to start (S3 sync) and we want the wrtte processes to run in parallel
 j=0
