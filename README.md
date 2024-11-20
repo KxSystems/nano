@@ -26,11 +26,14 @@ Multi-node client testing can be used to either test a single namespace solution
 
 ## Prerequisite
 
-The script assumes that [kdb+ is installed](https://code.kx.com/q/learn/install/). If the q home differs from `$HOME/q` then you need to set `QHOME` in `config/kdbenv`.
+Please [install kdb+ 4.1](https://code.kx.com/q/learn/install/). If the q home differs from `$HOME/q` then you need to set `QHOME` in `config/kdbenv`.
 
 The script assumes that the following commands are available - see `Dockerfile` for more information
    * yq
    * iostat
+   * nc
+
+The scripts starts several kdb+ processes that open a port for incoming messages. By default, the controller opens port 5100 and the workers open 5500, 5501, 5502, etc. You can change these ports by editing variables CONTROLLERPORT and WORKERBASEPORT in `mthread.sh`.
 
 ## Installing and configuring
 
@@ -162,8 +165,8 @@ The bash script starts a controller kdb+ process that is responsible to start ea
 A docker image is available for nano on Gitlab and on nexus:
 
 ```bash
-$ docker pull registry.gitlab.com/kxdev/benchmarking/nano/nano:2.5.4
-$ docker pull ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.5.4
+$ docker pull registry.gitlab.com/kxdev/benchmarking/nano/nano:2.6.0
+$ docker pull ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.6.0
 ```
 
 The nano scripts are placed in the docker directory `/opt/kx/app` -see `Dockerfile`
@@ -180,8 +183,8 @@ By default `flush/directmount.sh` is selected as the flush script which requires
 Example usages:
 
 ```bash
-$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/$USER/nanodata:/data --privileged ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.5.4 4 full delete
-$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/storage1/nanodata:/data1 -v /mnt/storage2/nanodata:/data2 -v ${PWD}/partitions_2disks:/opt/kx/app/partitions:ro -e FLUSH=/opt/kx/app/flush/noflush.sh -e THREADNR=5 ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.5.4 4 full delete
+$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/$USER/nanodata:/data --privileged ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.6.0 4 full delete
+$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/storage1/nanodata:/data1 -v /mnt/storage2/nanodata:/data2 -v ${PWD}/partitions_2disks:/opt/kx/app/partitions:ro -e FLUSH=/opt/kx/app/flush/noflush.sh -e THREADNR=5 ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.6.0 4 full delete
 ```
 
 ## Technical Details

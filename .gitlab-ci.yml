@@ -20,7 +20,8 @@ stages:
     - mkdir -p $HOME/.docker && echo $DOCKER_AUTH_CONFIG > $HOME/.docker/config.json
     - echo ${INT_NEXUS_PASS_RW} | docker login ${INSIGHTS_DEV_NEXUS_REGISTRY} -u ${INT_NEXUS_USER_RW} --password-stdin
   script:
-    - wget https://${INT_NEXUS_USER_RO}:${INT_NEXUS_PASS_RO}@ext-nexus.kxi-dev.kx.com/repository/kx-insights-packages/kdbInsightsCore/0.41.1/kdb-insights-core.tar
+    - INSIGHTSVER=4.1.6
+    - wget https://${INT_NEXUS_USER_RO}:${INT_NEXUS_PASS_RO}@ext-nexus.kxi-dev.kx.com/repository/kx-insights-packages/kdbInsightsCore/${INSIGHTSVER}-rc1/kdb-insights-core.tar
     - docker load < kdb-insights-core.tar
     - wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
     - chmod a+x /usr/local/bin/yq
@@ -28,6 +29,7 @@ stages:
     - docker build -t "${IMAGE_URL}" .
     - docker push "${IMAGE_URL}"
     - docker rmi "${IMAGE_URL}"
+    - docker rmi kdb-insights-core:${INSIGHTSVER}
     - echo "IMAGE_URL=${IMAGE_URL}" > img.env
 
 docker-buildpub-push:

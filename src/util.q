@@ -24,4 +24,4 @@ fix:{.Q.fmt[x+1+count string floor y; x; y]}'
 
 // @desc gets Mbyte/sec from list length and elapsed time
 //
-getMBPerSec:{[length; elapsed] SIZEOFLONG*length*1000%`long$elapsed}  / Same as SIZEOFLONG*length%M*tsToSec elapsed
+getMBPerSec:{[length:`j; elapsed:`n] SIZEOFLONG*length*1000%`long$elapsed}  / Same as SIZEOFLONG*length%M*tsToSec elapsed

@@ -5,24 +5,27 @@ system "l src/util.q";
 workerNr: system "s" // We assume that each worker has its own thread
 iostatH: hopen ":", argv `iostatfile
 
+Alltest:Workers:Devices: ();
+
+iostatError: `kB_read`kB_wrtn`kB_sum!3#0Nj
+Start: 0Np
+
+getKBReadMac: {[devices] 
+  if[devices ~ enlist ""; :iostatError];
+  iostatcmd: "iostat -d -I ", (" " sv devices), " 2>&1"; // -I returns the MB read as last column
+  r: @[system; iostatcmd; .qlog.error];
+  if[not 0h ~ type r; :iostatError];
+  @[iostatError;`kB_sum;:;1000*`long$"F"$l last where not "" ~/: l:" " vs last r]
+  }
+
 Alltest:Workers:Decives: ();
 
 iostatError: `kB_read`kB_wrtn!2#0Nj
 Start: 0Np
 
 getKBReadMac: {[x] iostatError}
-getKBReadLinux: {[devices]
-  iostatcmd: "iostat -dk -o JSON ", (" " sv devices), " 2>&1";
-  r: @[system; iostatcmd; .qlog.error];
-  :$[0h ~ type r; [
-  	iostats: @[; `disk] first @[; `statistics] first first first value flip value .j.k raze r;
-  	$[count iostats; exec `long$sum kB_read, `long$sum kB_wrtn from iostats; iostatError]];
-	iostatError]
-  }
 
-getKBRead: $[.z.o ~ `m64; getKBReadMac; getKBReadLinux]
-
-finish: {[x]
+finish: {[x:`j]
   .qlog.info "Sending exit message to workers";
   @[; "exit 0"; ::] each Workers;
   exit x
@@ -38,7 +41,7 @@ executeTest: {[dontcare]
     if[ any 1_differ Alltest; .qlog.error "Not all tests are the same!"; exit 1];
     {[t]
       .qlog.info "Executing test ", string t;
-      ddevices: distinct Decives;
+      ddevices: distinct Devices;
       sS: getKBRead[ddevices]; sT: .z.n;
       @[; (t; ::)] peach Workers;
       eT: .z.n; eS: getKBRead[ddevices];
@@ -57,13 +60,13 @@ handleToIP: (`int$())!()
   }
 .z.pc: {handleToIP:: handleToIP cut x}
 
-addWorker: {[port; decive; tests]
+addWorker: {[port:`i; device:`C; tests:`S]
   addr:handleToIP[.z.w],":",string port;
-  .qlog.info "adding tests from address ", addr, " using decive ", decive;
+  .qlog.info "adding tests from address ", addr, " using device ", device;
   if[0=count Workers; Start:: .z.p];
   Alltest,: enlist tests;
   Workers,: hsym `$addr;
-  Decives,: enlist decive;
+  Devices,: enlist device;
   }
 
 

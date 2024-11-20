@@ -16,7 +16,7 @@ totalreadInB: `long$MODIFIER * SIZEOFLONG * 100*1000*1000;
 .qlog.info "Reading altogether ", string[totalreadInB], " bytes of data";
 sizeM: (4000 64000 1000000 div SIZEOFLONG)!("4k"; "64k"; "1M");  // good enough for now
 
-randomread:{[blocksize]
+randomread:{[blocksize:`j]
   blockNr: totalreadInB div blocksize;
   blockLength: blocksize div SIZEOFLONG;
   .qlog.info "Indexing ", string[blockNr], " number of continuous blocks of size ", string blocksize;
@@ -27,11 +27,11 @@ randomread:{[blocksize]
     sT:.z.n;
     idxBase {[f;idxBase;offset] f offset+idxBase;}[f]/: offsets;
     eT: .z.n;
-    writeRes[ argv[`testtype];".randomread.", argv[`testname],"|random read ",sizeM[blockLength];"+,@"; count offsets; blockLength; sT, eT; fix[2;getMBPerSec[blockLength*count offsets; eT-sT]];"MB/sec\n"]
+    writeRes[argv[`testtype];".randomread.", argv[`testname],"|random read ",sizeM[blockLength];"+,@"; count offsets; blockLength; sT, eT; fix[2;getMBPerSec[blockLength*count offsets; eT-sT]];"MB/sec\n"]
     }[f; offsets; blockLength]
   };
 
-randomreadwithmmap:{[blocksize]
+randomreadwithmmap:{[blocksize:`j]
   blockNr: totalreadInB div blocksize;
   blockLength: blocksize div SIZEOFLONG;
   .qlog.info "Indexing ", string[blockNr], " number of continuous blocks of size ", string blocksize;
@@ -46,9 +46,8 @@ randomreadwithmmap:{[blocksize]
   };
 
 fn: $[`withmmap in argvk; randomreadwithmmap; randomread]
-.Q.dd[`.randomread; `$argv[`testname]] set fn "I"$argv `listsize;
+.Q.dd[`.randomread; `$argv[`testname]] set fn "J"$argv `listsize;
 
-@[controller; (`addWorker; system "p"; getDevice[]; getTests[`.randomread]); 
-  {.qlog.error "Error sending randomread tests to the controller: ", x; exit 1}]
+sendTests[controller;DB;`.randomread]
 
 .qlog.info "Ready for test execution";

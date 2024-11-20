@@ -17,7 +17,6 @@ system "l src/common.q";
   writeRes["read mem";".reread.readbinary|sequential read binary";"read1"; 1; hcount fReadBinary; sT, eT; fix[2;getMBPerSec[div[; 8] -16+hcount fReadBinary; eT-sT]]; "MB/sec\n"];
   }
 
-@[controller; (`addWorker; system "p"; getDevice[]; getTests[`.reread]); 
-  {.qlog.error "Error sending reread tests to the controller: ", x; exit 1}]
+sendTests[controller;DB;`.reread]
 
 .qlog.info "Ready for test execution";

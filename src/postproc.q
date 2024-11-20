@@ -12,7 +12,7 @@ outlatency: hsym `$outputprefix,"latency.psv"
 results: raze {("SSS*IJNNFS"; enlist "|") 0:x} each `$resfileprefix cross string[1+til nproc] ,\: ".psv";
 throughput: select numproc: count result, accuracy: 5 sublist string 100*1- (max[starttime] - min starttime) % avg endtime-starttime, throughput: sum result, first unit by testid, testtype, test, qexpression from results where not unit = `ms;
 latency: select numproc: count result, accuracy: 5 sublist string 100*1- (max[starttime] - min starttime) % avg endtime-starttime, avgLatency: avg result, maxLatency: max result, first unit by testid, testtype, test, qexpression from results where unit = `ms;
-iostat: ("SFF"; enlist "|") 0: `$iostatfile;
+iostat: ("SFFF"; enlist "|") 0: `$iostatfile;
 
 outthroughput 0: "|" 0: `numproc xcols delete testid from 0!throughput lj `testid xkey iostat;
 outlatency 0: "|" 0: `numproc xcols delete testid from 0!latency;

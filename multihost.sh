@@ -16,9 +16,10 @@ fi
 
 NUMPROCESSES=$1
 HERE=$(pwd)
-DATE=$(date +%m%d_%H%M)
 
-RESDIR="./results/${DATE}-${DATE}"
+DATE=$(date +%m%d_%H%M%S)
+
+RESDIR="./results/${DATE}"
 for HOST in $(cat hostlist); do
 	echo $HOST
 	ssh $HOST "cd ${HERE}; source ./config/kdbenv;source ./config/env;./mthread.sh ${NUMPROCESSES} $2 $3 ${DATE}" &
