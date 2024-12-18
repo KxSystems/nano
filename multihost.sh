@@ -16,7 +16,6 @@ fi
 
 NUMPROCESSES=$1
 HERE=$(pwd)
-
 DATE=$(date +%m%d_%H%M%S)
 
 RESDIR="./results/${DATE}"
