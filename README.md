@@ -217,14 +217,11 @@ We detail each test in the next section.
       1. `open append tiny`: appending four integers to the end of list (this operation includes opening and closing a file): `[; (); ,; 2 3 5 7]`
       1. `append tiny`: appending four integers to a handle of a kdb+ file: `H: hopen ...; H 2 3 5 7`
       1. `open replace tiny`: overwriting file content with two integers: `[; (); :; 42 7]`
-   1. `create list`: creates a list in memory (function `til`), i.e. allocating memory and filling it with consecutive longs. The length of the list depends on the memory you would like to allocate. You can either set this explicitly by variables `MEMUSAGETYPE` and `MEMUSAGEVALUE` or let it be automatic. The automation uses
-      1. available memory
-      1. percentage of memory to use (variable `MEMUSAGEVALUE`, default 60% -see `MEMUSAGERATEDEFAULT`) and
-      1. the process count.
+   1. `create list`: creates a list in memory (function `til`), i.e. allocating memory and filling it with consecutive longs. The length of the list depends is set by `SEQWRITETESTLIMIT`.
    1. `write rate`: writes the list (`set`) to file `readtest`.
    1. `sync rate`: calling system command `sync` on `readtest`.
-   1. `open append small`: appends a block of 16k many times to a file. The result file is a column of a splayed table and is used in random read test.
-   1. `open append mid sym`: appends a block of 4M symbols many times to a file. The result file is the `sym` column of a splayed table used in the `xasc` test.
+   1. `open append small`: appends a block of 16k many times to a file.
+   1. `open append mid sym`: appends a block of 32M symbols many times to a file. The result file is the `sym` column of a splayed table used in the `xasc` test.
    1. saves files for meta test:
       1. two long lists of length 16 k (size 128 k)
       1. a long list of length 4 M (size 32 M)

@@ -50,9 +50,10 @@ getTests: {[ns:`s] .Q.dd[ns;] each except[; `] key ns}
 fRead: hsym `$DB, fReadFileName: "/seqread"
 KDBDB: hsym `$DB, "/kdbdb"
 KDBTBL: .Q.dd[KDBDB; `tbl]
-fRandomRead: .Q.dd[KDBTBL; `randomread]
 fSymCol: .Q.dd[KDBTBL; `sym]
+fFloatCol: .Q.dd[KDBTBL; `floatcol]
 
+fRandomRead: hsym `$DB, "/randomread"
 fOpenClose: hsym `$DB, fOpenCloseFileName: "/openclose"
 fhcount: hsym `$DB, fHCountFileName: "/fhcount"
 fReadBinary: hsym `$DB, fHReadBinaryFileName: "/readbinary"

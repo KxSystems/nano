@@ -60,16 +60,13 @@ docker-builddev-push:
   needs:
     - job: docker-builddev-push
   variables:
-    DBSIZE: tiny
     APPDIR: /opt/kx/app
-    FLUSH: ${APPDIR}/flush/directmount.sh
     QLIC: /tmp/qlic
-    RESULTDIR: ${APPDIR}/results
-    LOGDIR: ${APPDIR}/logs
   before_script:
     - mkdir -p "$QLIC"
     - echo -n "$KDB_LICENSE_B64" | base64 -d > "$QLIC/kc.lic"
     - cd ${APPDIR}
+    - source ./config/env
   rules:
     - if: '$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
 
@@ -78,7 +75,7 @@ mthread-single:
     - .mthread
   script:
     - echo "${APPDIR}/data" > ./partitions
-    - ./mthread.sh 1 full delete
+    - DBSIZE=TINY ./mthread.sh 1 full delete
 
 mthread-multi:
   extends:
@@ -86,4 +83,4 @@ mthread-multi:
   script:
     - echo "${APPDIR}/data0" > ./partitions
     - echo "${APPDIR}/data1" >> ./partitions
-    - ./mthread.sh 3 full delete
+    - DBSIZE=TINY ./mthread.sh 3 full delete
