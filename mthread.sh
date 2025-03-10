@@ -97,23 +97,14 @@ yq -i ".env.DBDIR=\"$(cat $PARFILE)\"" $CONFIG
 yq -i ".nano.VERSION=\"$(yq '.dev' version.yaml)\"" $CONFIG
 yq -i ".kdb.MAJOR=$($QBIN -q  <<< ".z.K" | tr -d f)" $CONFIG
 yq -i ".kdb.MINOR=\"$($QBIN -q  <<< ".z.k")\"" $CONFIG
-yq -i ".kdb.QBIN=\"$QBIN\"" $CONFIG
-yq -i ".dbize.SEQWRITETESTLIMIT=$SEQWRITETESTLIMIT" $CONFIG
-yq -i ".dbize.RANDREADNUMBER=$RANDREADNUMBER" $CONFIG
-yq -i ".dbize.RANDREADFILESIZE=$RANDREADFILESIZE" $CONFIG
+yq -i ".dbize.MEMUSAGETYPE=\"$MEMUSAGETYPE\"" $CONFIG
+yq -i ".dbize.MEMUSAGEVALUE=$MEMUSAGEVALUE" $CONFIG
+yq -i ".dbize.RANDOMREADFILESIZETYPE=\"$RANDOMREADFILESIZETYPE\"" $CONFIG
+yq -i ".dbize.RANDOMREADFILESIZEVALUE=$RANDOMREADFILESIZEVALUE" $CONFIG
 yq -i ".dbize.DBSIZE=\"$DBSIZE\"" $CONFIG
 yq -i ".system.os=\"$(uname)\"" $CONFIG
-yq -i ".system.cpunr=$CORECOUNT" $CONFIG
-yq -i ".system.memsizeGB=$($QBIN -q <<<'.Q.w[][`mphy] div 1024 * 1024 * 1024')" $CONFIG
-
-if [ $(uname -s) = "Linux" ]; then
-  lscpu > ${RESDIR}/lscpu.out
-  ${SUDO} dmidecode -t memory > ${RESDIR}/dmidecode.out
-  if [ command -v numactl 2>&1 >/dev/null ]; then
-    numactl --hardware > ${RESDIR}/numactl.out
-  fi
-fi
-
+yq -i ".system.cpunr=$CORECOUNT" ${CONFIG}
+yq -i ".system.memsizeGB=$($QBIN -q <<<'.Q.w[][`mphy] div 1024 * 1024 * 1024')" ${CONFIG}
 
 
 # important that this it outside this loop with "q prepare", as first time after a mount as the
@@ -267,10 +258,10 @@ echo "STARTING XASC"
 ${FLUSH}
 touch ${CURRENTLOGDIR}/sync-$HOST
 
-${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller_xasc.log 2 >&1 &
+${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller 2 >&1 &
 j=0
 for i in $(seq $NUMPROCESSES); do
-	${QBIN} ./src/xasc.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i}_xasc.log 2>&1 &
+	${QBIN} ./src/xasc.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i} 2>&1 &
   j=$(( ($j + 1) % $NUMSEGS ))
 done
 wait -n

@@ -1,5 +1,3 @@
-results
-logs
-config
-qpbuild
-partitions
+results/**
+logs/**
+qpbuild/**

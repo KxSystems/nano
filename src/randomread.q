@@ -12,17 +12,16 @@ if[0=count .z.x;STDOUT">q ",(string .z.f)," -listsize N [-withmmap] -db DBDIR -r
 
 
 k64: 64*k
-totalreadInB: `long$MODIFIER * SIZEOFLONG * "J"$getenv `RANDREADNUMBER;
+totalreadInB: `long$MODIFIER * SIZEOFLONG * 100*1000*1000;
 .qlog.info "Reading altogether ", string[totalreadInB], " bytes of data";
 sizeM: (4000 64000 1000000 div SIZEOFLONG)!("4k"; "64k"; "1M");  // good enough for now
-pageLength: 4096 div SIZEOFLONG / the page size is 4k in Linux
 
 randomread:{[blocksize:`j]
   blockNr: totalreadInB div blocksize;
   blockLength: blocksize div SIZEOFLONG;
   .qlog.info "Indexing ", string[blockNr], " number of continuous blocks of size ", string blocksize;
   f:get fRandomRead;
-  offsets: pageLength*neg[blockNr]?(neg[blockLength]+count f) div pageLength;
+  offsets: blockNr?neg[blockLength]+count f;
   :{[f; offsets; blockLength; dontcare]
     idxBase: til blockLength;
     sT:.z.n;
@@ -36,7 +35,7 @@ randomreadwithmmap:{[blocksize:`j]
   blockNr: totalreadInB div blocksize;
   blockLength: blocksize div SIZEOFLONG;
   .qlog.info "Indexing ", string[blockNr], " number of continuous blocks of size ", string blocksize;
-  offsets: pageLength*neg[blockNr]?(neg[blockLength]+(-14+hcount fRandomRead)div SIZEOFLONG) div pageLength;  // 14 bytes overhead
+  offsets: blockNr?neg[blockLength]+(-14+hcount fRandomRead)div SIZEOFLONG;  // 14 bytes overhead
   :{[offsets; blockLength; dontcare]
     idxBase: til blockLength;
     sT:.z.n;

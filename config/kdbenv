@@ -1,13 +1,12 @@
 export QHOME=$HOME/q     # SET QHOME MANUALLY
 
 
-if [ $(uname -s) = "Darwin" ]; then
+if [ `uname -s` = "Darwin" ]; then
   QSUBDIR=m64
 else
   QSUBDIR=l64
 fi
 
 export QBIN="$QHOME/$QSUBDIR/q"
-#export QBIN="numactl -N 0 -m 0 $QHOME/$QSUBDIR/q"
 echo "QBIN is set to $QBIN"
 

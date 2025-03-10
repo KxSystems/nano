@@ -7,11 +7,8 @@ export THREADNR=1
 export FLUSH=./flush/directmount.sh
 
 # tests that wont be executed
-# whitespace separated list like
-# export EXCLUDETESTS=".xasc.xasc .xasc.phash"
-export EXCLUDETESTS=""
-
-export SUDO=""  # or "sudo" if sudo is required for some commands e.g. to flush page cache
+# whitespace separated list
+export EXCLUDETESTS=".xasc.xasc .xasc.phash"
 
 ##############
 # Settings for object storage
@@ -35,18 +32,14 @@ export SYMNR=10000
 export RESULTDIR="./results"
 export LOGDIR="./logs"
 
-# Data size for the sequential read/write tests. By default 30% of the physical memory is used.
-# Testing with unnecessary large vectors just prolongs the test execution without adding value, 
-# so a size limit is applied.
-export SEQWRITETESTLIMIT=$((8*1024*1024*1024)) # 8 GB
+# Memory used for the sequential read/write tests. This determines the size of the vector created in memory.
+# You can specify an absolute value in MB or the ratio to the physical memory size.
+export MEMUSAGETYPE=ratio    # Either ratio or abs
+export MEMUSAGEVALUE=0.6     # ratio to the physical memory
 
-# Data size for xasc test.
-export SORTFILESIZE=$((16*1024*1024*1024)) # 16 GB
-
-# For the random read, we create a file of size RANDREADFILESIZE
-# then random read altogether RANDREADAMOUNT amount of data.
-export RANDREADNUMBER=$((100*1024*1024)) #reading 100 million items
-export RANDREADFILESIZE=$((4000*1024*1024)) # persisting 8 billion items
+# Disk space used for the mid append and randome read tests.
+export RANDOMREADFILESIZETYPE=ratio
+export RANDOMREADFILESIZEVALUE=2
 
 
 # Mainly for testing, you can generate small or tiny data
