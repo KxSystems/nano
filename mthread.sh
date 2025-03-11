@@ -109,7 +109,7 @@ yq -i ".system.memsizeGB=$($QBIN -q <<<'.Q.w[][`mphy] div 1024 * 1024 * 1024')" 
 if [ $(uname -s) = "Linux" ]; then
   lscpu > ${RESDIR}/lscpu.out
   ${SUDO} dmidecode -t memory > ${RESDIR}/dmidecode.out
-  if [ command -v numactl 2>&1 >/dev/null ]; then
+  if command -v numactl 2>&1 >/dev/null; then
     numactl --hardware > ${RESDIR}/numactl.out
   fi
 fi
