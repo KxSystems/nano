@@ -83,6 +83,12 @@ if [[ $(uname) == "Linux" ]]; then
     COREPERSOCKET=$(lscpu | grep "Core(s) per socket" | cut -d":" -f 2 |xargs)
     SOCKETNR=$(lscpu | grep "Socket(s)" | cut -d":" -f 2 |xargs)
     CPUMOODEL=$(lscpu | grep "Model name" | cut -d":" -f 2 |xargs)
+
+    lscpu > ${RESDIR}/lscpu.out
+    ${SUDO} dmidecode -t memory > ${RESDIR}/dmidecode.out
+    if command -v numactl 2>&1 >/dev/null; then
+      numactl --hardware > ${RESDIR}/numactl.out
+    fi
 else
     COREPERSOCKET=$(sysctl -n hw.ncpu)
     SOCKETNR=1
@@ -112,15 +118,6 @@ yq -i ".system.cpu.model=\"$CPUMOODEL\"" $CONFIG
 yq -i ".system.cpu.corepersocket=$COREPERSOCKET" $CONFIG
 yq -i ".system.cpu.socketnr=$SOCKETNR" $CONFIG
 yq -i ".system.memsizeGB=$($QBIN -q <<<'.Q.w[][`mphy] div 1024 * 1024 * 1024')" $CONFIG
-
-if [ $(uname -s) = "Linux" ]; then
-  lscpu > ${RESDIR}/lscpu.out
-  ${SUDO} dmidecode -t memory > ${RESDIR}/dmidecode.out
-  if command -v numactl 2>&1 >/dev/null; then
-    numactl --hardware > ${RESDIR}/numactl.out
-  fi
-fi
-
 
 
 # important that this it outside this loop with "q prepare", as first time after a mount as the
