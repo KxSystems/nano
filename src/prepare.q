@@ -243,7 +243,7 @@ $[OBJSTORE; [
     .qlog.info "creating files for random read test";
     .qlog.info "starting append small test";
     chunkSize: count smallVec;
-    chunkNr: `long$disksize % SIZEOFLONG * chunkSize * processcount;
+    chunkNr: `long$disksize % SIZEOFLONG * chunkSize * 1+2 xlog processcount;
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
     do[chunkNr; .[fRandomRead;();,;smallVec]];
@@ -255,7 +255,7 @@ $[OBJSTORE; [
     .qlog.info "creating files for xasc tests";
     .qlog.info "starting append mid sym vector test";
     chunkSize: count midSymVec;
-    chunkNr: `long$TBLSIZE % SIZEOFLONG * chunkSize * processcount; // enumerated symbols are stored as longs
+    chunkNr: `long$TBLSIZE % SIZEOFLONG * chunkSize * 1+2 xlog processcount; // enumerated symbols are stored as longs
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
     do[chunkNr; .[fSymCol;();,;`sym$midSymVec]];
@@ -267,7 +267,7 @@ $[OBJSTORE; [
     .qlog.info "creating files for xasc tests";
     .qlog.info "starting append mid sym vector test";
     chunkSize: count midSymVec;
-    chunkNr: `long$TBLSIZE % SIZEOFLONG * chunkSize * processcount; // enumerated symbols are stored as longs
+    chunkNr: `long$TBLSIZE % SIZEOFLONG * chunkSize * 1+2 xlog processcount; // enumerated symbols are stored as longs
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
     do[chunkNr; .[fFloatCol;();,;midFloatVec]];

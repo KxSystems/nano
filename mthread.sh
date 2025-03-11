@@ -80,10 +80,15 @@ function notObjStore {
 }
 
 if [[ $(uname) == "Linux" ]]; then
-    CORECOUNT=$(nproc)
+    COREPERSOCKET=$(lscpu | grep "Core(s) per socket" | cut -d":" -f 2 |xargs)
+    SOCKETNR=$(lscpu | grep "Socket(s)" | cut -d":" -f 2 |xargs)
+    CPUMOODEL=$(lscpu | grep "Model name" | cut -d":" -f 2 |xargs)
 else
-    CORECOUNT=$(sysctl -n hw.ncpu)
+    COREPERSOCKET=$(sysctl -n hw.ncpu)
+    SOCKETNR=1
+    CPUMOODEL=$(sysctl -n machdep.cpu.brand_string)
 fi
+CORECOUNT=$((COREPERSOCKET * SOCKETNR))
 
 echo "Persisting config"
 CONFIG=${RESDIR}/config.yaml
@@ -103,13 +108,15 @@ yq -i ".dbize.RANDREADNUMBER=$RANDREADNUMBER" $CONFIG
 yq -i ".dbize.RANDREADFILESIZE=$RANDREADFILESIZE" $CONFIG
 yq -i ".dbize.DBSIZE=\"$DBSIZE\"" $CONFIG
 yq -i ".system.os=\"$(uname)\"" $CONFIG
-yq -i ".system.cpunr=$CORECOUNT" $CONFIG
+yq -i ".system.cpu.model=\"$CPUMOODEL\"" $CONFIG
+yq -i ".system.cpu.corepersocket=$COREPERSOCKET" $CONFIG
+yq -i ".system.cpu.socketnr=$SOCKETNR" $CONFIG
 yq -i ".system.memsizeGB=$($QBIN -q <<<'.Q.w[][`mphy] div 1024 * 1024 * 1024')" $CONFIG
 
 if [ $(uname -s) = "Linux" ]; then
   lscpu > ${RESDIR}/lscpu.out
   ${SUDO} dmidecode -t memory > ${RESDIR}/dmidecode.out
-  if [ command -v numactl 2>&1 >/dev/null ]; then
+  if command -v numactl 2>&1 >/dev/null; then
     numactl --hardware > ${RESDIR}/numactl.out
   fi
 fi
