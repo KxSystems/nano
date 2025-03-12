@@ -137,91 +137,47 @@ done
 
 echo "testid|iostat_read_throughput|iostat_write_throughput|iostat_readwrite_throughput" > ${IOSTATFILE}
 
-if [ "$SCOPE" = "full" ]; then
-  ######### WRITE TEST #########
-  ${FLUSH}
-
-  #
-  # simple semaphore for completion checking for all hosts ...
-  #
-  touch ${CURRENTLOGDIR}/sync-$HOST
+function runTest {
+  TESTNAME=$1
+  TESTER=$2
 
   echo
-  echo "STARTING WRITE TEST"
+  echo "STARTING $TESTNAME TEST"
+  
+  touch ${CURRENTLOGDIR}/sync-$HOST
 
-  ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_prepare.log 2 >&1 &
+  ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_${TESTER%.*}.log 2 >&1 &
   j=0
   for i in $(seq $NUMPROCESSES); do
-  	${QBIN} ./src/prepare.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -q -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_prepare.log 2 >&1 &
-  	j=$(( ($j + 1) % $NUMSEGS ))
+  	${QBIN} ./src/${TESTER} -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_${TESTER%.*}.log 2>&1 &
+    j=$(( ($j + 1) % $NUMSEGS ))
   done
-
   wait -n
   wait
 
-  sleep 1
   syncAcrossHosts
 
+  # air gap for any remote stats collection....
   sleep 5
+}
+
+if [ "$SCOPE" = "full" ]; then
+  ${FLUSH}
+  runTest CPU cpu.q
+  ${FLUSH}
+  runTest WRITE prepare.q
 fi
 
-######### READ TEST #########
-
-echo
-echo "STARTING SEQUENTIAL READ TEST"
 ${FLUSH}
-touch ${CURRENTLOGDIR}/sync-$HOST
-
-${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_read.log 2 >&1 &
-j=0
-for i in $(seq $NUMPROCESSES); do
-	${QBIN} ./src/read.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_read.log 2>&1 &
-  j=$(( ($j + 1) % $NUMSEGS ))
-done
-wait -n
-wait
-
-syncAcrossHosts
-
-# air gap for any remote stats collection....
-sleep 5
+runTest "SEQUENTIAL READ" read.q
 
 ######### RE-READ TEST #########
 # without flush, cached in kernel buffer, re-mapped...
-
-echo
-echo "STARTING SEQUENTIAL RE-READ (CACHE) TEST"
-
-touch ${CURRENTLOGDIR}/sync-$HOST
-${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_reread.log 2 >&1 &
-j=0
-for i in $(seq $NUMPROCESSES); do
-	${QBIN} ./src/reread.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_reread.log 2>&1  &
-  j=$(( ($j + 1) % $NUMSEGS ))
-done
-wait
-
-syncAcrossHosts
-
-# air gap for any remote stats collection....
-sleep 5
+runTest "SEQUENTIAL RE-READ" reread.q
 
 if [ "$SCOPE" = "full" ]; then
-  ######### META DATA TEST #########
-  echo
-  echo "STARTING META DATA TEST"
   ${FLUSH}
-
-  touch ${CURRENTLOGDIR}/sync-$HOST
-  ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_meta.log 2 >&1 &
-  j=0
-  for i in $(seq $NUMPROCESSES); do
-  	${QBIN} ./src/meta.q -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_meta.log 2>&1  &
-    j=$(( ($j + 1) % $NUMSEGS ))
-  done
-
-  wait
-  syncAcrossHosts
+  runTest "META DATA" meta.q
 fi
 
 ######### RANDOM READ TEST #########
@@ -264,23 +220,9 @@ for listsize in 1000000 64000 4000; do
   SEED=$((SEED+1))
 done
 
-######### XASC TEST #########
-
-echo
-echo "STARTING XASC"
 ${FLUSH}
-touch ${CURRENTLOGDIR}/sync-$HOST
+runTest XASC xasc.q
 
-${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller_xasc.log 2 >&1 &
-j=0
-for i in $(seq $NUMPROCESSES); do
-	${QBIN} ./src/xasc.q -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i}_xasc.log 2>&1 &
-  j=$(( ($j + 1) % $NUMSEGS ))
-done
-wait -n
-wait
-
-syncAcrossHosts
 
 echo "Aggregating results"
 ${QBIN} ./src/postproc.q -inputs ${RESFILEPREFIX} -iostatfile ${IOSTATFILE} -processes ${NUMPROCESSES} -outputprefix ${AGGRFILEPREFIX} -q

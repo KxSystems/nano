@@ -10,52 +10,9 @@ system "l src/common.q";
 if[not "full" ~ lower getenv `DBSIZE;
   .qlog.warn "Test runs with ", getenv[`DBSIZE], " data. Reduce ratio is ", string MODIFIER];
 
-smallVec: 0N?`long$til 16*k
-MIDLENGTH: `long$MODIFIER*32*M
-midVec: `long$til MIDLENGTH
-
-.prepare.smallPermute: {[]
-  .qlog.info "starting permute small test";
-  sT: .z.n;
-  `smallVec set 0N?smallVec;
-  eT: .z.n;
-  writeRes["read write mem"; ".prepare.smallPermute|permute small"; "0N?"; 1; count smallVec; sT, eT; fix[2; getMBPerSec[count smallVec; eT-sT]]; "MB/sec\n"];
-  }
-
-.prepare.smallSort: {[]
-  .qlog.info "starting sort small test";
-  sT: .z.n;
-  asc smallVec;
-  eT: .z.n;
-  writeRes["read write mem"; ".prepare.smallSort|sort small"; "asc"; 1; count smallVec; sT, eT; fix[2; getMBPerSec[count smallVec; eT-sT]]; "MB/sec\n"];
-  }
-
-.prepare.midPermute: {[]
-  .qlog.info "starting permute mid test";
-  sT: .z.n;
-  `midVec set 0N?midVec;
-  eT: .z.n;
-  writeRes["read write mem"; ".prepare.midPermute|permute mid"; "0N?"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
-  }
-
-.prepare.midDeltas: {[]
-  .qlog.info "starting deltas mid test";
-  sT: .z.n;
-  deltas midVec;
-  eT: .z.n;
-  writeRes["read write mem"; ".prepare.midDeltas|deltas mid"; "deltas"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
-  }
-
-.prepare.midModWhere: {[]
-  .qlog.info "starting modulo-eq-where mid test";
-  sT: .z.n;
-  where 0=midVec mod 7;
-  eT: .z.n;
-  writeRes["read write mem"; ".prepare.midModWhere|where mod = mid"; "where 0=mod[;7]"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
-  }
-
 SYMNR: "J"$getenv `SYMNR
 sym: `u#neg[SYMNR]?`4;
+
 .prepare.midRandSym: {[]
   .qlog.info "starting rand symbol mid test";
   sT: .z.n;
@@ -81,13 +38,6 @@ sym: `u#neg[SYMNR]?`4;
   writeRes["read write mem"; ".prepare.group|group mid"; "group"; 1; count midSymVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
-.prepare.midSort: {[]
-  .qlog.info "starting sort mid test";
-  sT: .z.n;
-  asc midVec;
-  eT: .z.n;
-  writeRes["read write mem"; ".prepare.midSort|sort mid"; "asc"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
-  }
 
 tinyVec: 2 3 5 7;
 if[ not OBJSTORE;

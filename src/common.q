@@ -84,3 +84,7 @@ sendTests:{[c:`s;db:`C;nm:`s]
   .qlog.info "exiting worker";
   if[`exitcustom in key `.; exitcustom[]]
   };
+
+smallVec: 0N?`long$til 16*k
+MIDLENGTH: `long$MODIFIER*32*M
+midVec: 0N?`long$til MIDLENGTH
