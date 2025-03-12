@@ -26,6 +26,15 @@ system "l src/common.q";
   writeRes["read write mem"; ".cpu.midPermute|permute mid"; "0N?"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
+.cpu.midSort: {[]
+  .qlog.info "starting sort mid test";
+  sT: .z.n;
+  asc midVec;
+  eT: .z.n;
+  writeRes["read write mem"; ".cpu.midSort|sort mid"; "asc"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  }
+
+
 .cpu.midDeltas: {[]
   .qlog.info "starting deltas mid test";
   N:10;
@@ -44,20 +53,13 @@ system "l src/common.q";
   writeRes["read write mem"; ".cpu.midModWhere|where mod = mid"; "where 0=mod[;7]"; N; count midVec; sT, eT; fix[2; getMBPerSec[N*count midVec; eT-sT]]; "MB/sec\n"];
   }
 
-.cpu.midSort: {[]
-  .qlog.info "starting sort mid test";
-  sT: .z.n;
-  asc midVec;
-  eT: .z.n;
-  writeRes["read write mem"; ".cpu.midSort|sort mid"; "asc"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
-  }
-
 .cpu.midRandSym: {[]
   .qlog.info "starting rand symbol mid test";
+  N:5;
   sT: .z.n;
-  MIDLENGTH?sym;
+  do[N;MIDLENGTH?sym];
   eT: .z.n;
-  writeRes["write mem"; ".cpu.midRandSym|roll mid"; enlist "?"; 1; MIDLENGTH; sT, eT; fix[2; getMBPerSec[MIDLENGTH; eT-sT]]; "MB/sec\n"];
+  writeRes["write mem"; ".cpu.midRandSym|roll symbol mid"; enlist "?"; N; MIDLENGTH; sT, eT; fix[2; getMBPerSec[N*MIDLENGTH; eT-sT]]; "MB/sec\n"];
   }
 
 .cpu.midRandFloat: {[]
@@ -66,7 +68,7 @@ system "l src/common.q";
   sT: .z.n;
   do[N;MIDLENGTH?100.];
   eT: .z.n;
-  writeRes["write mem"; ".cpu.midRandFloat|roll mid"; enlist "?"; N; MIDLENGTH; sT, eT; fix[2; getMBPerSec[N*MIDLENGTH; eT-sT]]; "MB/sec\n"];
+  writeRes["write mem"; ".cpu.midRandFloat|roll float mid"; enlist "?"; N; MIDLENGTH; sT, eT; fix[2; getMBPerSec[N*MIDLENGTH; eT-sT]]; "MB/sec\n"];
   }
 
 .cpu.group: {[]
@@ -76,6 +78,97 @@ system "l src/common.q";
   eT: .z.n;
   writeRes["read write mem"; ".cpu.group|group mid"; "group"; 1; count midSymVec; sT, eT; fix[2; getMBPerSec[count midSymVec; eT-sT]]; "MB/sec\n"];
   }
+
+.cpu.maxInt: {[]
+  .qlog.info "starting integer max test";
+  N:50;
+  sT: .z.n;
+  do[N;max midVec];
+  eT: .z.n;
+  writeRes["read mem"; ".cpu.maxInt|max int mid"; "max"; N; count midVec; sT, eT; fix[2; getMBPerSec[N*count midVec; eT-sT]]; "MB/sec\n"];
+  }
+
+.cpu.maxFloat: {[]
+  .qlog.info "starting float max test";
+  N:50;
+  sT: .z.n;
+  do[N;max midFloatVec];
+  eT: .z.n;
+  writeRes["read mem"; ".cpu.maxFloat|max float mid"; "max"; N; count midFloatVec; sT, eT; fix[2; getMBPerSec[N*count midFloatVec; eT-sT]]; "MB/sec\n"];
+  }
+
+
+.cpu.medInt: {[]
+  .qlog.info "starting integer median test";
+  sT: .z.n;
+  med midVec;
+  eT: .z.n;
+  writeRes["read mem"; ".cpu.medInt|med int mid"; "med"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
+  }
+
+.cpu.medFloat: {[]
+  .qlog.info "starting float median test";
+  sT: .z.n;
+  med midFloatVec;
+  eT: .z.n;
+  writeRes["read mem"; ".cpu.medFloat|med float mid"; "med"; 1; count midFloatVec; sT, eT; fix[2; getMBPerSec[count midFloatVec; eT-sT]]; "MB/sec\n"];
+  }
+
+.cpu.sdevInt: {[]
+  .qlog.info "starting integer sdev test";
+  N:10;
+  sT: .z.n;
+  do[N;sdev midVec];
+  eT: .z.n;
+  writeRes["read mem"; ".cpu.medInt|sdev int mid"; "sdev"; N; count midVec; sT, eT; fix[2; getMBPerSec[N*count midVec; eT-sT]]; "MB/sec\n"];
+  }
+
+.cpu.sdevFloat: {[]
+  .qlog.info "starting float sdev test";
+  N:10;
+  sT: .z.n;
+  do[N;sdev midFloatVec];
+  eT: .z.n;
+  writeRes["read mem"; ".cpu.medFloat|sdev float mid"; "sdev"; N; count midFloatVec; sT, eT; fix[2; getMBPerSec[N*count midFloatVec; eT-sT]]; "MB/sec\n"];
+  }
+
+.cpu.ceiling: {[]
+  .qlog.info "starting ceiling test";
+  N:10;
+  sT: .z.n;
+  do[N;ceiling midFloatVec];
+  eT: .z.n;
+  writeRes["read mem"; ".cpu.ceiling|ceiling mid"; "ceiling"; N; count midFloatVec; sT, eT; fix[2; getMBPerSec[N*count midFloatVec; eT-sT]]; "MB/sec\n"];
+  }
+
+.cpu.multiplyInt: {[]
+  .qlog.info "starting integer multiply test";
+  N:10;
+  sT: .z.n;
+  do[N;midVec * 100];
+  eT: .z.n;
+  writeRes["read mem"; ".cpu.multInt|mult int mid"; enlist "*"; N; count midVec; sT, eT; fix[2; getMBPerSec[N*count midVec; eT-sT]]; "MB/sec\n"];
+  }
+
+.cpu.multiplyFloat: {[]
+  .qlog.info "starting float multiply test";
+  N:10;
+  sT: .z.n;
+  do[N;midFloatVec * 100.];
+  eT: .z.n;
+  writeRes["read mem"; ".cpu.multFloat|mult float mid"; enlist  "*"; N; count midFloatVec; sT, eT; fix[2; getMBPerSec[N*count midFloatVec; eT-sT]]; "MB/sec\n"];
+  }
+
+
+.cpu.wavg: {[]
+  .qlog.info "starting weighted average test";
+  N:10;
+  sT: .z.n;
+  do[N;midVec wavg midFloatVec];
+  eT: .z.n;
+  writeRes["read mem"; ".cpu.wavg|wavg mid"; "wavg"; N; count midFloatVec; sT, eT; fix[2; getMBPerSec[2*N*count midFloatVec; eT-sT]]; "MB/sec\n"];
+  }
+
 
 sendTests[controller;DB;`.cpu]
 
