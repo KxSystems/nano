@@ -2,7 +2,7 @@
 
 © Kx Systems 2023
 
-"nano" calculates basic raw I/O capabilities of non-volatile storage, as measured from the perspective of kdb+. It is considered a storage, memory and CPU benchmark that performs sequential/random read and write together with aggregation (e.g. sum and sort) and meta operations (like opening a file).
+"nano" calculates basic raw CPU and I/O capabilities of non-volatile storage, as measured from the perspective of kdb+. It is considered a storage, memory and CPU benchmark that performs sequential/random read and write together with aggregation (e.g. sum and sort) and meta operations (like opening a file).
 
 Nano measures results from running on one server or aggregated across several servers.
 Servers can be attached either directly to storage, or connected to a
@@ -14,7 +14,7 @@ There is an option to test compressed data via algorithms on the client or, in t
 case of a storage system supporting built-in compression, that compression can be
 measured when being entirely off-loaded onto the target storage device.
 
-This utility is used to confirm the basic expectations for the storage subsystem
+This utility is used to confirm the basic expectations for the CPU and storage subsystem
 prior to a more detailed testing regime.
 
 "nano" does not simulate parallel IO rates via the creation of multi-column tick databases,
@@ -48,7 +48,7 @@ The benchmark can run with many parameters. Some parameters are set as environme
 One key environment variable is `FLUSH` that points to a storage cache flush script. Some sample scripts are provided and the default assumes locally attached block storage for which `echo 3 > /proc/sys/vm/drop_caches` does the job. If the root user is not available to you, the flush script will have to be placed in the sudo list by your systems administrator.
 
 ### storage disks
-Create a directory on each storage medium where data will be written to during the test. List these data directories in file `partitions`. Use absolute path names. You can change the name of the partition file in `config/env` via variable `PARFILE`.
+Create a directory on each storage medium where data will be written to during the test. List these data directories in file `partitions`. Use absolute path names.
 
 Using a single-line entry is a simple way of testing
 a single shared/parallel file-system. This would allow the shared FS to control the
@@ -119,10 +119,7 @@ $ ./mthread.sh 8 readonly keep 0404:1232
 ```
 
 
-Typical examples of the number of processes to test are 1, 2, 4, 8, 16, 32, 64, 128.
-The script will consume approximately 85% of available memory during the latter
-stages of the "run" phase, as lists are modified.
-If the server has 32GB of DRAM, or less, the results will be sub-optimal.
+Typical examples of the number of processes to test are 1, 2, 4, 8, 16, 32, 64, 128. If the server has 32GB of DRAM, or less, the results will be sub-optimal.
 
 ### multihost.sh
 
@@ -191,7 +188,8 @@ $ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/
 
 The script calculates the throughput (MiB/sec) of an operation by calculating the data size and the elapsed time of the operation.
 
-Script `./mthread.sh` executes 6 major tests:
+Script `./mthread.sh` executes 7 major tests:
+   1. CPU
    1. Prepare
    1. Read
    1. Reread
@@ -207,12 +205,16 @@ The cache is flushed before each test except reread.
 
 We detail each test in the next section.
 
-### Prepare/write (`prepare.q`)
+### CPU (`cpu.q`)
    1. starts a few tests on in-memory lists that mainly stresses the CPU. The small list (16k long) probably resides in CPU cache. Test include
       * creating random permutation
       * sorting
       * calculating deltas
       * generating indices based on modulo
+      * calculates moving and weighted averages
+      * do arithmetics and implicit iteration
+
+### Prepare/write (`prepare.q`)
    1. performs three write tests
       1. `open append tiny`: appending four integers to the end of list (this operation includes opening and closing a file): `[; (); ,; 2 3 5 7]`
       1. `append tiny`: appending four integers to a handle of a kdb+ file: `H: hopen ...; H 2 3 5 7`
