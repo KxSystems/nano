@@ -6,12 +6,13 @@ export THREADNR=1
 
 export FLUSH=./flush/directmount.sh
 
-# tests that wont be executed
-# whitespace separated list like
-# export EXCLUDETESTS=".xasc.xasc .xasc.phash"
+# Tests that wont be executed
+# Whitespace separated list that also accepts regular expressions - see https://code.kx.com/q/basics/regex/.
+# Example:
+# export EXCLUDETESTS=".cpu.* .xasc.phash"
 export EXCLUDETESTS=""
 
-export SUDO=""  # or "sudo" if sudo is required for some commands e.g. to flush page cache
+export SUDO="sudo"  # "" or "sudo" if sudo is required for some commands e.g. to flush page cache
 
 ##############
 # Settings for object storage

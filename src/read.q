@@ -14,7 +14,7 @@ system "l src/common.q";
   sT:.z.n;
   max mapped;
   eT: .z.n;
-  writeRes["read mem";".read.aggregate|aggregate";"max"; 1; count mapped; sT, eT; fix[2;getMBPerSec[count mapped; eT-sT]]; "MB/sec\n"];
+  writeRes["cpu read mem";".read.aggregate|aggregate";"max"; 1; count mapped; sT, eT; fix[2;getMBPerSec[count mapped; eT-sT]]; "MB/sec\n"];
   }
 
 .read.readbinary: {[]
