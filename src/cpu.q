@@ -52,6 +52,31 @@ system "l src/common.q";
   writeRes["read write mem"; ".cpu.midSort|sort mid"; "asc"; 1; count midVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
   }
 
+.cpu.midRandSym: {[]
+  .qlog.info "starting rand symbol mid test";
+  sT: .z.n;
+  MIDLENGTH?sym;
+  eT: .z.n;
+  writeRes["write mem"; ".cpu.midRandSym|roll mid"; enlist "?"; 1; MIDLENGTH; sT, eT; fix[2; getMBPerSec[MIDLENGTH; eT-sT]]; "MB/sec\n"];
+  }
+
+.cpu.midRandFloat: {[]
+  .qlog.info "starting rand float mid test";
+  N:10;
+  sT: .z.n;
+  do[N;MIDLENGTH?100.];
+  eT: .z.n;
+  writeRes["write mem"; ".cpu.midRandFloat|roll mid"; enlist "?"; N; MIDLENGTH; sT, eT; fix[2; getMBPerSec[N*MIDLENGTH; eT-sT]]; "MB/sec\n"];
+  }
+
+.cpu.group: {[]
+  .qlog.info "starting group test";
+  sT: .z.n;
+  group midSymVec;
+  eT: .z.n;
+  writeRes["read write mem"; ".cpu.group|group mid"; "group"; 1; count midSymVec; sT, eT; fix[2; getMBPerSec[count midSymVec; eT-sT]]; "MB/sec\n"];
+  }
+
 sendTests[controller;DB;`.cpu]
 
 .qlog.info "Ready for test execution";

@@ -10,34 +10,6 @@ system "l src/common.q";
 if[not "full" ~ lower getenv `DBSIZE;
   .qlog.warn "Test runs with ", getenv[`DBSIZE], " data. Reduce ratio is ", string MODIFIER];
 
-SYMNR: "J"$getenv `SYMNR
-sym: `u#neg[SYMNR]?`4;
-
-.prepare.midRandSym: {[]
-  .qlog.info "starting rand symbol mid test";
-  sT: .z.n;
-  `midSymVec set MIDLENGTH?sym;
-  eT: .z.n;
-  writeRes["write mem"; ".prepare.midRandSym|roll mid"; enlist "?"; 1; MIDLENGTH; sT, eT; fix[2; getMBPerSec[MIDLENGTH; eT-sT]]; "MB/sec\n"];
-  }
-
-.prepare.midRandFloat: {[]
-  .qlog.info "starting rand float mid test";
-  sT: .z.n;
-  midFloatVec: MIDLENGTH?100.;
-  eT: .z.n;
-  `midFloatVec set %[;100] `int$100*midFloatVec; / round up a bit to have some duplication
-  writeRes["write mem"; ".prepare.midRandFloat|roll mid"; enlist "?"; 1; MIDLENGTH; sT, eT; fix[2; getMBPerSec[MIDLENGTH; eT-sT]]; "MB/sec\n"];
-  }
-
-.prepare.group: {[]
-  .qlog.info "starting group test";
-  sT: .z.n;
-  group midSymVec;
-  eT: .z.n;
-  writeRes["read write mem"; ".prepare.group|group mid"; "group"; 1; count midSymVec; sT, eT; fix[2; getMBPerSec[count midVec; eT-sT]]; "MB/sec\n"];
-  }
-
 
 tinyVec: 2 3 5 7;
 if[ not OBJSTORE;
