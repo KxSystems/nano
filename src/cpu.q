@@ -1,4 +1,5 @@
 system "l src/common.q";
+system "l src/samplearrays.q";
 
 .cpu.smallPermute: {[]
   .qlog.info "starting permute small test";

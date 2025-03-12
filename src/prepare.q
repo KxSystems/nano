@@ -1,4 +1,5 @@
 system "l src/common.q";
+system "l src/samplearrays.q";
 
 // processes are executed by multiple independent executions of the kdb+ script, via calling
 // script. processcount is used to figure out how big to make each file

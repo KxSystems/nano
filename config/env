@@ -12,7 +12,7 @@ export FLUSH=./flush/directmount.sh
 # export EXCLUDETESTS=".cpu.* .xasc.phash"
 export EXCLUDETESTS=""
 
-export SUDO="sudo"  # or "sudo" if sudo is required for some commands e.g. to flush page cache
+export SUDO="sudo"  # "" or "sudo" if sudo is required for some commands e.g. to flush page cache
 
 ##############
 # Settings for object storage
