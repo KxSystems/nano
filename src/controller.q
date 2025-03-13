@@ -42,7 +42,9 @@ executeTest: {[dontcare]
     finish 3];
   if[workerNr = count Workers;
     system "t 0";
-    if[ any 1_differ Alltest; .qlog.error "Not all tests are the same!"; exit 1];
+    if[ any 1_differ Alltest; .qlog.error "Not all tests are the same!"; finish 1];
+    tests: first[Alltest] where not any first[Alltest] like/: exclusetests;
+    .qlog.info "Starting executing ", string[count tests], " tests one-by-one";
     {[t]
       .qlog.info "Executing test ", string t;
       ddevices: distinct Devices;
@@ -50,7 +52,7 @@ executeTest: {[dontcare]
       @[; (t; ::)] peach Workers;
       eT: .z.n; eS: getKBRead[ddevices];
       iostatH string[t], SEP, (SEP sv value fix[2; (eS-sS)%1000*tsToSec eT-sT]),"\n";
-      } each first[Alltest] except exclusetests;
+      } each tests;
     .qlog.info "All tests were executed.";
     if[not `debug in argvk; finish 0];
   ];
@@ -77,6 +79,6 @@ addWorker: {[port:`i; device:`C; tests:`S]
 .z.ts: executeTest;
 system "t 200";
 
-exclusetests: `$" " vs getenv `EXCLUDETESTS
+exclusetests: " " vs getenv `EXCLUDETESTS
 
 .qlog.info "controller started";
