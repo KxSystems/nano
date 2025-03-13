@@ -75,7 +75,7 @@ mthread-single:
     - .mthread
   script:
     - echo "${APPDIR}/data" > ./partitions
-    - DBSIZE=TINY ./mthread.sh 1 full delete
+    - DBSIZE=TINY SUDO="" ./mthread.sh 1 full delete
 
 mthread-multi:
   extends:
@@ -83,4 +83,4 @@ mthread-multi:
   script:
     - echo "${APPDIR}/data0" > ./partitions
     - echo "${APPDIR}/data1" >> ./partitions
-    - DBSIZE=TINY ./mthread.sh 3 full delete
+    - DBSIZE=TINY SUDO="" ./mthread.sh 3 full delete
