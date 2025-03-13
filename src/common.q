@@ -66,8 +66,7 @@ MODIFIER: 1f^MEMRATIOMODIFIERS `$lower getenv `DBSIZE
 // Repeat number of some meta and write tests
 N: `long$MODIFIER*50*1000
 
-processcount: string `$argv `processes
-processcount: "I"$processcount
+processcount: "I"$string `$argv `processes
 
 TASKSENDTIMEOUT:0D00:01
 sendTests:{[c:`s;db:`C;nm:`s]

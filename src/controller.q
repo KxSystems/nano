@@ -52,6 +52,7 @@ executeTest: {[dontcare]
       {[t;w] @[w; (t; ::); {.qlog.info "Error during test execution ", x; finish 4}]}[t] peach Workers;
       eT: .z.n; eS: getKBRead[ddevices];
       iostatH string[t], SEP, (SEP sv value fix[2; (eS-sS)%1000*tsToSec eT-sT]),"\n";
+      @[; (.Q.gc; ::)] peach Workers;
       } each tests;
     .qlog.info "All tests were executed.";
     if[not `debug in argvk; finish 0];

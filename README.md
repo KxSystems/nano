@@ -1,6 +1,6 @@
 # nano benchmark
 
-© Kx Systems 2023
+© KX 2025
 
 "nano" calculates basic raw CPU and I/O capabilities of non-volatile storage, as measured from the perspective of kdb+. It is considered a storage, memory and CPU benchmark that performs sequential/random read and write together with aggregation (e.g. sum and sort) and meta operations (like opening a file).
 
