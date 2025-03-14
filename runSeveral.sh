@@ -3,12 +3,12 @@
 set -euo pipefail
 
 if [ $# -gt 0 ]; then
-   OUTPUT=$1
+   readonly OUTPUT=$1
 else
-   OUTPUT=./results/throughput_total.csv
+   readonly OUTPUT=./results/throughput_total.csv
 fi
 
-HOST=$(uname -n)
+readonly HOST=$(uname -n)
 DATES=()
 
 for i in {1,2,4,8,16,32,64,96}; do
@@ -18,7 +18,7 @@ for i in {1,2,4,8,16,32,64,96}; do
 done
 
 head -n 1 results/${DATES[1]}/$HOST-throughput.psv > ${OUTPUT}
-TMP="$(mktemp)"
+readonly TMP="$(mktemp)"
 for DATE in ${DATES[@]}; do
    tail -n +2 results/${DATE}/$HOST-throughput.psv >> ${TMP}
 done

@@ -9,8 +9,7 @@
 
 SIZEOFLONG: 8
 
-k: 1024
-M: k*k
+M:k*k:1024
 
 SEP: "|"
 
