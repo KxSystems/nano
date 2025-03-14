@@ -49,7 +49,7 @@ executeTest: {[dontcare]
       .qlog.info "Executing test ", string t;
       ddevices: distinct Devices;
       sS: getKBRead[ddevices]; sT: .z.n;
-      {[t;w] @[w; (t; ::); {.qlog.info "Error during test execution ", x; finish 4}]}[t] peach Workers;
+      @[; (t; ::); {.qlog.info "Error during test execution ", x; finish 4}] peach Workers;
       eT: .z.n; eS: getKBRead[ddevices];
       iostatH string[t], SEP, (SEP sv value fix[2; (eS-sS)%1000*tsToSec eT-sT]),"\n";
       @[; (.Q.gc; ::)] peach Workers;
