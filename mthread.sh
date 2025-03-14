@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-USAGE="Usage: $0 processnr full|readonly keep|delete [date]"
+readonly USAGE="Usage: $0 processnr full|readonly keep|delete [date]"
 
 
 if [ $# -lt 3 ]; then
@@ -25,8 +25,8 @@ if [ ! -f ${FLUSH} ]; then
 	exit 4
 fi
 
-NUMPROCESSES=$1
-SCOPE="$2"
+readonly NUMPROCESSES=$1
+readonly SCOPE="$2"
 if [ "$#" -eq "4" ]; then
   echo "Date is set to $4"
   DATE="$4"
@@ -34,13 +34,13 @@ else
 	DATE=$(date +%m%d_%H%M%S)
 fi
 
-CONTROLLERPORT=5100
+readonly CONTROLLERPORT=5100
 if nc -z 127.0.0.1 $CONTROLLERPORT 2>&1 > /dev/null; then
   echo "Port $CONTROLLERPORT is used. Maybe leftover kdb+ processes are running. Cannot start the controller. Exiting."
   exit 12
 fi
 
-WORKERBASEPORT=5500
+readonly WORKERBASEPORT=5500
 for i in $(seq $NUMPROCESSES); do
   if nc -z  127.0.0.1 $((WORKERBASEPORT+i)); then
     echo "Port $((WORKERBASEPORT+i)) is used. Maybe leftover kdb+ processes are running. Exiting."
@@ -49,24 +49,24 @@ for i in $(seq $NUMPROCESSES); do
 done
 
 
-HOST=$(uname -n)
+readonly HOST=$(uname -n)
 
-PARFILE="./partitions"
-NUMSEGS=`wc -l $PARFILE | awk '{print $1}'`
+readonly PARFILE="./partitions"
+readonly NUMSEGS=`wc -l $PARFILE | awk '{print $1}'`
 declare -a array
 array=(`cat $PARFILE`)
 
-RESDIR="${RESULTDIR}/${DATE}"
+readonly RESDIR="${RESULTDIR}/${DATE}"
 mkdir -p ${RESDIR}
 echo "Results will be persisted in ${RESDIR}"
-CURRENTLOGDIR="${LOGDIR}/${DATE}"
+readonly CURRENTLOGDIR="${LOGDIR}/${DATE}"
 mkdir -p ${CURRENTLOGDIR}
 
-RESFILEPREFIX=${RESDIR}/detailed-${HOST}-
-IOSTATFILE=${RESDIR}/iostat-${HOST}.psv
-AGGRFILEPREFIX=${RESDIR}/${HOST}-
+readonly RESFILEPREFIX=${RESDIR}/detailed-${HOST}-
+readonly IOSTATFILE=${RESDIR}/iostat-${HOST}.psv
+readonly AGGRFILEPREFIX=${RESDIR}/${HOST}-
 
-LOGFILEPREFIX="${CURRENTLOGDIR}/${HOST}-${NUMPROCESSES}t-"
+readonly LOGFILEPREFIX="${CURRENTLOGDIR}/${HOST}-${NUMPROCESSES}t-"
 
 function syncAcrossHosts {
 	rm ${CURRENTLOGDIR}/sync-$HOST
@@ -97,7 +97,7 @@ fi
 CORECOUNT=$((COREPERSOCKET * SOCKETNR))
 
 echo "Persisting config"
-CONFIG=${RESDIR}/config.yaml
+readonly CONFIG=${RESDIR}/config.yaml
 echo "Persisting config to $CONFIG"
 touch $CONFIG
 yq -i ".env.COMPRESS=\"$COMPRESS\"" $CONFIG
