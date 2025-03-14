@@ -52,9 +52,10 @@ done
 readonly HOST=$(uname -n)
 
 readonly PARFILE="./partitions"
-readonly NUMSEGS=`wc -l $PARFILE | awk '{print $1}'`
+
 declare -a array
 array=(`cat $PARFILE`)
+readonly NUMSEGS=${#array[@]}
 
 readonly RESDIR="${RESULTDIR}/${DATE}"
 mkdir -p ${RESDIR}
