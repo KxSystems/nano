@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-USAGE="Usage: $0 processnr full|readonly keep|delete [date]"
+readonly USAGE="Usage: $0 processnr full|readonly keep|delete [date]"
 
 
 if [ $# -lt 3 ]; then
@@ -25,8 +25,10 @@ if [ ! -f ${FLUSH} ]; then
 	exit 4
 fi
 
-NUMPROCESSES=$1
-SCOPE="$2"
+readonly NUMPROCESSES=$1
+readonly SCOPE="$2"
+readonly KEEPDELETE=$3
+
 if [ "$#" -eq "4" ]; then
   echo "Date is set to $4"
   DATE="$4"
@@ -34,13 +36,13 @@ else
 	DATE=$(date +%m%d_%H%M%S)
 fi
 
-CONTROLLERPORT=5100
+readonly CONTROLLERPORT=5100
 if nc -z 127.0.0.1 $CONTROLLERPORT 2>&1 > /dev/null; then
   echo "Port $CONTROLLERPORT is used. Maybe leftover kdb+ processes are running. Cannot start the controller. Exiting."
   exit 12
 fi
 
-WORKERBASEPORT=5500
+readonly WORKERBASEPORT=5500
 for i in $(seq $NUMPROCESSES); do
   if nc -z  127.0.0.1 $((WORKERBASEPORT+i)); then
     echo "Port $((WORKERBASEPORT+i)) is used. Maybe leftover kdb+ processes are running. Exiting."
@@ -49,24 +51,25 @@ for i in $(seq $NUMPROCESSES); do
 done
 
 
-HOST=$(uname -n)
+readonly HOST=$(uname -n)
 
-PARFILE="./partitions"
-NUMSEGS=`wc -l $PARFILE | awk '{print $1}'`
+readonly PARFILE="./partitions"
+
 declare -a array
 array=(`cat $PARFILE`)
+readonly NUMSEGS=${#array[@]}
 
-RESDIR="${RESULTDIR}/${DATE}"
+readonly RESDIR="${RESULTDIR}/${DATE}"
 mkdir -p ${RESDIR}
 echo "Results will be persisted in ${RESDIR}"
-CURRENTLOGDIR="${LOGDIR}/${DATE}"
+readonly CURRENTLOGDIR="${LOGDIR}/${DATE}"
 mkdir -p ${CURRENTLOGDIR}
 
-RESFILEPREFIX=${RESDIR}/detailed-${HOST}-
-IOSTATFILE=${RESDIR}/iostat-${HOST}.psv
-AGGRFILEPREFIX=${RESDIR}/${HOST}-
+readonly RESFILEPREFIX=${RESDIR}/detailed-${HOST}-
+readonly IOSTATFILE=${RESDIR}/iostat-${HOST}.psv
+readonly AGGRFILEPREFIX=${RESDIR}/${HOST}-
 
-LOGFILEPREFIX="${CURRENTLOGDIR}/${HOST}-${NUMPROCESSES}t-"
+readonly LOGFILEPREFIX="${CURRENTLOGDIR}/${HOST}-${NUMPROCESSES}t-"
 
 function syncAcrossHosts {
 	rm ${CURRENTLOGDIR}/sync-$HOST
@@ -97,7 +100,7 @@ fi
 CORECOUNT=$((COREPERSOCKET * SOCKETNR))
 
 echo "Persisting config"
-CONFIG=${RESDIR}/config.yaml
+readonly CONFIG=${RESDIR}/config.yaml
 echo "Persisting config to $CONFIG"
 touch $CONFIG
 yq -i ".env.COMPRESS=\"$COMPRESS\"" $CONFIG
@@ -113,12 +116,42 @@ yq -i ".dbize.SEQWRITETESTLIMIT=$SEQWRITETESTLIMIT" $CONFIG
 yq -i ".dbize.RANDREADNUMBER=$RANDREADNUMBER" $CONFIG
 yq -i ".dbize.RANDREADFILESIZE=$RANDREADFILESIZE" $CONFIG
 yq -i ".dbize.DBSIZE=\"$DBSIZE\"" $CONFIG
-yq -i ".system.os=\"$(uname)\"" $CONFIG
+yq -i ".system.os.name=\"$(uname)\"" $CONFIG
+yq -i ".system.os.kernel=\"$(uname -r)\"" $CONFIG
+yq -i ".system.cpu.arch=\"$(uname -p)\"" $CONFIG
 yq -i ".system.cpu.model=\"$CPUMOODEL\"" $CONFIG
 yq -i ".system.cpu.corepersocket=$COREPERSOCKET" $CONFIG
 yq -i ".system.cpu.socketnr=$SOCKETNR" $CONFIG
 yq -i ".system.memsizeGB=$($QBIN -q <<<'.Q.w[][`mphy] div 1024 * 1024 * 1024')" $CONFIG
 
+
+function cleanup {
+  if [ "$KEEPDELETE" = "delete" ]; then
+  	echo "cleaning up DB..."
+  	j=0
+  	for i in $(seq $NUMPROCESSES); do
+      if notObjStore ${array[$j]}; then
+  		  rm -rf ${array[$j]}/${HOST}.${i}/${DATE}
+        rmdir ${array[$j]}/${HOST}.${i}
+      else
+        if [[ ${array[$j]} == s3://* ]]; then
+          aws s3 rm ${array[$j]}/${HOST}.${i}/${DATE} --recursive
+        elif [[ ${array[$j]} == gs://* ]]; then
+          gsutil rm -r ${array[$j]}/${HOST}.${i}/${DATE}
+        elif [[ ${array[$j]} == ms://* ]]; then
+          echo "Cleanup ${array[$j]}/${HOST}.${i}/${DATE} manually"
+          echo "az storage fs directory delete -f YOURCONTAINER -n ${HOST}.${i}/${DATE} --account-name YOURSTORAGEACCOUNT"
+        else
+          echo "Unknown object storage prefix ${array[$j]::2}"
+        fi
+      fi
+  		j=$(( ($j + 1) % $NUMSEGS ))
+  	done
+  fi
+  rm -rf ./sync-*
+}
+
+trap cleanup EXIT
 
 # important that this it outside this loop with "q prepare", as first time after a mount as the
 # fs may take a long time to start (S3 sync) and we want the wrtte processes to run in parallel
@@ -131,7 +164,7 @@ for i in $(seq $NUMPROCESSES); do
     fi
 	  mkdir -p ${array[$j]}/${HOST}.${i}/${DATE}
   fi
-  echo "testtype|testid|test|qexpression|repeat|length|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
+  echo "threadnr|testtype|testid|test|qexpression|repeat|length|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
 	j=$(( ($j + 1) % $NUMSEGS ))
 done
 
@@ -231,29 +264,6 @@ ${QBIN} ./src/postproc.q -inputs ${RESFILEPREFIX} -iostatfile ${IOSTATFILE} -pro
 # an air gap for any storage stats gathering before unlinks go out ...
 #
 sleep 5
-if [ "$3" = "delete" ]; then
-	echo "cleaning up DB..."
-	j=0
-	for i in $(seq $NUMPROCESSES); do
-    if notObjStore ${array[$j]}; then
-		  rm -rf ${array[$j]}/${HOST}.${i}/${DATE}
-      rmdir ${array[$j]}/${HOST}.${i}
-    else
-      if [[ ${array[$j]} == s3://* ]]; then
-        aws s3 rm ${array[$j]}/${HOST}.${i}/${DATE} --recursive
-      elif [[ ${array[$j]} == gs://* ]]; then
-        gsutil rm -r ${array[$j]}/${HOST}.${i}/${DATE}
-      elif [[ ${array[$j]} == ms://* ]]; then
-        echo "Cleanup ${array[$j]}/${HOST}.${i}/${DATE} manually"
-        echo "az storage fs directory delete -f YOURCONTAINER -n ${HOST}.${i}/${DATE} --account-name YOURSTORAGEACCOUNT"
-      else
-        echo "Unknown object storage prefix ${array[$j]::2}"
-      fi
-    fi
-		j=$(( ($j + 1) % $NUMSEGS ))
-	done
-fi
-rm -rf ./sync-*
 
 sync ${RESDIR}
 sync ${CURRENTLOGDIR}

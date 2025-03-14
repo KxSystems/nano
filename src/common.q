@@ -16,8 +16,8 @@ if[ not `result in argvk;
   exit 8];
 
 resultH: hopen ":", argv `result;
- writeRes: {[testtype:`C; test:`C; qexpression:`C; repeat:`j; length:`j; times:`N; result:`C; unit:`C]
-  resultH SEP sv (testtype; test; qexpression; string repeat; string length; string first times; string last times; result; unit);
+writeRes: {[testtype:`C; test:`C; qexpression:`C; repeat:`j; length:`j; times:`N; result:`C; unit:`C]
+  resultH SEP sv (string system "s";testtype; test; qexpression; string repeat; string length; string first times; string last times; result; unit);
   }
 
 controller: `$"::",argv `controller;
@@ -60,14 +60,13 @@ fReadBinary: hsym `$DB, fHReadBinaryFileName: "/readbinary"
 fmmap: hsym `$DB, fHmmapFileName: "/mmap"
 flock: hsym `$DB, "/locktest"
 
-MEMRATIOMODIFIERS: `full`small`tiny!1 0.2 0.05
+MEMRATIOMODIFIERS: `double`full`small`tiny!2 1 0.2 0.05
 MODIFIER: 1f^MEMRATIOMODIFIERS `$lower getenv `DBSIZE
 
 // Repeat number of some meta and write tests
 N: `long$MODIFIER*50*1000
 
-processcount: string `$argv `processes
-processcount: "I"$processcount
+processcount: "I"$string `$argv `processes
 
 TASKSENDTIMEOUT:0D00:01
 sendTests:{[c:`s;db:`C;nm:`s]
