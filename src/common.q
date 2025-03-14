@@ -16,8 +16,8 @@ if[ not `result in argvk;
   exit 8];
 
 resultH: hopen ":", argv `result;
- writeRes: {[testtype:`C; test:`C; qexpression:`C; repeat:`j; length:`j; times:`N; result:`C; unit:`C]
-  resultH SEP sv (testtype; test; qexpression; string repeat; string length; string first times; string last times; result; unit);
+writeRes: {[testtype:`C; test:`C; qexpression:`C; repeat:`j; length:`j; times:`N; result:`C; unit:`C]
+  resultH SEP sv (string system "s";testtype; test; qexpression; string repeat; string length; string first times; string last times; result; unit);
   }
 
 controller: `$"::",argv `controller;

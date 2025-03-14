@@ -133,7 +133,7 @@ for i in $(seq $NUMPROCESSES); do
     fi
 	  mkdir -p ${array[$j]}/${HOST}.${i}/${DATE}
   fi
-  echo "testtype|testid|test|qexpression|repeat|length|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
+  echo "threadnr|testtype|testid|test|qexpression|repeat|length|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
 	j=$(( ($j + 1) % $NUMSEGS ))
 done
 
