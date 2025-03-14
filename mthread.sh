@@ -27,6 +27,8 @@ fi
 
 readonly NUMPROCESSES=$1
 readonly SCOPE="$2"
+readonly KEEPDELETE=$3
+
 if [ "$#" -eq "4" ]; then
   echo "Date is set to $4"
   DATE="$4"
@@ -122,6 +124,34 @@ yq -i ".system.cpu.corepersocket=$COREPERSOCKET" $CONFIG
 yq -i ".system.cpu.socketnr=$SOCKETNR" $CONFIG
 yq -i ".system.memsizeGB=$($QBIN -q <<<'.Q.w[][`mphy] div 1024 * 1024 * 1024')" $CONFIG
 
+
+function cleanup {
+  if [ "$KEEPDELETE" = "delete" ]; then
+  	echo "cleaning up DB..."
+  	j=0
+  	for i in $(seq $NUMPROCESSES); do
+      if notObjStore ${array[$j]}; then
+  		  rm -rf ${array[$j]}/${HOST}.${i}/${DATE}
+        rmdir ${array[$j]}/${HOST}.${i}
+      else
+        if [[ ${array[$j]} == s3://* ]]; then
+          aws s3 rm ${array[$j]}/${HOST}.${i}/${DATE} --recursive
+        elif [[ ${array[$j]} == gs://* ]]; then
+          gsutil rm -r ${array[$j]}/${HOST}.${i}/${DATE}
+        elif [[ ${array[$j]} == ms://* ]]; then
+          echo "Cleanup ${array[$j]}/${HOST}.${i}/${DATE} manually"
+          echo "az storage fs directory delete -f YOURCONTAINER -n ${HOST}.${i}/${DATE} --account-name YOURSTORAGEACCOUNT"
+        else
+          echo "Unknown object storage prefix ${array[$j]::2}"
+        fi
+      fi
+  		j=$(( ($j + 1) % $NUMSEGS ))
+  	done
+  fi
+  rm -rf ./sync-*
+}
+
+trap cleanup EXIT
 
 # important that this it outside this loop with "q prepare", as first time after a mount as the
 # fs may take a long time to start (S3 sync) and we want the wrtte processes to run in parallel
@@ -234,29 +264,6 @@ ${QBIN} ./src/postproc.q -inputs ${RESFILEPREFIX} -iostatfile ${IOSTATFILE} -pro
 # an air gap for any storage stats gathering before unlinks go out ...
 #
 sleep 5
-if [ "$3" = "delete" ]; then
-	echo "cleaning up DB..."
-	j=0
-	for i in $(seq $NUMPROCESSES); do
-    if notObjStore ${array[$j]}; then
-		  rm -rf ${array[$j]}/${HOST}.${i}/${DATE}
-      rmdir ${array[$j]}/${HOST}.${i}
-    else
-      if [[ ${array[$j]} == s3://* ]]; then
-        aws s3 rm ${array[$j]}/${HOST}.${i}/${DATE} --recursive
-      elif [[ ${array[$j]} == gs://* ]]; then
-        gsutil rm -r ${array[$j]}/${HOST}.${i}/${DATE}
-      elif [[ ${array[$j]} == ms://* ]]; then
-        echo "Cleanup ${array[$j]}/${HOST}.${i}/${DATE} manually"
-        echo "az storage fs directory delete -f YOURCONTAINER -n ${HOST}.${i}/${DATE} --account-name YOURSTORAGEACCOUNT"
-      else
-        echo "Unknown object storage prefix ${array[$j]::2}"
-      fi
-    fi
-		j=$(( ($j + 1) % $NUMSEGS ))
-	done
-fi
-rm -rf ./sync-*
 
 sync ${RESDIR}
 sync ${CURRENTLOGDIR}
