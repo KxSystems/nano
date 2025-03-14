@@ -60,7 +60,7 @@ fReadBinary: hsym `$DB, fHReadBinaryFileName: "/readbinary"
 fmmap: hsym `$DB, fHmmapFileName: "/mmap"
 flock: hsym `$DB, "/locktest"
 
-MEMRATIOMODIFIERS: `full`small`tiny!1 0.2 0.05
+MEMRATIOMODIFIERS: `double`full`small`tiny!2 1 0.2 0.05
 MODIFIER: 1f^MEMRATIOMODIFIERS `$lower getenv `DBSIZE
 
 // Repeat number of some meta and write tests
