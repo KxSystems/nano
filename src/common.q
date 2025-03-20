@@ -17,7 +17,7 @@ if[ not `result in argvk;
 
 resultH: hopen ":", argv `result;
 writeRes: {[testtype:`C; test:`C; qexpression:`C; repeat:`j; length:`j; times:`N; result:`C; unit:`C]
-  resultH SEP sv (string system "s";testtype; test; qexpression; string repeat; string length; string first times; string last times; result; unit);
+  resultH SEP sv (string system "s";string .z.o;testtype; test; qexpression; string repeat; string length; string first times; string last times; result; unit);
   }
 
 controller: `$"::",argv `controller;

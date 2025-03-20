@@ -3,7 +3,7 @@ FROM kdb-insights-core:4.1.6
 WORKDIR /opt/kx/app
 
 COPY src ./src
-COPY mthread.sh runSeveral.sh version.yaml ./
+COPY mthread.sh runSeveral.sh common.sh version.yaml  ./
 COPY flush ./flush
 COPY config/env ./config/env
 
