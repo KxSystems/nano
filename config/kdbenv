@@ -3,8 +3,15 @@ export QHOME=$HOME/q     # SET QHOME MANUALLY
 
 if [ $(uname -s) = "Darwin" ]; then
   QSUBDIR=m64
+elif [ $(uname -s) = "Linux" ]; then
+  if [ $(uname -p) = "x86_64" ]; then
+    QSUBDIR=l64
+  else
+    QSUBDIR=l64arm
+  fi
 else
-  QSUBDIR=l64
+  echo "Unsupported OS. Only Linux and macOS are supported."
+  exit 10
 fi
 
 export QBIN="$QHOME/$QSUBDIR/q"
