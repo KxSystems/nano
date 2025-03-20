@@ -56,7 +56,7 @@ readonly HOST=$(uname -n)
 readonly PARFILE="./partitions"
 
 declare -a array
-array=(`cat $PARFILE`)
+array=($(cat $PARFILE))
 readonly NUMSEGS=${#array[@]}
 
 readonly RESDIR="${RESULTDIR}/${DATE}"
@@ -82,22 +82,7 @@ function notObjStore {
   if [[ $1 != s3://* && $1 != gs://* && $1 != ms://* ]]; then return 0; else return 1; fi
 }
 
-if [[ $(uname) == "Linux" ]]; then
-    COREPERSOCKET=$(lscpu | grep "Core(s) per socket" | cut -d":" -f 2 |xargs)
-    SOCKETNR=$(lscpu | grep "Socket(s)" | cut -d":" -f 2 |xargs)
-    CPUMOODEL=$(lscpu | grep "Model name" | cut -d":" -f 2 |xargs)
-
-    lscpu > ${RESDIR}/lscpu.out
-    ${SUDO} dmidecode -t memory > ${RESDIR}/dmidecode.out
-    if command -v numactl 2>&1 >/dev/null; then
-      numactl --hardware > ${RESDIR}/numactl.out
-    fi
-else
-    COREPERSOCKET=$(sysctl -n hw.ncpu)
-    SOCKETNR=1
-    CPUMOODEL=$(sysctl -n machdep.cpu.brand_string)
-fi
-CORECOUNT=$((COREPERSOCKET * SOCKETNR))
+source common.sh
 
 echo "Persisting config"
 readonly CONFIG=${RESDIR}/config.yaml
@@ -118,20 +103,27 @@ yq -i ".dbize.RANDREADFILESIZE=$RANDREADFILESIZE" $CONFIG
 yq -i ".dbize.DBSIZE=\"$DBSIZE\"" $CONFIG
 yq -i ".system.os.name=\"$(uname)\"" $CONFIG
 yq -i ".system.os.kernel=\"$(uname -r)\"" $CONFIG
-yq -i ".system.cpu.arch=\"$(uname -p)\"" $CONFIG
+yq -i ".system.cpu.arch=\"$(arch)\"" $CONFIG
 yq -i ".system.cpu.model=\"$CPUMOODEL\"" $CONFIG
 yq -i ".system.cpu.corepersocket=$COREPERSOCKET" $CONFIG
 yq -i ".system.cpu.socketnr=$SOCKETNR" $CONFIG
 yq -i ".system.memsizeGB=$($QBIN -q <<<'.Q.w[][`mphy] div 1024 * 1024 * 1024')" $CONFIG
 
+if [[ $(uname) == "Linux" ]]; then
+    lscpu > ${RESDIR}/lscpu.out
+    ${SUDO} dmidecode -t memory > ${RESDIR}/dmidecode.out
+    if command -v numactl 2>&1 >/dev/null; then
+      numactl --hardware > ${RESDIR}/numactl.out
+    fi
+fi
 
 function cleanup {
   if [ "$KEEPDELETE" = "delete" ]; then
-    echo "cleaning up DB..."
-    j=0
-    for i in $(seq $NUMPROCESSES); do
+  	echo "cleaning up DB..."
+  	j=0
+  	for i in $(seq $NUMPROCESSES); do
       if notObjStore ${array[$j]}; then
-        rm -rf ${array[$j]}/${HOST}.${i}/${DATE}
+  		  rm -rf ${array[$j]}/${HOST}.${i}/${DATE}
         rmdir ${array[$j]}/${HOST}.${i}
       else
         if [[ ${array[$j]} == s3://* ]]; then
@@ -145,7 +137,7 @@ function cleanup {
           echo "Unknown object storage prefix ${array[$j]::2}"
         fi
       fi
-  	  j=$(( ($j + 1) % $NUMSEGS ))
+  		j=$(( ($j + 1) % $NUMSEGS ))
   	done
   fi
   rm -rf ./sync-*
@@ -164,7 +156,7 @@ for i in $(seq $NUMPROCESSES); do
     fi
 	  mkdir -p ${array[$j]}/${HOST}.${i}/${DATE}
   fi
-  echo "threadnr|testtype|testid|test|qexpression|repeat|length|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
+  echo "threadnr|os|testtype|testid|test|qexpression|repeat|length|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
 	j=$(( ($j + 1) % $NUMSEGS ))
 done
 

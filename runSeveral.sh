@@ -2,19 +2,28 @@
 
 set -euo pipefail
 
-if [ $# -gt 0 ]; then
-   readonly OUTPUT=$1
-else
+source common.sh
+
+if [ $# -lt 1 ]; then
    readonly OUTPUT=./results/throughput_total.csv
+   readonly LIMIT=$CORECOUNT
+elif [ $# -lt 2 ]; then
+   readonly OUTPUT=$1
+   readonly LIMIT=$CORECOUNT
+else
+   readonly OUTPUT=$1
+   readonly LIMIT=$2
 fi
 
 readonly HOST=$(uname -n)
 DATES=()
 
-for i in {1,2,4,8,16,32,64,96}; do
+NUMPROCESSES=1
+while [ $NUMPROCESSES -le $LIMIT ]; do
    DATE=$(date +%m%d_%H%M%S)
    DATES+=($DATE)
-   ./mthread.sh $i full delete ${DATE}
+   ./mthread.sh $NUMPROCESSES full delete ${DATE}
+   NUMPROCESSES=$((NUMPROCESSES * 2))
 done
 
 head -n 1 results/${DATES[1]}/$HOST-throughput.psv > ${OUTPUT}
