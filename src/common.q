@@ -24,7 +24,7 @@ controller: `$"::",argv `controller;
 
 msstring:{(string x)," ms"}
 // df returns partition like /dev/nvme0n1p1
-getPartition: {[db:`C] first " " vs last system "df ", db}
+getFilesystem: {[db:`C] first " " vs last system "df ", db}
 
 getDeviceOSX:{
   $[1 = count system "diskutil list|grep physical";
@@ -36,7 +36,10 @@ getDeviceOSX:{
 getDevice:{[db:`C]
   if[.z.o=`m64;:getDeviceOSX[]];
 
-  p: ssr[;"/dev/";""] getPartition[db];
+  fs: getFilesystem[db];
+  if["overlay" ~ fs; :fs];   / Inside Docker, NYI
+  if["disk" ~ last system "lsblk -o type ", fs; :fs];
+  p: ssr[;"/dev/";""] fs;
   // disk is looked up from partition by e.g. /sys/class/block/nvme0n1p1
   if[not (`$p) in key `$":/sys/class/block";
     .qlog.warn "Unable to map partition ", p, " to a device";
