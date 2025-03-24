@@ -60,15 +60,18 @@ docker-builddev-push:
   needs:
     - job: docker-builddev-push
   variables:
-    APPDIR: /opt/kx/app
     QLIC: /tmp/qlic
   before_script:
     - mkdir -p "$QLIC"
     - echo -n "$KDB_LICENSE_B64" | base64 -d > "$QLIC/kc.lic"
-    - cd ${APPDIR}
     - source ./config/env
   rules:
     - if: '$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
+  artifacts:
+    paths:
+      - logs/*/*.log
+    expire_in: 1 day
+    when: on_failure
 
 mthread-single:
   extends:
