@@ -162,8 +162,8 @@ The bash script starts a controller kdb+ process that is responsible to start ea
 A docker image is available for nano on Gitlab and on nexus:
 
 ```bash
-$ docker pull registry.gitlab.com/kxdev/benchmarking/nano/nano:2.6.0
-$ docker pull ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.6.0
+$ docker pull registry.gitlab.com/kxdev/benchmarking/nano/nano:latest
+$ docker pull ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest
 ```
 
 The nano scripts are placed in the docker directory `/opt/kx/app` -see `Dockerfile`
@@ -180,8 +180,8 @@ By default `flush/directmount.sh` is selected as the flush script which requires
 Example usages:
 
 ```bash
-$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/$USER/nanodata:/data --privileged ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.6.0 4 full delete
-$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/storage1/nanodata:/data1 -v /mnt/storage2/nanodata:/data2 -v ${PWD}/partitions_2disks:/opt/kx/app/partitions:ro -e FLUSH=/opt/kx/app/flush/noflush.sh -e THREADNR=5 ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:2.6.0 4 full delete
+$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/$USER/nanodata:/data --privileged ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest 4 full delete
+$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/storage1/nanodata:/data1 -v /mnt/storage2/nanodata:/data2 -v ${PWD}/partitions_2disks:/opt/kx/app/partitions:ro -e FLUSH=/opt/kx/app/flush/noflush.sh -e THREADNR=5 ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest 4 full delete
 ```
 
 ## Technical Details
