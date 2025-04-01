@@ -5,7 +5,7 @@ set -euo pipefail
 source common.sh
 
 if [ $# -lt 1 ]; then
-   readonly OUTPUT=./results/throughput_total.csv
+   readonly OUTPUT=./results/throughput_total.psv
    readonly LIMIT=$CORECOUNT
 elif [ $# -lt 2 ]; then
    readonly OUTPUT=$1
