@@ -140,7 +140,7 @@ system "l src/samplearrays.q";
   sT: .z.n;
   do[N;sdev midVec];
   eT: .z.n;
-  writeRes["cpu read mem"; ".cpu.medInt|sdev int mid"; "sdev"; N; count midVec; sT, eT; fix[2; getMBPerSec[N*count midVec; eT-sT]]; "MB/sec\n"];
+  writeRes["cpu read mem"; ".cpu.sdevInt|sdev int mid"; "sdev"; N; count midVec; sT, eT; fix[2; getMBPerSec[N*count midVec; eT-sT]]; "MB/sec\n"];
   }
 
 .cpu.sdevFloat: {[]
@@ -149,7 +149,7 @@ system "l src/samplearrays.q";
   sT: .z.n;
   do[N;sdev midFloatVec];
   eT: .z.n;
-  writeRes["cpu read mem"; ".cpu.medFloat|sdev float mid"; "sdev"; N; count midFloatVec; sT, eT; fix[2; getMBPerSec[N*count midFloatVec; eT-sT]]; "MB/sec\n"];
+  writeRes["cpu read mem"; ".cpu.sdevFloat|sdev float mid"; "sdev"; N; count midFloatVec; sT, eT; fix[2; getMBPerSec[N*count midFloatVec; eT-sT]]; "MB/sec\n"];
   }
 
 .cpu.ceiling: {[]
@@ -167,7 +167,7 @@ system "l src/samplearrays.q";
   sT: .z.n;
   do[N;midVec * 100];
   eT: .z.n;
-  writeRes["cpu read write mem"; ".cpu.multInt|mult int mid"; enlist "*"; N; count midVec; sT, eT; fix[2; getMBPerSec[N*count midVec; eT-sT]]; "MB/sec\n"];
+  writeRes["cpu read write mem"; ".cpu.multiplyInt|mult int mid"; enlist "*"; N; count midVec; sT, eT; fix[2; getMBPerSec[N*count midVec; eT-sT]]; "MB/sec\n"];
   }
 
 .cpu.multiplyFloat: {[]
@@ -176,7 +176,7 @@ system "l src/samplearrays.q";
   sT: .z.n;
   do[N;midFloatVec * 100.];
   eT: .z.n;
-  writeRes["cpu read write mem"; ".cpu.multFloat|mult float mid"; enlist  "*"; N; count midFloatVec; sT, eT; fix[2; getMBPerSec[N*count midFloatVec; eT-sT]]; "MB/sec\n"];
+  writeRes["cpu read write mem"; ".cpu.multiplyFloat|mult float mid"; enlist  "*"; N; count midFloatVec; sT, eT; fix[2; getMBPerSec[N*count midFloatVec; eT-sT]]; "MB/sec\n"];
   }
 
 .cpu.divideInt: {[]
