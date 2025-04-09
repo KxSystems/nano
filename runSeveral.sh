@@ -6,10 +6,10 @@ source common.sh
 
 if [ $# -lt 1 ]; then
    readonly OUTPUT=./results/throughput_total.psv
-   readonly LIMIT=$CORECOUNT
+   readonly LIMIT=$COMPUTECOUNT
 elif [ $# -lt 2 ]; then
    readonly OUTPUT=$1
-   readonly LIMIT=$CORECOUNT
+   readonly LIMIT=$COMPUTECOUNT
 else
    readonly OUTPUT=$1
    readonly LIMIT=$2
