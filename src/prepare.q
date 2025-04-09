@@ -196,7 +196,7 @@ $[OBJSTORE; [
     do[chunkNr; .[fFloatCol;();,;midFloatVec]];
     system "sync ", 1_string fSymCol;
     eT: .z.n;
-    writeRes["write disk";".prepare.appendMidSym|open append mid float, sync once";".[;();,;]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
+    writeRes["write disk";".prepare.appendMidFloat|open append mid float, sync once";".[;();,;]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
   };
   .prepare.makeTable: {[]
     .qlog.info "make ", (1_string KDBDB), " a normal kdb+ database (for e.g. xasc test)";
