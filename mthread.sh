@@ -93,10 +93,11 @@ yq -i ".env.THREADNR=$THREADNR" $CONFIG
 yq -i ".env.PROCNR=$NUMPROCESSES" $CONFIG
 yq -i ".env.FLUSH=\"$(basename $FLUSH)\"" $CONFIG
 yq -i ".env.DBDIR=\"$(cat $PARFILE)\"" $CONFIG
-yq -i ".nano.VERSION=\"$(yq '.dev' version.yaml)\"" $CONFIG
-yq -i ".kdb.MAJOR=$($QBIN -q  <<< ".z.K" | tr -d f)" $CONFIG
-yq -i ".kdb.MINOR=\"$($QBIN -q  <<< ".z.k")\"" $CONFIG
-yq -i ".kdb.QBIN=\"$QBIN\"" $CONFIG
+yq -i ".env.NUMA=\"$NUMA\"" $CONFIG
+yq -i ".nano.version=\"$(yq '.dev' version.yaml)\"" $CONFIG
+yq -i ".kdb.major=$($QBIN -q  <<< ".z.K" | tr -d f)" $CONFIG
+yq -i ".kdb.minor=\"$($QBIN -q  <<< ".z.k")\"" $CONFIG
+yq -i ".kdb.qbin=\"$QBIN\"" $CONFIG
 yq -i ".dbize.SEQWRITETESTLIMIT=$SEQWRITETESTLIMIT" $CONFIG
 yq -i ".dbize.RANDREADNUMBER=$RANDREADNUMBER" $CONFIG
 yq -i ".dbize.RANDREADFILESIZE=$RANDREADFILESIZE" $CONFIG
@@ -105,15 +106,27 @@ yq -i ".system.os.name=\"$(uname)\"" $CONFIG
 yq -i ".system.os.kernel=\"$(uname -r)\"" $CONFIG
 yq -i ".system.cpu.arch=\"$(arch)\"" $CONFIG
 yq -i ".system.cpu.model=\"$CPUMOODEL\"" $CONFIG
-yq -i ".system.cpu.corepersocket=$COREPERSOCKET" $CONFIG
 yq -i ".system.cpu.socketnr=$SOCKETNR" $CONFIG
+yq -i ".system.cpu.corepersocket=$COREPERSOCKET" $CONFIG
+yq -i ".system.cpu.threadpercore=$THREADPERCORE" $CONFIG
 yq -i ".system.memsizeGB=$($QBIN -q <<<'.Q.w[][`mphy] div 1024 * 1024 * 1024')" $CONFIG
+
+function getNuma {
+    echo ""
+}
 
 if [[ $(uname) == "Linux" ]]; then
     lscpu > ${RESDIR}/lscpu.out
     ${SUDO} dmidecode -t memory > ${RESDIR}/dmidecode.out
     if command -v numactl 2>&1 >/dev/null; then
       numactl --hardware > ${RESDIR}/numactl.out
+      NUMANODES=$(lscpu|grep "NUMA node(s)"|cut -d":" -f 2|xargs)
+      if [[ ${NUMA} == "roundrobin" ]] && [[ ${NUMANODES} -gt 1 ]]; then
+        function getNuma {
+          local IDX=$(((${1}-1) % NUMANODES))
+          echo "numactl -N $IDX -m $IDX"
+        }
+      fi
     fi
 fi
 
@@ -174,7 +187,8 @@ function runTest {
   ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_${TESTER%.*}.log 2 >&1 &
   j=0
   for i in $(seq $NUMPROCESSES); do
-  	${QBIN} ./src/${TESTER} -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_${TESTER%.*}.log 2>&1 &
+    local NUMAPREFIX=$(getNuma $i)
+  	${NUMAPREFIX} ${QBIN} ./src/${TESTER} -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_${TESTER%.*}.log 2>&1 &
     j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait -n

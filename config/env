@@ -14,6 +14,11 @@ export EXCLUDETESTS=""
 
 export SUDO="sudo"  # "" or "sudo" if sudo is required for some commands e.g. to flush page cache
 
+# Worker processes can be started with a numactl command.
+# Option `roundrobin` means that worker `i` is started on numa node `i mod N` where N is the number of numa nodes.
+# If N is 1 or NUMA is set to `nonuma` then no numactl is used.
+export NUMA="nonuma" # nonuma or roundrobin
+
 ##############
 # Settings for object storage
 # See this for more details: https://code.kx.com/insights/1.4/core/objstor/main.html

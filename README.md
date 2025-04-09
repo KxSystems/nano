@@ -106,7 +106,7 @@ This takes three arguments:
    is kept on the filesystem. Useful for testing performance on a fuller
    filesystem, which could be modeled through running multiple iterations
    of `mthread.sh`.
-1. Optional: date. This test assumes that data was already generated (`keep` flag was used the previous test). Format of `%m%dD%H%M` is expected like `0404D1232`.
+1. Optional: date. This test assumes that data was already generated (`keep` flag was used the previous test). Format of `%m%d_H%M%S` is expected like `0408_152349`.
 
 If you would like the data to be compressed then pass the environment variable `COMPRESS` with the [kdb+ compression parameters](https://code.kx.com/q/kb/file-compression/#compression-parameters).
 
@@ -115,7 +115,7 @@ Example usages
 ```bash
 $ ./mthread.sh $(nproc) full delete
 $ COMPRESS="17 2 6" ./mthread.sh 8 full keep
-$ ./mthread.sh 8 readonly keep 0404:1232
+$ ./mthread.sh 8 readonly keep 0408_152349
 ```
 
 
