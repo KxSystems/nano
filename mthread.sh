@@ -59,6 +59,21 @@ declare -a array
 array=($(cat $PARFILE))
 readonly NUMSEGS=${#array[@]}
 
+if [ $SCOPE = "readonly" ]; then
+  if ! [ "$#" -eq "4" ]; then
+    echo "Passing a date (4th) parameter is mandatory in readonly mode to locate previously generated data files"
+    exit 5
+  fi
+  j=0
+  for i in $(seq $NUMPROCESSES); do
+  	if ! [ -d ${array[$j]}/${HOST}.${i}/${DATE} ]; then
+      echo "Data directory ${array[$j]}/${HOST}.${i}/${DATE} does not exits. Mode readonly assumes that data has been generated previously."
+      exit 6
+    fi
+    j=$(( ($j + 1) % $NUMSEGS ))
+  done
+fi
+
 readonly RESDIR="${RESULTDIR}/${DATE}"
 mkdir -p ${RESDIR}
 echo "Results will be persisted in ${RESDIR}"
@@ -163,7 +178,7 @@ trap cleanup EXIT
 j=0
 for i in $(seq $NUMPROCESSES); do
   if notObjStore ${array[$j]}; then
-    if [ -d ${array[$j]}/${HOST}.${i} ]; then
+    if [ $SCOPE = "full" ] && [ -d ${array[$j]}/${HOST}.${i} ]; then
       echo "${array[$j]}/${HOST}.${i} directory already exists. Please remove it and rerun."
       exit 7
     fi

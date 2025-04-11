@@ -31,7 +31,7 @@ getKBRead: $[.z.o ~ `m64; getKBReadMac; getKBReadLinux]
 
 finish: {[x:`j]
   .qlog.info "Sending exit message to workers";
-  @[; "exit 0"; ::] each Workers;
+  @[; "exit ", string x; ::] each Workers;
   exit x
   }
 
