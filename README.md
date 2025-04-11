@@ -65,10 +65,11 @@ The environment executing this test must have the associated cloud vendor CLI se
 
 You can also test the [cache](https://code.kx.com/insights/1.4/core/objstor/kxreaper.html) impact of the object storage library. The recommended way is to
    * provide an object storage path in `partitions`
-   * run a full test to populate data: `./mthread.sh $(nproc) full keep`. Take note of the data location postfix (`0509D1529` in our case)
+   * `DATE=$(date +%m%d_%H%M%S)`
+   * run a full test to populate data: `./mthread.sh $(nproc) full keep $DATE`.
    * assign an empty directory on a fast local disk to the environment variable `KX_OBJSTR_CACHE_PATH` in file `./config/env`
-   * run the test to populate cache: `./mthread.sh $(nproc) readonly keep 0509D1529`
-   * run the test again to use cache: `./mthread.sh $(nproc) readonly delete 0509D1529`
+   * run the test to populate cache: `./mthread.sh $(nproc) readonly keep $DATE`
+   * run the test again to use cache: `./mthread.sh $(nproc) readonly delete $DATE`
    * delete cache files in object storage cache: `source ./config/env; rm -rf ${KX_OBJSTR_CACHE_PATH}/objects`
 
 The random read kdb+ script is deterministic, i.e. it reads the same blocks in consecutive runs. The script uses [roll](https://code.kx.com/q/ref/deal/#roll-and-deal) for selecting random blocks which uses a fixed seed.
