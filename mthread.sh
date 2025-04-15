@@ -14,10 +14,6 @@ if [ "$1" -le 0 ]; then
 	echo $USAGE
 	exit 2
 fi
-if [ "$1" -gt 256 ]; then
-	echo "This test does not qualify results above 256 processes"
-	exit 3
-fi
 
 if [ ! -f ${FLUSH} ]; then
 	echo "${FLUSH} is missing"
@@ -105,6 +101,7 @@ echo "Persisting config to $CONFIG"
 touch $CONFIG
 yq -i ".env.COMPRESS=\"$COMPRESS\"" $CONFIG
 yq -i ".env.THREADNR=$THREADNR" $CONFIG
+yq -i ".env.FILENRPERWORKER=$FILENRPERWORKER" $CONFIG
 yq -i ".env.PROCNR=$NUMPROCESSES" $CONFIG
 yq -i ".env.FLUSH=\"$(basename $FLUSH)\"" $CONFIG
 yq -i ".env.DBDIR=\"$(cat $PARFILE)\"" $CONFIG
@@ -178,8 +175,8 @@ trap cleanup EXIT
 j=0
 for i in $(seq $NUMPROCESSES); do
   if notObjStore ${array[$j]}; then
-    if [ $SCOPE = "full" ] && [ -d ${array[$j]}/${HOST}.${i} ]; then
-      echo "${array[$j]}/${HOST}.${i} directory already exists. Please remove it and rerun."
+    if [ $SCOPE = "full" ] && [ -d ${array[$j]}/${HOST}.${i}/${DATE} ]; then
+      echo "${array[$j]}/${HOST}.${i}/${DATE} directory already exists. Please remove it and rerun."
       exit 7
     fi
 	  mkdir -p ${array[$j]}/${HOST}.${i}/${DATE}
@@ -219,7 +216,7 @@ if [ "$SCOPE" = "full" ]; then
   ${FLUSH}
   runTest CPU cpu.q
   ${FLUSH}
-  runTest WRITE prepare.q
+  runTest WRITE write.q
 fi
 
 ${FLUSH}
@@ -247,7 +244,7 @@ function runrandomread {
   j=0
   sleep 5
   for i in $(seq $NUMPROCESSES); do
-  	${QBIN} ./src/randomread.q -testname randomread -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read disk" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i}_randomread_$listsize.log 2>&1  &
+  	${QBIN} ./src/randomread.q -testname randomread_${listsize}${mmap:1} -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read disk" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i}_randomread_$listsize.log 2>&1  &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait
@@ -255,7 +252,7 @@ function runrandomread {
   ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller_randomreread_$listsize.log 2 >&1 &
   j=0
   for i in $(seq $NUMPROCESSES); do
-  	${QBIN} ./src/randomread.q -testname randomreread -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read mem" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i}_randomreread_$listsize.log 2>&1  &
+  	${QBIN} ./src/randomread.q -testname randomreread_${listsize}${mmap:1} -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read mem" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i}_randomreread_$listsize.log 2>&1  &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait
