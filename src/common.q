@@ -56,7 +56,9 @@ KDBTBL: .Q.dd[KDBDB; `tbl]
 fSymCol: .Q.dd[KDBTBL; `sym]
 fFloatCol: .Q.dd[KDBTBL; `floatcol]
 
-fRandomRead: hsym `$DB, "/randomread"
+FILENRPERWORKER: "I"$getenv `FILENRPERWORKER
+
+fsRandomRead: hsym `$DB,/: "/randomread",/: string til FILENRPERWORKER
 fOpenClose: hsym `$DB, fOpenCloseFileName: "/openclose"
 fhcount: hsym `$DB, fHCountFileName: "/fhcount"
 fReadBinary: hsym `$DB, fHReadBinaryFileName: "/readbinary"

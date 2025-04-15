@@ -18,32 +18,34 @@ sizeM: (4000 64000 1000000 div SIZEOFLONG)!("4k"; "64k"; "1M");  // good enough 
 pageLength: 4096 div SIZEOFLONG / the page size is 4k in Linux
 
 randomread:{[blocksize:`j]
-  blockNr: totalreadInB div blocksize;
+  blockNr: totalreadInB div blocksize * FILENRPERWORKER;
   blockLength: blocksize div SIZEOFLONG;
-  .qlog.info "Indexing ", string[blockNr], " number of continuous blocks of size ", string blocksize;
-  f:get fRandomRead;
-  offsets: pageLength*neg[blockNr]?(neg[blockLength]+count f) div pageLength;
-  :{[f; offsets; blockLength; dontcare]
+  .qlog.info "Indexing each memory-maped file vectors with ", string[blockNr], " number of continuous blocks of size ", string blocksize;
+  fs:get each fsRandomRead;
+  offsetlists: pageLength*neg[blockNr]?/:(neg[blockLength]+count each fs) div pageLength;
+  :{[fs; offsetlists; blockLength; dontcare]
     idxBase: til blockLength;
+    idxpairs: 0N?raze til[FILENRPERWORKER] ,/:' offsetlists;
     sT:.z.n;
-    idxBase {[f;idxBase;offset] f offset+idxBase;}[f]/: offsets;
+    ({[fs;idxBase;fidx;offset] fs[fidx] offset+idxBase;}[fs;idxBase].) each idxpairs;
     eT: .z.n;
-    writeRes[argv[`testtype];".randomread.", argv[`testname],"|random read ",sizeM[blockLength];"+,@"; count offsets; blockLength; sT, eT; fix[2;getMBPerSec[blockLength*count offsets; eT-sT]];"MB/sec\n"]
-    }[f; offsets; blockLength]
+    writeRes[argv[`testtype];".randomread.", argv[`testname],"|random read ",sizeM[blockLength];"+,@"; sum count each offsetlists; blockLength; sT, eT; fix[2;getMBPerSec[blockLength*sum count each offsetlists; eT-sT]];"MB/sec\n"]
+    }[fs; offsetlists; blockLength]
   };
 
 randomreadwithmmap:{[blocksize:`j]
-  blockNr: totalreadInB div blocksize;
+  blockNr: totalreadInB div blocksize * FILENRPERWORKER;
   blockLength: blocksize div SIZEOFLONG;
-  .qlog.info "Indexing ", string[blockNr], " number of continuous blocks of size ", string blocksize;
-  offsets: pageLength*neg[blockNr]?(neg[blockLength]+(-14+hcount fRandomRead)div SIZEOFLONG) div pageLength;  // 14 bytes overhead
-  :{[offsets; blockLength; dontcare]
+  .qlog.info "Memory-maping and indexing each file vectors with ", string[blockNr], " number of continuous blocks of size ", string blocksize;
+  offsetlists: pageLength*neg[blockNr]?/:(neg[blockLength]+(-14+hcount each fsRandomRead)div SIZEOFLONG) div pageLength;  // 14 bytes overhead
+  :{[offsetlists; blockLength; dontcare]
     idxBase: til blockLength;
+    idxpairs: 0N?raze fsRandomRead ,/:' offsetlists;
     sT:.z.n;
-    idxBase {[idxBase; offset] get[fRandomRead] offset+idxBase;}/: offsets;
+    ({[idxBase;f;offset] get[f] offset+idxBase;}[idxBase].) each idxpairs;
     eT: .z.n;
-    writeRes[argv[`testtype];".randomread.", argv[`testname], "|mmap,random read ",sizeM[blockLength];"get,+,@"; count offsets; blockLength; sT, eT; fix[2;getMBPerSec[blockLength*count offsets; eT-sT]];"MB/sec\n"];
-    }[offsets; blockLength]
+    writeRes[argv[`testtype];".randomread.", argv[`testname], "|mmap,random read ",sizeM[blockLength];"get,+,@"; sum count each offsetlists; blockLength; sT, eT; fix[2;getMBPerSec[blockLength*sum count each offsetlists; eT-sT]];"MB/sec\n"];
+    }[offsetlists; blockLength]
   };
 
 fn: $[`withmmap in argvk; randomreadwithmmap; randomread]
