@@ -4,15 +4,12 @@
 
 "nano" calculates basic raw CPU and I/O capabilities of non-volatile storage, as measured from the perspective of kdb+. It is considered a storage, memory and CPU benchmark that performs sequential/random read and write together with aggregation (e.g. sum and sort) and meta operations (like opening a file).
 
-Nano measures results from running on one server or aggregated across several servers.
-Servers can be attached either directly to storage, or connected to a
+Nano measures results from running on one kdb+ processes or aggregated across several worker processes. The kdb+ processes can be attached either directly to storage, or connected to a
 distributed/shared storage system.
 
 The throughput and latency measurements are taken directly from kdb+/q,
 results include read/mmap allocation, creation and ingest of data.
-There is an option to test compressed data via algorithms on the client or, in the
-case of a storage system supporting built-in compression, that compression can be
-measured when being entirely off-loaded onto the target storage device.
+There is an option to test compressed data.
 
 This utility is used to confirm the basic expectations for the CPU and storage subsystem
 prior to a more detailed testing regime.
@@ -29,9 +26,9 @@ Multi-node client testing can be used to either test a single namespace solution
 Please [install kdb+ 4.1](https://code.kx.com/q/learn/install/). If the q home differs from `$HOME/q` then you need to set `QHOME` in `config/kdbenv`.
 
 The script assumes that the following commands are available - see `Dockerfile` for more information
-   * yq
-   * iostat
-   * nc
+   * [yq](https://github.com/mikefarah/yq)
+   * [iostat](https://github.com/sysstat/sysstat)
+   * [nc](https://nc110.sourceforge.io/)
 
 The scripts starts several kdb+ processes that open a port for incoming messages. By default, the controller opens port 5100 and the workers open 5500, 5501, 5502, etc. You can change these ports by editing variables CONTROLLERPORT and WORKERBASEPORT in `mthread.sh`.
 
@@ -43,7 +40,7 @@ Place these scripts in a single working directory.
 The scripts can best be run as root user or started with high priority.
 
 ### parameters
-The benchmark can run with many parameters. Some parameters are set as environment variables (e.g. the number of secondary threads of the kdb+ processes) and some are set by command line parameters (e.g. number of parallel kdb+ processes). Environment variables are placed in `config/env`.
+The benchmark can run with many parameters. Some parameters are set as environment variables (e.g. the number of secondary threads of the kdb+ processes) and some are set by command line parameters (e.g. number of worker kdb+ processes). Environment variables are placed in `config/env`.
 
 One key environment variable is `FLUSH` that points to a storage cache flush script. Some sample scripts are provided and the default assumes locally attached block storage for which `echo 3 > /proc/sys/vm/drop_caches` does the job. If the root user is not available to you, the flush script will have to be placed in the sudo list by your systems administrator.
 
@@ -102,8 +99,8 @@ Executes multiple processes of execution of the benchmark on the execution host
 This takes three arguments:
 
 1. The number of executions of q on each node, integer.
-1. `full|readonly` to select between full and read only test. Subtests `prepare` and `meta` are not executed in read-only tests.
-1. `delete | keep`. Flag, determines if the data created from each process
+1. `full|readonly` to select between full and read only test. Subtests `write` and `meta` are not executed in read-only tests.
+1. `delete|keep`. Flag, determines if the data created from each process
    is kept on the filesystem. Useful for testing performance on a fuller
    filesystem, which could be modeled through running multiple iterations
    of `mthread.sh`.
@@ -191,23 +188,23 @@ The script calculates the throughput (MiB/sec) of an operation by calculating th
 
 Script `./mthread.sh` executes 7 major tests:
    1. CPU
-   1. Prepare
+   1. Write
    1. Read
    1. Reread
    1. Meta
    1. Random read
    1. xasc
 
-In read-only tests (when DB dir parameter is passed to `mthread.sh` as a third parameter) the [Prepare](#Prepare) and [Meta](#Meta) tests are omitted.
+In read-only tests (when DB dir parameter is passed to `mthread.sh` as a third parameter) the [Write](#Write) and [Meta](#Meta) tests are omitted.
 
 All tests start multiple kdb+ processes (set by the first parameter of `./mthread.sh`) each having its own working space on the disk.
 
-The cache is flushed before each test except reread.
+The cache is flushed before each test except reread and random reread.
 
 We detail each test in the next section.
 
 ### CPU (`cpu.q`)
-   1. starts a few tests on in-memory lists that mainly stresses the CPU. The small list (16k long) probably resides in CPU cache. Test include
+   1. starts a few tests on in-memory lists that mainly stresses the CPU and memory. The small (16k long) and mid-length (32M long) long lists probably reside in CPU caches. Test include
       * creating random permutation
       * sorting
       * calculating deltas
@@ -215,7 +212,7 @@ We detail each test in the next section.
       * calculates moving and weighted averages
       * do arithmetics and implicit iteration
 
-### Prepare/write (`prepare.q`)
+### Write (`write.q`)
    1. performs three write tests
       1. `open append tiny`: appending four integers to the end of list (this operation includes opening and closing a file): `[; (); ,; 2 3 5 7]`
       1. `append tiny`: appending four integers to a handle of a kdb+ file: `H: hopen ...; H 2 3 5 7`
