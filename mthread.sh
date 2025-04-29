@@ -62,8 +62,9 @@ if [ $SCOPE = "readonly" ]; then
   fi
   j=0
   for i in $(seq $NUMPROCESSES); do
-  	if ! [ -d ${array[$j]}/${HOST}.${i}/${DATE} ]; then
-      echo "Data directory ${array[$j]}/${HOST}.${i}/${DATE} does not exits. Mode readonly assumes that data has been generated previously."
+    DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
+    if ! [ -d ${DATADIR} ]; then
+      echo "Data directory ${DATADIR} does not exits. Mode readonly assumes that data has been generated previously."
       exit 6
     fi
     j=$(( ($j + 1) % $NUMSEGS ))
@@ -147,16 +148,16 @@ function cleanup {
   	echo "cleaning up DB..."
   	j=0
   	for i in $(seq $NUMPROCESSES); do
+      local DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
       if notObjStore ${array[$j]}; then
-  		  rm -rf ${array[$j]}/${HOST}.${i}/${DATE}
-        rmdir ${array[$j]}/${HOST}.${i}
+        rm -rf ${DATADIR}
       else
         if [[ ${array[$j]} == s3://* ]]; then
-          aws s3 rm ${array[$j]}/${HOST}.${i}/${DATE} --recursive
+          aws s3 rm ${DATADIR} --recursive
         elif [[ ${array[$j]} == gs://* ]]; then
-          gsutil rm -r ${array[$j]}/${HOST}.${i}/${DATE}
+          gsutil rm -r ${DATADIR}
         elif [[ ${array[$j]} == ms://* ]]; then
-          echo "Cleanup ${array[$j]}/${HOST}.${i}/${DATE} manually"
+          echo "Cleanup ${DATADIR} manually"
           echo "az storage fs directory delete -f YOURCONTAINER -n ${HOST}.${i}/${DATE} --account-name YOURSTORAGEACCOUNT"
         else
           echo "Unknown object storage prefix ${array[$j]::2}"
@@ -175,11 +176,12 @@ trap cleanup EXIT
 j=0
 for i in $(seq $NUMPROCESSES); do
   if notObjStore ${array[$j]}; then
-    if [ $SCOPE = "full" ] && [ -d ${array[$j]}/${HOST}.${i}/${DATE} ]; then
-      echo "${array[$j]}/${HOST}.${i}/${DATE} directory already exists. Please remove it and rerun."
+    DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
+    if [ $SCOPE = "full" ] && [ -d ${DATADIR} ]; then
+      echo "${DATADIR} directory already exists. Please remove it and rerun."
       exit 7
     fi
-	  mkdir -p ${array[$j]}/${HOST}.${i}/${DATE}
+	  mkdir -p ${DATADIR}
   fi
   echo "threadnr|os|testtype|testid|test|qexpression|repeat|length|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
 	j=$(( ($j + 1) % $NUMSEGS ))
@@ -199,8 +201,9 @@ function runTest {
   ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_${TESTER%.*}.log 2 >&1 &
   j=0
   for i in $(seq $NUMPROCESSES); do
+    local DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
     local NUMAPREFIX=$(getNuma $i)
-  	${NUMAPREFIX} ${QBIN} ./src/${TESTER} -processes $NUMPROCESSES -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_${TESTER%.*}.log 2>&1 &
+    ${NUMAPREFIX} ${QBIN} ./src/${TESTER} -processes $NUMPROCESSES -db ${DATADIR} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_${TESTER%.*}.log 2>&1 &
     j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait -n
