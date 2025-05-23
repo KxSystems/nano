@@ -13,6 +13,5 @@ RUN source ./config/env
 RUN echo "/data" > ./partitions
 
 RUN yum upgrade -y && yum install -y wget sysstat nc dmidecode numactl
-RUN wget https://github.com/mikefarah/yq/releases/download/v4.34.1/yq_linux_386 -O /usr/bin/yq && chmod +x /usr/bin/yq
 
 ENTRYPOINT [ "/bin/bash", "mthread.sh" ]

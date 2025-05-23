@@ -26,7 +26,6 @@ Multi-node client testing can be used to either test a single namespace solution
 Please [install kdb+ 4.1](https://code.kx.com/q/learn/install/). If the q home differs from `$HOME/q` then you need to set `QHOME` in `config/kdbenv`.
 
 The script assumes that the following commands are available - see `Dockerfile` for more information
-   * [yq](https://github.com/mikefarah/yq)
    * [iostat](https://github.com/sysstat/sysstat)
    * [nc](https://nc110.sourceforge.io/)
 
