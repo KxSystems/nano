@@ -77,7 +77,7 @@ TASKSENDTIMEOUT:0D00:01
 sendTests:{[c:`s;db:`C;nm:`s]
   .qlog.info "Sending tests to the controller";
   s:.z.p;
-  while[not (::)~@[c; (`addWorker; system "p"; getDevice[db]; getTests[nm]); 
+  while[not (::)~@[c; (`addWorker; system "p"; getDevice db; getTests nm); 
       {.qlog.debug "Unable to send tests to the controller: ", x, ". Waiting a second before retry.";0b}];
     if[.z.p > s+TASKSENDTIMEOUT; .qlog.error "Timeout sending tests to the controller"; exit 1];
     system "sleep 1"];
