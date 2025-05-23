@@ -24,7 +24,7 @@ if [ ! -f ${FLUSH} ]; then
 fi
 
 readonly NUMPROCESSES=$1
-readonly SCOPE="$2"
+readonly export SCOPE="$2"
 readonly KEEPDELETE=$3
 
 if [ "$#" -eq "4" ]; then

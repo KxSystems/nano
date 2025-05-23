@@ -2,7 +2,13 @@ echo "Flushing page cache"
 
 
 if [ $(uname -s) = "Darwin" ];then
-	sync $(cat ./partitions); ${SUDO} purge
+	if [[ ! "$SCOPE" = "cpuonly" ]]; then
+		sync $(cat ./partitions)
+	fi
+	${SUDO} purge
 else
-	sync $(cat ./partitions); echo 3 | ${SUDO} tee /proc/sys/vm/drop_caches > /dev/null
+	if [[ ! "$SCOPE" = "cpuonly" ]]; then
+		sync $(cat ./partitions)
+	fi
+	echo 3 | ${SUDO} tee /proc/sys/vm/drop_caches > /dev/null
 fi
