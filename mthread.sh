@@ -220,17 +220,17 @@ function runTest {
 }
 
 if [[ "$SCOPE" = "cpuonly" || "$SCOPE" = "full" ]]; then
-  ${FLUSH}
+  source ${FLUSH}
   runTest CPU cpu.q
 fi
 
 if [ "$SCOPE" = "full" ]; then
-  ${FLUSH}
+  source ${FLUSH}
   runTest WRITE write.q
 fi
 
 if [[ ! "$SCOPE" = "cpuonly" ]]; then
-  ${FLUSH}
+  source ${FLUSH}
   runTest "SEQUENTIAL READ" read.q
   ######### RE-READ TEST #########
   # without flush, cached in kernel buffer, re-mapped...
@@ -238,7 +238,7 @@ if [[ ! "$SCOPE" = "cpuonly" ]]; then
 fi
 
 if [ "$SCOPE" = "full" ]; then
-  ${FLUSH}
+  source ${FLUSH}
   runTest "META DATA" meta.q
 fi
 
@@ -247,7 +247,7 @@ fi
 function runrandomread {
   local listsize=$1
   local mmap=$2
-  ${FLUSH}
+  source ${FLUSH}
   echo "test${mmap} with block size ${listsize}"
 
   touch ${CURRENTLOGDIR}/sync-$HOST
@@ -283,7 +283,7 @@ if [[ ! "$SCOPE" = "cpuonly" ]]; then
     SEED=$((SEED+1))
   done
 
-  ${FLUSH}
+  source ${FLUSH}
   runTest XASC xasc.q
 fi
 
