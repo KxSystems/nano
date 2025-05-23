@@ -6,7 +6,7 @@ set -euo pipefail
 # that probably needs an access key
 
 IMAGENAME=nano
-VERSION=$(cat version.yaml)
+VERSION=$(cat version.txt)
 echo "Building verion ${VERSION}"
 
 docker build -t ${IMAGENAME}:${VERSION} .
