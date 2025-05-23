@@ -16,11 +16,11 @@ if [ "$1" -le 0 ]; then
 fi
 
 if [[ ! "$2" =~ ^(cpuonly|readonly|full)$ ]]; then
-    error_exit "Invalid scope: $SCOPE (must be 'cpuonly', 'readonly' or 'full')"
+    error_exit "Invalid scope: $SCOPE (must be 'cpuonly', 'readonly' or 'full')" 2
 fi
 
 if [ ! -f ${FLUSH} ]; then
-	error_exit "Script ${FLUSH} is missing. Please set environment variable FLUSH to an existing flush scripts"
+	error_exit "Script ${FLUSH} is missing. Please set environment variable FLUSH to an existing flush scripts" 3
 fi
 
 readonly NUMPROCESSES=$1
@@ -36,15 +36,13 @@ fi
 
 readonly CONTROLLERPORT=5100
 if nc -z 127.0.0.1 $CONTROLLERPORT 2>&1 > /dev/null; then
-  echo "Port $CONTROLLERPORT is used. Maybe leftover kdb+ processes are running. Cannot start the controller. Exiting."
-  exit 12
+  error_exit "Port $CONTROLLERPORT is used. Maybe leftover kdb+ processes are running. Cannot start the controller. Exiting." 12
 fi
 
 readonly WORKERBASEPORT=5500
 for i in $(seq $NUMPROCESSES); do
   if nc -z  127.0.0.1 $((WORKERBASEPORT+i)); then
-    echo "Port $((WORKERBASEPORT+i)) is used. Maybe leftover kdb+ processes are running. Exiting."
-    exit 13
+    error_exit "Port $((WORKERBASEPORT+i)) is used. Maybe leftover kdb+ processes are running. Exiting." 13
   fi
 done
 
@@ -59,15 +57,13 @@ readonly NUMSEGS=${#array[@]}
 
 if [ $SCOPE = "readonly" ]; then
   if ! [ "$#" -eq "4" ]; then
-    echo "Passing a date (4th) parameter is mandatory in readonly mode to locate previously generated data files"
-    exit 5
+    error_exit "Passing a date (4th) parameter is mandatory in readonly mode to locate previously generated data files" 5
   fi
   j=0
   for i in $(seq $NUMPROCESSES); do
     DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
     if ! [ -d ${DATADIR} ]; then
-      echo "Data directory ${DATADIR} does not exits. Mode readonly assumes that data has been generated previously."
-      exit 6
+      error_exit "Data directory ${DATADIR} does not exits. Mode readonly assumes that data has been generated previously." 6
     fi
     j=$(( ($j + 1) % $NUMSEGS ))
   done
@@ -180,8 +176,7 @@ for i in $(seq $NUMPROCESSES); do
   if notObjStore ${array[$j]}; then
     DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
     if [ $SCOPE = "full" ] && [ -d ${DATADIR} ]; then
-      echo "${DATADIR} directory already exists. Please remove it and rerun."
-      exit 7
+      error_exit "${DATADIR} directory already exists. Please remove it and rerun." 7
     fi
 	  mkdir -p ${DATADIR}
   fi
