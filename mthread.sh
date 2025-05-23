@@ -6,19 +6,21 @@ readonly USAGE="Usage: $0 processnr cpuonly|readonly|full keep|delete [date]"
 
 
 if [ $# -lt 3 ]; then
-  echo "At least three parameters are mandatory"
 	echo $USAGE
-	exit 1
+  error_exit "At least three parameters are mandatory" 2
 fi
+
 if [ "$1" -le 0 ]; then
 	echo $USAGE
-	exit 2
+  error_exit "The proccessnumber must be greater than 0" 2
+fi
+
+if [[ ! "$2" =~ ^(cpuonly|readonly|full)$ ]]; then
+    error_exit "Invalid scope: $SCOPE (must be 'cpuonly', 'readonly' or 'full')"
 fi
 
 if [ ! -f ${FLUSH} ]; then
-	echo "${FLUSH} is missing"
-	echo "please set environment varibale FLUSH to an existing flush scripts"
-	exit 4
+	error_exit "Script ${FLUSH} is missing. Please set environment variable FLUSH to an existing flush scripts"
 fi
 
 readonly NUMPROCESSES=$1

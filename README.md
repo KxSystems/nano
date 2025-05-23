@@ -99,7 +99,7 @@ Executes multiple processes of execution of the benchmark on the execution host
 This takes three arguments:
 
 1. The number of executions of q on each node, integer.
-1. `full|readonly` to select between full and read only test. Subtests `write` and `meta` are not executed in read-only tests.
+1. `cpuonly|readonly|full` to select between cpuonly, read only and full test. Subtests `write` and `meta` are not executed in read-only tests.
 1. `delete|keep`. Flag, determines if the data created from each process
    is kept on the filesystem. Useful for testing performance on a fuller
    filesystem, which could be modeled through running multiple iterations
