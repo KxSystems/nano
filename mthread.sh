@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-readonly USAGE="Usage: $0 processnr full|readonly keep|delete [date]"
+readonly USAGE="Usage: $0 processnr cpuonly|readonly|full keep|delete [date]"
 
 
 if [ $# -lt 3 ]; then
@@ -144,7 +144,7 @@ if [[ $(uname) == "Linux" ]]; then
 fi
 
 function cleanup {
-  if [ "$KEEPDELETE" = "delete" ]; then
+  if [[ "$KEEPDELETE" = "delete" && "$SCOPE" != "cpuonly" ]]; then
   	echo "cleaning up DB..."
   	j=0
   	for i in $(seq $NUMPROCESSES); do
@@ -175,13 +175,15 @@ trap cleanup EXIT
 # fs may take a long time to start (S3 sync) and we want the wrtte processes to run in parallel
 j=0
 for i in $(seq $NUMPROCESSES); do
-  if notObjStore ${array[$j]}; then
-    DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
-    if [ $SCOPE = "full" ] && [ -d ${DATADIR} ]; then
-      echo "${DATADIR} directory already exists. Please remove it and rerun."
-      exit 7
+  if [[ ! "$SCOPE" = "cpuonly" ]]; then
+    if notObjStore ${array[$j]}; then
+      DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
+      if [ $SCOPE = "full" ] && [ -d ${DATADIR} ]; then
+        echo "${DATADIR} directory already exists. Please remove it and rerun."
+        exit 7
+      fi
+	    mkdir -p ${DATADIR}
     fi
-	  mkdir -p ${DATADIR}
   fi
   echo "threadnr|os|testtype|testid|test|qexpression|repeat|length|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
 	j=$(( ($j + 1) % $NUMSEGS ))
@@ -215,19 +217,23 @@ function runTest {
   sleep 5
 }
 
-if [ "$SCOPE" = "full" ]; then
+if [[ "$SCOPE" = "cpuonly" || "$SCOPE" = "full" ]]; then
   ${FLUSH}
   runTest CPU cpu.q
+fi
+
+if [ "$SCOPE" = "full" ]; then
   ${FLUSH}
   runTest WRITE write.q
 fi
 
-${FLUSH}
-runTest "SEQUENTIAL READ" read.q
-
-######### RE-READ TEST #########
-# without flush, cached in kernel buffer, re-mapped...
-runTest "SEQUENTIAL RE-READ" reread.q
+if [[ ! "$SCOPE" = "cpuonly" ]]; then
+  ${FLUSH}
+  runTest "SEQUENTIAL READ" read.q
+  ######### RE-READ TEST #########
+  # without flush, cached in kernel buffer, re-mapped...
+  runTest "SEQUENTIAL RE-READ" reread.q
+fi
 
 if [ "$SCOPE" = "full" ]; then
   ${FLUSH}
@@ -262,20 +268,22 @@ function runrandomread {
   syncAcrossHosts
 }
 
-echo
-echo "STARTING RANDOM READ TEST"
-SEED=1
-for listsize in 1000000 64000 4000; do
-	runrandomread $listsize " "
-  SEED=$((SEED+1))
-done
-for listsize in 1000000 64000 4000; do
-	runrandomread $listsize " -withmmap"
-  SEED=$((SEED+1))
-done
+if [[ ! "$SCOPE" = "cpuonly" ]]; then
+  echo
+  echo "STARTING RANDOM READ TEST"
+  SEED=1
+  for listsize in 1000000 64000 4000; do
+  	runrandomread $listsize " "
+    SEED=$((SEED+1))
+  done
+  for listsize in 1000000 64000 4000; do
+  	runrandomread $listsize " -withmmap"
+    SEED=$((SEED+1))
+  done
 
-${FLUSH}
-runTest XASC xasc.q
+  ${FLUSH}
+  runTest XASC xasc.q
+fi
 
 
 echo "Aggregating results"
