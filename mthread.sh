@@ -177,15 +177,13 @@ trap cleanup EXIT
 # fs may take a long time to start (S3 sync) and we want the wrtte processes to run in parallel
 j=0
 for i in $(seq $NUMPROCESSES); do
-  if [[ ! "$SCOPE" = "cpuonly" ]]; then
-    if notObjStore ${array[$j]}; then
-      DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
-      if [ $SCOPE = "full" ] && [ -d ${DATADIR} ]; then
-        echo "${DATADIR} directory already exists. Please remove it and rerun."
-        exit 7
-      fi
-	    mkdir -p ${DATADIR}
+  if notObjStore ${array[$j]}; then
+    DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
+    if [ $SCOPE = "full" ] && [ -d ${DATADIR} ]; then
+      echo "${DATADIR} directory already exists. Please remove it and rerun."
+      exit 7
     fi
+	  mkdir -p ${DATADIR}
   fi
   echo "threadnr|os|testtype|testid|test|qexpression|repeat|length|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
 	j=$(( ($j + 1) % $NUMSEGS ))
