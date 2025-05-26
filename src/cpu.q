@@ -470,7 +470,7 @@ system "l src/samplearrays.q";
   sT: .z.n;
   do[N;-18!midVec];
   eT: .z.n;
-  writeRes["cpu read write mem"; ".cpu.compressIntMid|-18! float mid"; "-18!"; N; count midVec; sT, eT; fix[2; getMBPerSec[N*count midVec; eT-sT]]; "MB/sec\n"];
+  writeRes["cpu read write mem"; ".cpu.compressIntMid|-18! int mid"; "-18!"; N; count midVec; sT, eT; fix[2; getMBPerSec[N*count midVec; eT-sT]]; "MB/sec\n"];
   }
 
 .cpu.compressFloatMid: {[]
