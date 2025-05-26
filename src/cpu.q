@@ -109,7 +109,7 @@ system "l src/samplearrays.q";
   sT: .z.n;
   do[N;-9!-8!tinyVec];
   eT: .z.n;
-  writeRes["cpu read write mem"; ".cpu.serializeIntTiny|-9!-8! float tiny"; "-9!-8!"; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N*count tinyVec; eT-sT]]; "MB/sec\n"];
+  writeRes["cpu read write mem"; ".cpu.serializeIntTiny|-9!-8! int tiny"; "-9!-8!"; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N*count tinyVec; eT-sT]]; "MB/sec\n"];
   }
 
 .cpu.compressIntTiny: {[]
@@ -118,7 +118,7 @@ system "l src/samplearrays.q";
   sT: .z.n;
   do[N;-18!tinyVec];
   eT: .z.n;
-  writeRes["cpu read write mem"; ".cpu.compressIntTiny|-18! float tiny"; "-18!"; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N*count tinyVec; eT-sT]]; "MB/sec\n"];
+  writeRes["cpu read write mem"; ".cpu.compressIntTiny|-18! int tiny"; "-18!"; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N*count tinyVec; eT-sT]]; "MB/sec\n"];
   }
 
 ///////////// Small vector Tests
@@ -238,7 +238,7 @@ system "l src/samplearrays.q";
   sT: .z.n;
   do[N;-18!smallVec];
   eT: .z.n;
-  writeRes["cpu read write mem"; ".cpu.compressIntSmall|-18! float small"; "-18!"; N; count smallVec; sT, eT; fix[2; getMBPerSec[N*count smallVec; eT-sT]]; "MB/sec\n"];
+  writeRes["cpu read write mem"; ".cpu.compressIntSmall|-18! int small"; "-18!"; N; count smallVec; sT, eT; fix[2; getMBPerSec[N*count smallVec; eT-sT]]; "MB/sec\n"];
   }
 
 
