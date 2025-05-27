@@ -177,11 +177,11 @@ $[OBJSTORE; [
   .write.appendMidSym: {[]
     .qlog.info "creating files for xasc tests";
     .qlog.info "starting append mid sym vector test";
-    chunkSize: count midSymVec;
+    chunkSize: count largeSymVec;
     chunkNr: `long$TBLSIZE % SIZEOFLONG * chunkSize * 1+2 xlog processcount; // enumerated symbols are stored as longs
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
-    do[chunkNr; .[fSymCol;();,;`sym$midSymVec]];
+    do[chunkNr; .[fSymCol;();,;`sym$largeSymVec]];
     system "sync ", 1_string fSymCol;
     eT: .z.n;
     writeRes["write disk";".write.appendMidSym|open append mid sym, sync once";".[;();,;`sym$]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
@@ -189,11 +189,11 @@ $[OBJSTORE; [
   .write.appendMidFloat: {[]
     .qlog.info "creating files for xasc tests";
     .qlog.info "starting append mid sym vector test";
-    chunkSize: count midSymVec;
+    chunkSize: count largeSymVec;
     chunkNr: `long$TBLSIZE % SIZEOFLONG * chunkSize * 1+2 xlog processcount; // enumerated symbols are stored as longs
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
-    do[chunkNr; .[fFloatCol;();,;midFloatVec]];
+    do[chunkNr; .[fFloatCol;();,;largeFloatVec]];
     system "sync ", 1_string fSymCol;
     eT: .z.n;
     writeRes["write disk";".write.appendMidFloat|open append mid float, sync once";".[;();,;]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
