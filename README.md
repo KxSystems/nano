@@ -116,7 +116,7 @@ $ ./mthread.sh 8 readonly keep 0408_152349
 ```
 
 
-Typical examples of the number of processes to test are 1, 2, 4, 8, 16, 32, 64, 128. If the server has 32GB of DRAM, or less, the results will be sub-optimal.
+Typical examples of the number of processes to test are 1, 2, 4, 8, 16, 32, 64, 128.
 
 ### multihost.sh
 
@@ -203,7 +203,7 @@ The cache is flushed before each test except reread and random reread.
 We detail each test in the next section.
 
 ### CPU (`cpu.q`)
-   1. starts a few tests on in-memory lists that mainly stresses the CPU and memory. The small (16k long) and mid-length (32M long) long lists probably reside in CPU caches. Test include
+   1. starts a few tests on in-memory lists that mainly stresses the CPU and memory. It uses tiny, small (16k long), medium and large vectors fitting into L1, L2, L3 caches and into memory. Test include
       * creating random permutation
       * sorting
       * calculating deltas
@@ -213,17 +213,17 @@ We detail each test in the next section.
 
 ### Write (`write.q`)
    1. performs three write tests
-      1. `open append tiny`: appending four integers to the end of list (this operation includes opening and closing a file): `[; (); ,; 2 3 5 7]`
-      1. `append tiny`: appending four integers to a handle of a kdb+ file: `H: hopen ...; H 2 3 5 7`
+      1. `open append tiny`: appending tiny integer list to the end of list (this operation includes opening and closing a file): `[; (); ,; 2 3 5 7]`
+      1. `append tiny`: appending tiny integer list to a handle of a kdb+ file: `H: hopen ...; H 2 3 5 7`
       1. `open replace tiny`: overwriting file content with two integers: `[; (); :; 42 7]`
    1. `create list`: creates a list in memory (function `til`), i.e. allocating memory and filling it with consecutive longs. The length of the list depends is set by `SEQWRITETESTLIMIT`.
    1. `write rate`: writes the list (`set`) to file `readtest`.
    1. `sync rate`: calling system command `sync` on `readtest`.
-   1. `open append small`: appends a block of 16k many times to a file.
-   1. `open append mid sym`: appends a block of 32M symbols many times to a file. The result file is the `sym` column of a splayed table used in the `xasc` test.
+   1. `open append small`: appends a small integer list many times to a file.
+   1. `open append large sym`: appends a large block a few times to a file. The result file is the `sym` column of a splayed table used in the `xasc` test.
    1. saves files for meta test:
-      1. two long lists of length 16 k (size 128 k)
-      1. a long list of length 4 M (size 32 M)
+      1. two long lists of length 63k
+      1. a long list of length 31M
 
 
 ### Sequential read (`read.q`)
