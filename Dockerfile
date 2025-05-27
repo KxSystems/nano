@@ -12,6 +12,6 @@ ENV QBIN=/opt/kx/kdb/l64/q
 RUN source ./config/env
 RUN echo "/data" > ./partitions
 
-RUN yum upgrade -y && yum install -y wget sysstat nc dmidecode numactl
+RUN yum upgrade -y && yum install -y wget sysstat nc dmidecode numactl hwloc
 
 ENTRYPOINT [ "/bin/bash", "mthread.sh" ]

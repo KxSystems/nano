@@ -149,6 +149,10 @@ EOF
             export NUMANODES
         fi
     fi
+    
+    if command -v hwloc-ls &>/dev/null; then
+      hwloc-ls > "${RESDIR}/hwloc-ls.out" || echo "Warning: Failed to run hwloc-ls" >&2
+    fi
 }
 
 get_numa_config() {
