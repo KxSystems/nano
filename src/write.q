@@ -140,7 +140,7 @@ $[OBJSTORE; [
     hdel hsym `$ffileoTmp;
 
     / more generous for hcount
-    (hsym `$ffile4Tmp: tmpdir, fHCountFileName) set midVec;
+    (hsym `$ffile4Tmp: tmpdir, fHCountFileName) set largeVec;
     system cloudcmd[ffile4Tmp; fHCountFileName];
     hdel hsym `$ffile4Tmp
   }
@@ -206,7 +206,7 @@ $[OBJSTORE; [
   };
   .write.prepare: {[]
     / more generous for hcount
-    fhcount set midVec;
+    fhcount set largeVec;
     fReadBinary set raze 64#enlist smallVec;
     fmmap set smallVec;
     fOpenClose set smallVec;
