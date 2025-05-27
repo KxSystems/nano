@@ -4,7 +4,7 @@
 TINYLENGTH: `long$MODIFIER*2047       / object size is 16KB, should fit into a typical L1 cache (32KB)
 SMALLLENGTH: `long$MODIFIER*63*k      / obj size is 512KB, should fit into a typical L2 cache (1 or 2MB)
 MEDIUMLENGTH: `long$MODIFIER*4*127*k  / obj size is 4MB, should fit into a typical L3 cache depending on the number of workers
-LARGELENGTH: `long$MODIFIER*63*M      / obj size is 256MB, should fit into memory only if process count > 1
+LARGELENGTH: `long$MODIFIER*31*M      / obj size is 256MB, should fit into memory only if process count > 1
 
 genIntVec:{[N:`j]
     N4: N div 4;
