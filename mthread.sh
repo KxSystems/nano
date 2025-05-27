@@ -140,7 +140,7 @@ EOF
     if [[ "$(uname)" == "Linux" ]]; then
         lscpu > "${RESDIR}/lscpu.out"
         if command -v dmidecode &>/dev/null; then
-            sudo dmidecode -t memory > "${RESDIR}/dmidecode.out" || echo "Warning: Failed to run dmidecode" >&2
+            $SUDO dmidecode -t memory > "${RESDIR}/dmidecode.out" || echo "Warning: Failed to run dmidecode" >&2
         fi
         
         if command -v numactl &>/dev/null; then
