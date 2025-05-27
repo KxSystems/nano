@@ -218,6 +218,7 @@ run_random_read_test() {
 # Main Script Execution
 #######################################
 
+source "${SCRIPT_DIR}/common.sh"
 validate_input "$@"
 
 readonly NUMPROCESSES=$1
@@ -270,8 +271,6 @@ readonly IOSTATFILE="${RESDIR}/iostat-${HOST}.psv"
 readonly AGGRFILEPREFIX="${RESDIR}/${HOST}-"
 readonly LOGFILEPREFIX="${CURRENTLOGDIR}/${HOST}-${NUMPROCESSES}t-"
 readonly CONFIG="${RESDIR}/config.yaml"
-
-source "${SCRIPT_DIR}/common.sh"
 
 persist_config
 
