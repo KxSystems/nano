@@ -68,9 +68,6 @@ flock: hsym `$DB, "/locktest"
 MEMRATIOMODIFIERS: `double`full`small`tiny!2 1 0.2 0.05
 MODIFIER: 1f^MEMRATIOMODIFIERS `$lower getenv `DBSIZE
 
-// Repeat number of some meta and write tests
-N: `long$MODIFIER*50*1000
-
 processcount: "I"$string `$argv `processes
 
 TASKSENDTIMEOUT:0D00:01

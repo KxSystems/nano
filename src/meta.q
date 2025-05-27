@@ -8,6 +8,7 @@ $[OBJSTORE;
   .qlog.info"Skipping hopen/append/symlink/enum extend meta tests"; [
   .meta.openclose: {[]
     .qlog.info "starting close open test";
+    N: `long$MODIFIER*50*1000;
     sT:.z.n;
     do[N; hclose hopen fOpenClose];
     eT: .z.n;
@@ -26,6 +27,7 @@ $[OBJSTORE;
 
   .meta.lock: {[]
     .qlog.info "starting lock test";
+    N: `long$MODIFIER*50*1000;
     sT:.z.n;
     do[N; flock?`aaa`bbb`ccc`ddd`eee];
     eT: .z.n;
@@ -34,6 +36,7 @@ $[OBJSTORE;
 
 .meta.size: {[]
   .qlog.info "starting size test";
+  N: `long$MODIFIER*50*1000;
   sT:.z.n;
   do[N; hcount fhcount];
   eT: .z.n;
@@ -42,6 +45,7 @@ $[OBJSTORE;
 
 .meta.get: {[]
   .qlog.info "starting mmap test";
+  N: `long$MODIFIER*50*1000;
   sT:.z.n;
   do[N; get fmmap];
   eT: .z.n;

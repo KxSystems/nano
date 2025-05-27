@@ -12,11 +12,11 @@ if[not "full" ~ lower getenv `DBSIZE;
   .qlog.warn "Test runs with ", getenv[`DBSIZE], " data. Reduce ratio is ", string MODIFIER];
 
 
-tinyVec: 2 3 5 7;
 if[ not OBJSTORE;
   .write.tinyAppend: {[]
     .qlog.info "starting append tiny test";
     ftinyAppend: hsym `$DB, "/tinyAppend";
+    N:200;
     sT: .z.n;
     do[N; .[ftinyAppend;();,; tinyVec]];
     system "sync ", DB, "/tinyAppend";
@@ -29,6 +29,7 @@ if[ not OBJSTORE;
     ftinyAppendFH: hsym `$DB, "/tinyAppendFH";
     ftinyAppendFH set 0#tinyVec;
     H: hopen ftinyAppendFH;
+    N:500;
     sT: .z.n;
     do[N; H tinyVec];
     system "sync ", DB, "/tinyAppendFH";
@@ -42,19 +43,20 @@ if[ not OBJSTORE;
     fsmallAppendFH: hsym `$DB, "/smallAppendFH";
     fsmallAppendFH set 0#smallVec;
     H: hopen fsmallAppendFH;
-    M: N div 10;
+    N:50;
     sT: .z.n;
-    do[M; H smallVec];
+    do[N; H smallVec];
     system "sync ", DB, "/smallAppendFH";
     eT: .z.n;
     hclose H;
-    writeRes["write disk"; ".write.smallAppendToHandler|append small, sync once"; "H til 16*k"; M; count smallVec; sT, eT; fix[2; getMBPerSec[M * count smallVec; eT-sT]]; "MB/sec\n"];
+    writeRes["write disk"; ".write.smallAppendToHandler|append small, sync once"; "H til 16*k"; N; count smallVec; sT, eT; fix[2; getMBPerSec[N * count smallVec; eT-sT]]; "MB/sec\n"];
   };
 
   .write.tinyReplace: {[]
     .qlog.info "starting replace tiny test";
     ftinyReplace: hsym `$DB, "/tinyReplace";
     ftinyReplace set smallVec;
+    N:100;
     sT: .z.n;
     do[N; .[ftinyReplace;();:; tinyVec]];
     system "sync ", DB, "/tinyReplace";
