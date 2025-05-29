@@ -640,4 +640,4 @@ system "l src/samplearrays.q";
 
 sendTests[controller;DB;`.cpu]
 
-.qlog.info "Ready for test execution";
+.qlog.info "Worker is ready for test execution. Pid: ", string .z.i

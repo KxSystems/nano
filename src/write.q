@@ -234,4 +234,4 @@ exitcustom: {[]
 
 sendTests[controller;DB;`.write]
 
-.qlog.info "Ready for test execution";
+.qlog.info "Worker is ready for test execution. Pid: ", string .z.i
