@@ -45,4 +45,4 @@ fn: $[`withmmap in argvk; randomreadwithmmap; randomread]
 
 sendTests[controller;DB;`.randomread]
 
-.qlog.info "Ready for test execution";
+.qlog.info "Worker is ready for test execution. Pid: ", string .z.i
