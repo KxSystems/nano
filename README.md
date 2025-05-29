@@ -181,6 +181,19 @@ $ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/
 $ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/storage1/nanodata:/data1 -v /mnt/storage2/nanodata:/data2 -v ${PWD}/partitions_2disks:/opt/kx/app/partitions:ro -e FLUSH=/opt/kx/app/flush/noflush.sh -e THREADNR=5 ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest 4 full delete
 ```
 
+## Troubleshooting
+
+### Too many open files
+If you see the error `Too many open files` in a log file, then increase the limit by
+
+```bash
+$ ulimit -n 2048
+```
+
+The controller open a TCP connection to all workers so this error typically occurs with a large number of workers (e.g. 512).
+
+The ulimit change above is temporary and applies only to the current shell session.
+
 ## Technical Details
 
 The script calculates the throughput (MiB/sec) of an operation by calculating the data size and the elapsed time of the operation.
