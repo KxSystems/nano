@@ -67,6 +67,15 @@ system "l src/samplearrays.q";
   writeRes["cpu read write mem"; ".cpu.modWhereTiny|where mod = int tiny"; "where 0=mod[;7]"; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N*count tinyVec; eT-sT]]; "MB/sec\n"];
   }
 
+.cpu.randTiny: {[]
+  .qlog.info "starting rand int tiny test";
+  N:200000;
+  sT: .z.n;
+  do[N;TINYLENGTH?100];
+  eT: .z.n;
+  writeRes["cpu write mem"; ".cpu.randTiny|roll int tiny"; enlist "?"; N; TINYLENGTH; sT, eT; fix[2; getMBPerSec[N*TINYLENGTH; eT-sT]]; "MB/sec\n"];
+  }
+
 .cpu.xbarTiny: {[]
   .qlog.info "starting xbar tiny test";
   N:200000;
@@ -185,6 +194,15 @@ system "l src/samplearrays.q";
   do[N;where 0=smallVec mod 7];
   eT: .z.n;
   writeRes["cpu read write mem"; ".cpu.modWhereSmall|where mod = int small"; "where 0=mod[;7]"; N; count smallVec; sT, eT; fix[2; getMBPerSec[N*count smallVec; eT-sT]]; "MB/sec\n"];
+  }
+
+.cpu.randSmall: {[]
+  .qlog.info "starting rand int small test";
+  N:5000;
+  sT: .z.n;
+  do[N;SMALLLENGTH?100];
+  eT: .z.n;
+  writeRes["cpu write mem"; ".cpu.randSmall|roll int small"; enlist "?"; N; SMALLLENGTH; sT, eT; fix[2; getMBPerSec[N*SMALLLENGTH; eT-sT]]; "MB/sec\n"];
   }
 
 .cpu.xbarSmall: {[]
@@ -306,6 +324,16 @@ system "l src/samplearrays.q";
   eT: .z.n;
   writeRes["cpu read write mem"; ".cpu.modWhereMedium|where mod = int medium"; "where 0=mod[;7]"; N; count mediumVec; sT, eT; fix[2; getMBPerSec[N*count mediumVec; eT-sT]]; "MB/sec\n"];
   }
+
+.cpu.randMedium: {[]
+  .qlog.info "starting rand int medium test";
+  N:500;
+  sT: .z.n;
+  do[N;MEDIUMLENGTH?100];
+  eT: .z.n;
+  writeRes["cpu write mem"; ".cpu.randMedium|roll int medium"; enlist "?"; N; MEDIUMLENGTH; sT, eT; fix[2; getMBPerSec[N*MEDIUMLENGTH; eT-sT]]; "MB/sec\n"];
+  }
+
 
 .cpu.xbarMedium: {[]
   .qlog.info "starting xbar medium test";
@@ -465,6 +493,15 @@ system "l src/samplearrays.q";
   do[N;LARGELENGTH?100.];
   eT: .z.n;
   writeRes["cpu write mem"; ".cpu.randFloatLarge|roll float large"; enlist "?"; N; LARGELENGTH; sT, eT; fix[2; getMBPerSec[N*LARGELENGTH; eT-sT]]; "MB/sec\n"];
+  }
+
+.cpu.randLarge: {[]
+  .qlog.info "starting rand int large test";
+  N:10;
+  sT: .z.n;
+  do[N;LARGELENGTH?100];
+  eT: .z.n;
+  writeRes["cpu write mem"; ".cpu.randLarge|roll int large"; enlist "?"; N; LARGELENGTH; sT, eT; fix[2; getMBPerSec[N*LARGELENGTH; eT-sT]]; "MB/sec\n"];
   }
 
 .cpu.groupLarge: {[]
