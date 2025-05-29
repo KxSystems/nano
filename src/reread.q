@@ -19,4 +19,4 @@ system "l src/common.q";
 
 sendTests[controller;DB;`.reread]
 
-.qlog.info "Ready for test execution";
+.qlog.info "Worker is ready for test execution. Pid: ", string .z.i

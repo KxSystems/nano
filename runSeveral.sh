@@ -6,13 +6,20 @@ source common.sh
 
 if [ $# -lt 1 ]; then
    readonly OUTPUT=./results/throughput_total.psv
+   readonly SCOPE=full
    readonly LIMIT=$COMPUTECOUNT
 elif [ $# -lt 2 ]; then
    readonly OUTPUT=$1
+   readonly SCOPE=full
+   readonly LIMIT=$COMPUTECOUNT
+elif [ $# -lt 3 ]; then
+   readonly OUTPUT=$1
+   readonly SCOPE=$2
    readonly LIMIT=$COMPUTECOUNT
 else
    readonly OUTPUT=$1
-   readonly LIMIT=$2
+   readonly SCOPE=$2
+   readonly LIMIT=$3
 fi
 
 readonly HOST=$(uname -n)
@@ -22,7 +29,7 @@ NUMPROCESSES=1
 while [ $NUMPROCESSES -le $LIMIT ]; do
    DATE=$(date +%m%d_%H%M%S)
    DATES+=($DATE)
-   ./mthread.sh $NUMPROCESSES full delete ${DATE}
+   ./mthread.sh $NUMPROCESSES $SCOPE delete ${DATE}
    NUMPROCESSES=$((NUMPROCESSES * 2))
 done
 

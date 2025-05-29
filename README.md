@@ -26,7 +26,6 @@ Multi-node client testing can be used to either test a single namespace solution
 Please [install kdb+ 4.1](https://code.kx.com/q/learn/install/). If the q home differs from `$HOME/q` then you need to set `QHOME` in `config/kdbenv`.
 
 The script assumes that the following commands are available - see `Dockerfile` for more information
-   * [yq](https://github.com/mikefarah/yq)
    * [iostat](https://github.com/sysstat/sysstat)
    * [nc](https://nc110.sourceforge.io/)
 
@@ -99,7 +98,7 @@ Executes multiple processes of execution of the benchmark on the execution host
 This takes three arguments:
 
 1. The number of executions of q on each node, integer.
-1. `full|readonly` to select between full and read only test. Subtests `write` and `meta` are not executed in read-only tests.
+1. `cpuonly|readonly|full` to select between cpuonly, read only and full test. Subtests `write` and `meta` are not executed in read-only tests.
 1. `delete|keep`. Flag, determines if the data created from each process
    is kept on the filesystem. Useful for testing performance on a fuller
    filesystem, which could be modeled through running multiple iterations
@@ -117,7 +116,7 @@ $ ./mthread.sh 8 readonly keep 0408_152349
 ```
 
 
-Typical examples of the number of processes to test are 1, 2, 4, 8, 16, 32, 64, 128. If the server has 32GB of DRAM, or less, the results will be sub-optimal.
+Typical examples of the number of processes to test are 1, 2, 4, 8, 16, 32, 64, 128.
 
 ### multihost.sh
 
@@ -182,6 +181,19 @@ $ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/
 $ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/storage1/nanodata:/data1 -v /mnt/storage2/nanodata:/data2 -v ${PWD}/partitions_2disks:/opt/kx/app/partitions:ro -e FLUSH=/opt/kx/app/flush/noflush.sh -e THREADNR=5 ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest 4 full delete
 ```
 
+## Troubleshooting
+
+### Too many open files
+If you see the error `Too many open files` in a log file, then increase the limit by
+
+```bash
+$ ulimit -n 2048
+```
+
+The controller open a TCP connection to all workers so this error typically occurs with a large number of workers (e.g. 512).
+
+The ulimit change above is temporary and applies only to the current shell session.
+
 ## Technical Details
 
 The script calculates the throughput (MiB/sec) of an operation by calculating the data size and the elapsed time of the operation.
@@ -204,7 +216,7 @@ The cache is flushed before each test except reread and random reread.
 We detail each test in the next section.
 
 ### CPU (`cpu.q`)
-   1. starts a few tests on in-memory lists that mainly stresses the CPU and memory. The small (16k long) and mid-length (32M long) long lists probably reside in CPU caches. Test include
+   1. starts a few tests on in-memory lists that mainly stresses the CPU and memory. It uses tiny, small (16k long), medium and large vectors fitting into L1, L2, L3 caches and into memory. Test include
       * creating random permutation
       * sorting
       * calculating deltas
@@ -214,17 +226,17 @@ We detail each test in the next section.
 
 ### Write (`write.q`)
    1. performs three write tests
-      1. `open append tiny`: appending four integers to the end of list (this operation includes opening and closing a file): `[; (); ,; 2 3 5 7]`
-      1. `append tiny`: appending four integers to a handle of a kdb+ file: `H: hopen ...; H 2 3 5 7`
+      1. `open append tiny`: appending tiny integer list to the end of list (this operation includes opening and closing a file): `[; (); ,; 2 3 5 7]`
+      1. `append tiny`: appending tiny integer list to a handle of a kdb+ file: `H: hopen ...; H 2 3 5 7`
       1. `open replace tiny`: overwriting file content with two integers: `[; (); :; 42 7]`
    1. `create list`: creates a list in memory (function `til`), i.e. allocating memory and filling it with consecutive longs. The length of the list depends is set by `SEQWRITETESTLIMIT`.
    1. `write rate`: writes the list (`set`) to file `readtest`.
    1. `sync rate`: calling system command `sync` on `readtest`.
-   1. `open append small`: appends a block of 16k many times to a file.
-   1. `open append mid sym`: appends a block of 32M symbols many times to a file. The result file is the `sym` column of a splayed table used in the `xasc` test.
+   1. `open append small`: appends a small integer list many times to a file.
+   1. `open append large sym`: appends a large block a few times to a file. The result file is the `sym` column of a splayed table used in the `xasc` test.
    1. saves files for meta test:
-      1. two long lists of length 16 k (size 128 k)
-      1. a long list of length 4 M (size 32 M)
+      1. two long lists of length 63k
+      1. a long list of length 31M
 
 
 ### Sequential read (`read.q`)

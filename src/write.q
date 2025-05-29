@@ -12,11 +12,11 @@ if[not "full" ~ lower getenv `DBSIZE;
   .qlog.warn "Test runs with ", getenv[`DBSIZE], " data. Reduce ratio is ", string MODIFIER];
 
 
-tinyVec: 2 3 5 7;
 if[ not OBJSTORE;
   .write.tinyAppend: {[]
     .qlog.info "starting append tiny test";
     ftinyAppend: hsym `$DB, "/tinyAppend";
+    N:200;
     sT: .z.n;
     do[N; .[ftinyAppend;();,; tinyVec]];
     system "sync ", DB, "/tinyAppend";
@@ -29,6 +29,7 @@ if[ not OBJSTORE;
     ftinyAppendFH: hsym `$DB, "/tinyAppendFH";
     ftinyAppendFH set 0#tinyVec;
     H: hopen ftinyAppendFH;
+    N:500;
     sT: .z.n;
     do[N; H tinyVec];
     system "sync ", DB, "/tinyAppendFH";
@@ -42,19 +43,20 @@ if[ not OBJSTORE;
     fsmallAppendFH: hsym `$DB, "/smallAppendFH";
     fsmallAppendFH set 0#smallVec;
     H: hopen fsmallAppendFH;
-    M: N div 10;
+    N:50;
     sT: .z.n;
-    do[M; H smallVec];
+    do[N; H smallVec];
     system "sync ", DB, "/smallAppendFH";
     eT: .z.n;
     hclose H;
-    writeRes["write disk"; ".write.smallAppendToHandler|append small, sync once"; "H til 16*k"; M; count smallVec; sT, eT; fix[2; getMBPerSec[M * count smallVec; eT-sT]]; "MB/sec\n"];
+    writeRes["write disk"; ".write.smallAppendToHandler|append small, sync once"; "H til 16*k"; N; count smallVec; sT, eT; fix[2; getMBPerSec[N * count smallVec; eT-sT]]; "MB/sec\n"];
   };
 
   .write.tinyReplace: {[]
     .qlog.info "starting replace tiny test";
     ftinyReplace: hsym `$DB, "/tinyReplace";
     ftinyReplace set smallVec;
+    N:100;
     sT: .z.n;
     do[N; .[ftinyReplace;();:; tinyVec]];
     system "sync ", DB, "/tinyReplace";
@@ -140,7 +142,7 @@ $[OBJSTORE; [
     hdel hsym `$ffileoTmp;
 
     / more generous for hcount
-    (hsym `$ffile4Tmp: tmpdir, fHCountFileName) set midVec;
+    (hsym `$ffile4Tmp: tmpdir, fHCountFileName) set largeVec;
     system cloudcmd[ffile4Tmp; fHCountFileName];
     hdel hsym `$ffile4Tmp
   }
@@ -177,11 +179,11 @@ $[OBJSTORE; [
   .write.appendMidSym: {[]
     .qlog.info "creating files for xasc tests";
     .qlog.info "starting append mid sym vector test";
-    chunkSize: count midSymVec;
+    chunkSize: count largeSymVec;
     chunkNr: `long$TBLSIZE % SIZEOFLONG * chunkSize * 1+2 xlog processcount; // enumerated symbols are stored as longs
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
-    do[chunkNr; .[fSymCol;();,;`sym$midSymVec]];
+    do[chunkNr; .[fSymCol;();,;`sym$largeSymVec]];
     system "sync ", 1_string fSymCol;
     eT: .z.n;
     writeRes["write disk";".write.appendMidSym|open append mid sym, sync once";".[;();,;`sym$]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
@@ -189,11 +191,11 @@ $[OBJSTORE; [
   .write.appendMidFloat: {[]
     .qlog.info "creating files for xasc tests";
     .qlog.info "starting append mid sym vector test";
-    chunkSize: count midSymVec;
+    chunkSize: count largeSymVec;
     chunkNr: `long$TBLSIZE % SIZEOFLONG * chunkSize * 1+2 xlog processcount; // enumerated symbols are stored as longs
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
-    do[chunkNr; .[fFloatCol;();,;midFloatVec]];
+    do[chunkNr; .[fFloatCol;();,;largeFloatVec]];
     system "sync ", 1_string fSymCol;
     eT: .z.n;
     writeRes["write disk";".write.appendMidFloat|open append mid float, sync once";".[;();,;]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
@@ -206,7 +208,7 @@ $[OBJSTORE; [
   };
   .write.prepare: {[]
     / more generous for hcount
-    fhcount set midVec;
+    fhcount set largeVec;
     fReadBinary set raze 64#enlist smallVec;
     fmmap set smallVec;
     fOpenClose set smallVec;
@@ -232,4 +234,4 @@ exitcustom: {[]
 
 sendTests[controller;DB;`.write]
 
-.qlog.info "Ready for test execution";
+.qlog.info "Worker is ready for test execution. Pid: ", string .z.i

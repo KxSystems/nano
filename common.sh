@@ -1,3 +1,8 @@
+error_exit() {
+    echo "ERROR: $1" >&2
+    exit "${2:-1}"
+}
+
 if [[ $(uname) == "Linux" ]]; then
     SOCKETNR=$(lscpu | grep "Socket(s)" | cut -d":" -f 2 |xargs)
     COREPERSOCKET=$(lscpu | grep "Core(s) per socket" | cut -d":" -f 2 |xargs)
