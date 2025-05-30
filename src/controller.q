@@ -82,4 +82,4 @@ system "t 200";
 
 exclusetests: " " vs getenv `EXCLUDETESTS
 
-.qlog.info "controller started";
+.qlog.info "controller started with pid ", string .z.i

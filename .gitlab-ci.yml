@@ -23,9 +23,7 @@ stages:
     - INSIGHTSVER=4.1.6
     - wget https://${INT_NEXUS_USER_RO}:${INT_NEXUS_PASS_RO}@ext-nexus.kxi-dev.kx.com/repository/kx-insights-packages/kdbInsightsCore/${INSIGHTSVER}-rc1/kdb-insights-core.tar
     - docker load < kdb-insights-core.tar
-    - wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-    - chmod a+x /usr/local/bin/yq
-    - IMAGE_URL="$INSIGHTS_DEV_NEXUS_REGISTRY/benchmarking/nano:$(yq -r ".${TARGET}" version.yaml)"
+    - IMAGE_URL="$INSIGHTS_DEV_NEXUS_REGISTRY/benchmarking/nano:$(cat version.txt)"
     - docker build -t "${IMAGE_URL}" .
     - docker push "${IMAGE_URL}"
     - docker rmi "${IMAGE_URL}"
@@ -87,3 +85,11 @@ mthread-multi:
     - echo "${APPDIR}/data0" > ./partitions
     - echo "${APPDIR}/data1" >> ./partitions
     - DBSIZE=TINY SUDO="" ./mthread.sh 3 full delete
+
+mthread-multi-cpuonly:
+  extends:
+    - .mthread
+  script:
+    - echo "${APPDIR}/data0" > ./partitions
+    - echo "${APPDIR}/data1" >> ./partitions
+    - DBSIZE=TINY SUDO="" ./mthread.sh 3 cpuonly delete

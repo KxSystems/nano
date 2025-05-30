@@ -2,194 +2,171 @@
 
 set -euo pipefail
 
-readonly USAGE="Usage: $0 processnr full|readonly keep|delete [date]"
-
-
-if [ $# -lt 3 ]; then
-  echo "At least three parameters are mandatory"
-	echo $USAGE
-	exit 1
-fi
-if [ "$1" -le 0 ]; then
-	echo $USAGE
-	exit 2
-fi
-
-if [ ! -f ${FLUSH} ]; then
-	echo "${FLUSH} is missing"
-	echo "please set environment varibale FLUSH to an existing flush scripts"
-	exit 4
-fi
-
-readonly NUMPROCESSES=$1
-readonly SCOPE="$2"
-readonly KEEPDELETE=$3
-
-if [ "$#" -eq "4" ]; then
-  echo "Date is set to $4"
-  DATE="$4"
-else
-	DATE=$(date +%m%d_%H%M%S)
-fi
-
+readonly USAGE="Usage: $0 processnr cpuonly|readonly|full keep|delete [date]"
+readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 readonly CONTROLLERPORT=5100
-if nc -z 127.0.0.1 $CONTROLLERPORT 2>&1 > /dev/null; then
-  echo "Port $CONTROLLERPORT is used. Maybe leftover kdb+ processes are running. Cannot start the controller. Exiting."
-  exit 12
-fi
-
 readonly WORKERBASEPORT=5500
-for i in $(seq $NUMPROCESSES); do
-  if nc -z  127.0.0.1 $((WORKERBASEPORT+i)); then
-    echo "Port $((WORKERBASEPORT+i)) is used. Maybe leftover kdb+ processes are running. Exiting."
-    exit 13
+
+#######################################
+# Functions
+#######################################
+
+validate_input() {
+  if [ $# -lt 3 ]; then
+  	echo $USAGE
+    error_exit "At least three parameters are mandatory" 2
   fi
-done
 
-
-readonly HOST=$(uname -n)
-
-readonly PARFILE="./partitions"
-
-declare -a array
-array=($(cat $PARFILE))
-readonly NUMSEGS=${#array[@]}
-
-if [ $SCOPE = "readonly" ]; then
-  if ! [ "$#" -eq "4" ]; then
-    echo "Passing a date (4th) parameter is mandatory in readonly mode to locate previously generated data files"
-    exit 5
+  if [[ ! "$1" =~ ^[0-9]+$ ]] || [[ "$1" -le 0 ]]; then
+  	echo $USAGE
+    error_exit "The process number must be a positive integer" 2
   fi
-  j=0
-  for i in $(seq $NUMPROCESSES); do
-    DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
-    if ! [ -d ${DATADIR} ]; then
-      echo "Data directory ${DATADIR} does not exits. Mode readonly assumes that data has been generated previously."
-      exit 6
-    fi
-    j=$(( ($j + 1) % $NUMSEGS ))
-  done
+
+  if [[ ! "$2" =~ ^(cpuonly|readonly|full)$ ]]; then
+    error_exit "Invalid scope: $SCOPE (must be 'cpuonly', 'readonly' or 'full')" 2
+  fi
+
+  if [[ ! "$3" =~ ^(keep|delete)$ ]]; then
+    error_exit "Invalid cleanup option: $3 (must be 'keep' or 'delete')" 2
+  fi
+
+  if [[ "$2" == "readonly" && $# -ne 4 ]]; then
+    error_exit "Passing a date (4th) parameter is mandatory in readonly mode to locate previously generated data files" 5
 fi
-
-readonly RESDIR="${RESULTDIR}/${DATE}"
-mkdir -p ${RESDIR}
-echo "Results will be persisted in ${RESDIR}"
-readonly CURRENTLOGDIR="${LOGDIR}/${DATE}"
-mkdir -p ${CURRENTLOGDIR}
-
-readonly RESFILEPREFIX=${RESDIR}/detailed-${HOST}-
-readonly IOSTATFILE=${RESDIR}/iostat-${HOST}.psv
-readonly AGGRFILEPREFIX=${RESDIR}/${HOST}-
-
-readonly LOGFILEPREFIX="${CURRENTLOGDIR}/${HOST}-${NUMPROCESSES}t-"
-
-function syncAcrossHosts {
-	rm ${CURRENTLOGDIR}/sync-$HOST
-	while [ `ls -l ./sync-* 2> /dev/null | wc -l` -ne 0 ]; do
-	  sleep 0.5
-    done
 }
 
-function notObjStore {
-  if [[ $1 != s3://* && $1 != gs://* && $1 != ms://* ]]; then return 0; else return 1; fi
-}
-
-source common.sh
-
-echo "Persisting config"
-readonly CONFIG=${RESDIR}/config.yaml
-echo "Persisting config to $CONFIG"
-touch $CONFIG
-yq -i ".env.COMPRESS=\"$COMPRESS\"" $CONFIG
-yq -i ".env.THREADNR=$THREADNR" $CONFIG
-yq -i ".env.FILENRPERWORKER=$FILENRPERWORKER" $CONFIG
-yq -i ".env.PROCNR=$NUMPROCESSES" $CONFIG
-yq -i ".env.FLUSH=\"$(basename $FLUSH)\"" $CONFIG
-yq -i ".env.DBDIR=\"$(cat $PARFILE)\"" $CONFIG
-yq -i ".env.NUMA=\"$NUMA\"" $CONFIG
-yq -i ".nano.version=\"$(yq '.dev' version.yaml)\"" $CONFIG
-yq -i ".kdb.major=$($QBIN -q  <<< ".z.K" | tr -d f)" $CONFIG
-yq -i ".kdb.minor=\"$($QBIN -q  <<< ".z.k")\"" $CONFIG
-yq -i ".kdb.qbin=\"$QBIN\"" $CONFIG
-yq -i ".dbize.SEQWRITETESTLIMIT=$SEQWRITETESTLIMIT" $CONFIG
-yq -i ".dbize.RANDREADNUMBER=$RANDREADNUMBER" $CONFIG
-yq -i ".dbize.RANDREADFILESIZE=$RANDREADFILESIZE" $CONFIG
-yq -i ".dbize.DBSIZE=\"$DBSIZE\"" $CONFIG
-yq -i ".system.os.name=\"$(uname)\"" $CONFIG
-yq -i ".system.os.kernel=\"$(uname -r)\"" $CONFIG
-yq -i ".system.cpu.arch=\"$(arch)\"" $CONFIG
-yq -i ".system.cpu.model=\"$CPUMOODEL\"" $CONFIG
-yq -i ".system.cpu.socketnr=$SOCKETNR" $CONFIG
-yq -i ".system.cpu.corepersocket=$COREPERSOCKET" $CONFIG
-yq -i ".system.cpu.threadpercore=$THREADPERCORE" $CONFIG
-yq -i ".system.memsizeGB=$($QBIN -q <<<'.Q.w[][`mphy] div 1024 * 1024 * 1024')" $CONFIG
-
-function getNuma {
-    echo ""
-}
-
-if [[ $(uname) == "Linux" ]]; then
-    lscpu > ${RESDIR}/lscpu.out
-    ${SUDO} dmidecode -t memory > ${RESDIR}/dmidecode.out
-    if command -v numactl 2>&1 >/dev/null; then
-      numactl --hardware > ${RESDIR}/numactl.out
-      NUMANODES=$(lscpu|grep "NUMA node(s)"|cut -d":" -f 2|xargs)
-      if [[ ${NUMA} == "roundrobin" ]] && [[ ${NUMANODES} -gt 1 ]]; then
-        function getNuma {
-          local IDX=$(((${1}-1) % NUMANODES))
-          echo "numactl -N $IDX -m $IDX"
-        }
+validate_environment() {
+  local required_vars=("FLUSH" "RESULTDIR" "LOGDIR" "QBIN" "THREADNR" "FILENRPERWORKER" 
+                       "NUMA" "SEQWRITETESTLIMIT" "RANDREADNUMBER" "RANDREADFILESIZE" "DBSIZE")
+  
+  for var in "${required_vars[@]}"; do
+      if [[ -z "${!var:-}" ]]; then
+          error_exit "Required environment variable $var is not set" 3
       fi
-    fi
-fi
+  done
 
-function cleanup {
-  if [ "$KEEPDELETE" = "delete" ]; then
+  if [[ ! -f "${FLUSH}" ]]; then
+      error_exit "Script ${FLUSH} is missing. Please set environment variable FLUSH to an existing flush script" 3
+  fi
+}
+
+check_port() {
+  local port=$1
+  if nc -z 127.0.0.1 "$port" &>/dev/null; then
+      error_exit "Port $port is in use. Maybe leftover kdb+ processes are running." 12
+  fi
+}
+
+sync_across_hosts() {
+	rm ${CURRENTLOGDIR}/sync-${HOST}
+	while [ $(ls -l ./sync-* 2> /dev/null | wc -l) -ne 0 ]; do
+	  sleep 0.5
+  done
+}
+
+is_not_obj_store() {
+  [[ $1 != s3://* && $1 != gs://* && $1 != ms://* ]]
+}
+
+cleanup() {
+  if [[ "$KEEPDELETE" = "delete" && "$SCOPE" != "cpuonly" ]]; then
   	echo "cleaning up DB..."
   	j=0
   	for i in $(seq $NUMPROCESSES); do
-      local DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
-      if notObjStore ${array[$j]}; then
-        rm -rf ${DATADIR}
+      local datadir=${array[$j]}/${HOST}.${i}/${DATE}
+      if is_not_obj_store ${array[$j]}; then
+        rm -rf ${datadir}
       else
-        if [[ ${array[$j]} == s3://* ]]; then
-          aws s3 rm ${DATADIR} --recursive
-        elif [[ ${array[$j]} == gs://* ]]; then
-          gsutil rm -r ${DATADIR}
-        elif [[ ${array[$j]} == ms://* ]]; then
-          echo "Cleanup ${DATADIR} manually"
-          echo "az storage fs directory delete -f YOURCONTAINER -n ${HOST}.${i}/${DATE} --account-name YOURSTORAGEACCOUNT"
-        else
-          echo "Unknown object storage prefix ${array[$j]::2}"
-        fi
+        case "${array[$j]}" in
+          s3://*)
+              aws s3 rm "${datadir}" --recursive || echo "Warning: Failed to clean S3 path ${datadir}" >&2
+              ;;
+          gs://*)
+              gsutil rm -r "${datadir}" || echo "Warning: Failed to clean GS path ${datadir}" >&2
+              ;;
+          ms://*)
+              echo "Cleanup ${datadir} manually"
+              echo "az storage fs directory delete -f YOURCONTAINER -n ${HOST}.${i}/${DATE} --account-name YOURSTORAGEACCOUNT"
+              ;;
+          *)
+              echo "Unknown object storage prefix ${array[$j]::2}" >&2
+              ;;
+        esac
       fi
-  		j=$(( ($j + 1) % $NUMSEGS ))
+  		j=$(( (j + 1) % $NUMSEGS ))
   	done
   fi
   rm -rf ./sync-*
 }
 
-trap cleanup EXIT
+persist_config() {
+    echo "Persisting config to ${CONFIG}"
+    
+    # Create config file with basic information
+    cat > "${CONFIG}" <<EOF
+env:
+  COMPRESS: "${COMPRESS}"
+  THREADNR: ${THREADNR}
+  FILENRPERWORKER: ${FILENRPERWORKER}
+  PROCNR: ${NUMPROCESSES}
+  FLUSH: "$(basename "${FLUSH}")"
+  DBDIR: "$(cat "${PARFILE}")"
+  NUMA: "${NUMA}"
+nano:
+  version: "$(cat version.txt)"
+kdb:
+  major: $("${QBIN}" -q <<< ".z.K" | tr -d 'f')
+  minor: "$("${QBIN}" -q <<< ".z.k")"
+  qbin: "${QBIN}"
+dbize:
+  SEQWRITETESTLIMIT: ${SEQWRITETESTLIMIT}
+  RANDREADNUMBER: ${RANDREADNUMBER}
+  RANDREADFILESIZE: ${RANDREADFILESIZE}
+  DBSIZE: "${DBSIZE}"
+system:
+  os:
+    name: "$(uname)"
+    kernel: "$(uname -r)"
+  cpu:
+    arch: "$(arch)"
+    model: "${CPUMOODEL}"
+    socketnr: ${SOCKETNR}
+    corepersocket: ${COREPERSOCKET}
+    threadpercore: ${THREADPERCORE}
+  memsizeGB: $("${QBIN}" -q <<< '.Q.w[][`mphy] div 1024 * 1024 * 1024')
+EOF
 
-# important that this it outside this loop with "q prepare", as first time after a mount as the
-# fs may take a long time to start (S3 sync) and we want the wrtte processes to run in parallel
-j=0
-for i in $(seq $NUMPROCESSES); do
-  if notObjStore ${array[$j]}; then
-    DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
-    if [ $SCOPE = "full" ] && [ -d ${DATADIR} ]; then
-      echo "${DATADIR} directory already exists. Please remove it and rerun."
-      exit 7
+    # Add Linux-specific information if available
+    if [[ "$(uname)" == "Linux" ]]; then
+        lscpu > "${RESDIR}/lscpu.out"
+        if command -v dmidecode &>/dev/null; then
+            $SUDO dmidecode -t memory > "${RESDIR}/dmidecode.out" || echo "Warning: Failed to run dmidecode" >&2
+        fi
+        
+        if command -v numactl &>/dev/null; then
+            numactl --hardware > "${RESDIR}/numactl.out" || echo "Warning: Failed to run numactl" >&2
+            NUMANODES=$(lscpu | grep "NUMA node(s)" | cut -d":" -f 2 | xargs)
+            export NUMANODES
+        fi
     fi
-	  mkdir -p ${DATADIR}
-  fi
-  echo "threadnr|os|testtype|testid|test|qexpression|repeat|length|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
-	j=$(( ($j + 1) % $NUMSEGS ))
-done
+    
+    if command -v hwloc-ls &>/dev/null; then
+      hwloc-ls > "${RESDIR}/hwloc-ls.out" || echo "Warning: Failed to run hwloc-ls" >&2
+    fi
+}
 
-echo "testid|iostat_read_throughput|iostat_write_throughput|iostat_readwrite_throughput" > ${IOSTATFILE}
+get_numa_config() {
+    if [[ -z "${NUMANODES:-}" || "${NUMANODES}" -le 1 || "${NUMA}" != "roundrobin" ]]; then
+        echo ""
+        return
+    fi
 
-function runTest {
+    local process_id=$1
+    local numa_node=$(( (process_id - 1) % NUMANODES ))
+    echo "numactl -N ${numa_node} -m ${numa_node}"
+}
+
+run_test() {
   TESTNAME=$1
   TESTER=$2
 
@@ -202,44 +179,23 @@ function runTest {
   j=0
   for i in $(seq $NUMPROCESSES); do
     local DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
-    local NUMAPREFIX=$(getNuma $i)
+    local NUMAPREFIX=$(get_numa_config $i)
     ${NUMAPREFIX} ${QBIN} ./src/${TESTER} -processes $NUMPROCESSES -db ${DATADIR} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_${TESTER%.*}.log 2>&1 &
     j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait -n
   wait
 
-  syncAcrossHosts
+  sync_across_hosts
 
   # air gap for any remote stats collection....
-  sleep 5
+  sleep 3
 }
 
-if [ "$SCOPE" = "full" ]; then
-  ${FLUSH}
-  runTest CPU cpu.q
-  ${FLUSH}
-  runTest WRITE write.q
-fi
-
-${FLUSH}
-runTest "SEQUENTIAL READ" read.q
-
-######### RE-READ TEST #########
-# without flush, cached in kernel buffer, re-mapped...
-runTest "SEQUENTIAL RE-READ" reread.q
-
-if [ "$SCOPE" = "full" ]; then
-  ${FLUSH}
-  runTest "META DATA" meta.q
-fi
-
-######### RANDOM READ TEST #########
-
-function runrandomread {
+run_random_read_test() {
   local listsize=$1
   local mmap=$2
-  ${FLUSH}
+  source ${FLUSH}
   echo "test${mmap} with block size ${listsize}"
 
   touch ${CURRENTLOGDIR}/sync-$HOST
@@ -259,24 +215,119 @@ function runrandomread {
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait
-  syncAcrossHosts
+  sync_across_hosts
 }
 
-echo
-echo "STARTING RANDOM READ TEST"
-SEED=1
-for listsize in 1000000 64000 4000; do
-	runrandomread $listsize " "
-  SEED=$((SEED+1))
-done
-for listsize in 1000000 64000 4000; do
-	runrandomread $listsize " -withmmap"
-  SEED=$((SEED+1))
+#######################################
+# Main Script Execution
+#######################################
+
+source "${SCRIPT_DIR}/common.sh"
+validate_input "$@"
+
+readonly NUMPROCESSES=$1
+readonly export SCOPE=$2
+readonly KEEPDELETE=$3
+
+if [ "$#" -eq "4" ]; then
+  echo "Date is set to $4"
+  DATE="$4"
+else
+	DATE=$(date +%m%d_%H%M%S)
+fi
+
+validate_environment
+
+check_port $CONTROLLERPORT
+for i in $(seq $NUMPROCESSES); do
+  check_port "$((WORKERBASEPORT+i))"
 done
 
-${FLUSH}
-runTest XASC xasc.q
+readonly HOST=$(uname -n)
+readonly PARFILE="./partitions"
 
+if [[ ! -f "${PARFILE}" ]]; then
+    error_exit "Partitions file ${PARFILE} does not exist" 4
+fi
+
+mapfile -t array < "${PARFILE}"
+readonly NUMSEGS=${#array[@]}
+
+if [[ $SCOPE == "readonly" ]]; then
+  local j=0
+  for i in $(seq $NUMPROCESSES); do
+    local datadir=${array[$j]}/${HOST}.${i}/${DATE}
+    if ! [ -d ${datadir} ]; then
+      error_exit "Data directory ${datadir} does not exits. Mode readonly assumes that data has been generated previously." 6
+    fi
+    j=$(( ($j + 1) % $NUMSEGS ))
+  done
+fi
+
+readonly RESDIR="${RESULTDIR}/${DATE}"
+mkdir -p ${RESDIR} || error_exit "Failed to create results directory ${RESDIR}" 7
+echo "Results will be persisted in ${RESDIR}"
+readonly CURRENTLOGDIR="${LOGDIR}/${DATE}" 
+mkdir -p ${CURRENTLOGDIR} || error_exit "Failed to create log directory ${CURRENTLOGDIR}" 8
+
+readonly RESFILEPREFIX="${RESDIR}/detailed-${HOST}-"
+readonly IOSTATFILE="${RESDIR}/iostat-${HOST}.psv"
+readonly AGGRFILEPREFIX="${RESDIR}/${HOST}-"
+readonly LOGFILEPREFIX="${CURRENTLOGDIR}/${HOST}-${NUMPROCESSES}t-"
+readonly CONFIG="${RESDIR}/config.yaml"
+
+persist_config
+
+trap cleanup EXIT
+
+# important that this it outside this loop with "q prepare", as first time after a mount as the
+# fs may take a long time to start (S3 sync) and we want the wrtte processes to run in parallel
+j=0
+for i in $(seq $NUMPROCESSES); do
+  if is_not_obj_store ${array[$j]}; then
+    DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
+    if [ $SCOPE = "full" ] && [ -d ${DATADIR} ]; then
+      error_exit "${DATADIR} directory already exists. Please remove it and rerun." 7
+    fi
+	  mkdir -p ${DATADIR}
+  fi
+  echo "threadnr|os|testtype|testid|test|qexpression|repeat|length|starttime|endtime|result|unit" > ${RESFILEPREFIX}${i}.psv
+	j=$(( ($j + 1) % $NUMSEGS ))
+done
+
+echo "testid|iostat_read_throughput|iostat_write_throughput|iostat_readwrite_throughput" > ${IOSTATFILE}
+
+if [[ "$SCOPE" = "cpuonly" ]]; then
+  source ${FLUSH}
+  run_test CPU cpu.q
+else
+  if [[ "$SCOPE" = "full" ]]; then
+    source ${FLUSH}
+    run_test CPU cpu.q
+    source ${FLUSH}
+    run_test WRITE write.q
+    source ${FLUSH}
+    run_test "META DATA" meta.q
+  fi
+
+  source ${FLUSH}
+  run_test "SEQUENTIAL READ" read.q
+  run_test "SEQUENTIAL RE-READ" reread.q
+
+  echo "STARTING RANDOM READ TEST"
+  SEED=1
+  for listsize in 1000000 64000 4000; do
+  	run_random_read_test $listsize " "
+    SEED=$((SEED+1))
+  done
+  for listsize in 1000000 64000 4000; do
+  	run_random_read_test $listsize " -withmmap"
+    SEED=$((SEED+1))
+  done
+
+  source ${FLUSH}
+  run_test XASC xasc.q
+fi
 
 echo "Aggregating results"
 ${QBIN} ./src/postproc.q -inputs ${RESFILEPREFIX} -iostatfile ${IOSTATFILE} -processes ${NUMPROCESSES} -outputprefix ${AGGRFILEPREFIX} -q
@@ -284,7 +335,10 @@ ${QBIN} ./src/postproc.q -inputs ${RESFILEPREFIX} -iostatfile ${IOSTATFILE} -pro
 #
 # an air gap for any storage stats gathering before unlinks go out ...
 #
-sleep 5
+sleep 3
 
 sync ${RESDIR}
 sync ${CURRENTLOGDIR}
+
+echo "Benchmark completed successfully"
+exit 0

@@ -5,14 +5,8 @@ set -euo pipefail
 # docker login ${REGISTRY}
 # that probably needs an access key
 
-if [ $# -eq 0 ]; then
-  TARGET=dev
-else
-  TARGET=$1
-fi
-
 IMAGENAME=nano
-VERSION=$(yq ".${TARGET}" version.yaml)
+VERSION=$(cat version.txt)
 echo "Building verion ${VERSION}"
 
 docker build -t ${IMAGENAME}:${VERSION} .
