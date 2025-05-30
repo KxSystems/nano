@@ -32,5 +32,5 @@ largeFloatVec:genFloatVec LARGELENGTH
 
 SYMNR: "J"$getenv `SYMNR
 sym: `u#neg[SYMNR]?`4;
-largeSymVec: LARGELENGTH?sym;
+
 .Q.gc[]
