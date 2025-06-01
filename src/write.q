@@ -178,8 +178,9 @@ $[OBJSTORE; [
   };
   .write.appendMidSym: {[]
     .qlog.info "creating files for xasc tests";
-    .qlog.info "starting append mid sym vector test";
-    chunkSize: count largeSymVec;
+    .qlog.info "starting append large sym vector test";
+    chunkSize: LARGELENGTH;
+    largeSymVec: chunkSize?sym;
     chunkNr: `long$TBLSIZE % SIZEOFLONG * chunkSize * 1+2 xlog processcount; // enumerated symbols are stored as longs
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
@@ -190,8 +191,8 @@ $[OBJSTORE; [
   };
   .write.appendMidFloat: {[]
     .qlog.info "creating files for xasc tests";
-    .qlog.info "starting append mid sym vector test";
-    chunkSize: count largeSymVec;
+    .qlog.info "starting append large float vector test";
+    chunkSize: count largeFloatVec;
     chunkNr: `long$TBLSIZE % SIZEOFLONG * chunkSize * 1+2 xlog processcount; // enumerated symbols are stored as longs
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
