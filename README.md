@@ -194,6 +194,17 @@ The controller open a TCP connection to all workers so this error typically occu
 
 The ulimit change above is temporary and applies only to the current shell session.
 
+### Out of memory
+The memory need is proportional to the number of threads (`THREADNR`) for several q operations. For CPU tests, because vector lengths are fixed, the total memory required scales directly with the number of kdb+ workers.
+
+If your test run fails with an OutOfMemory (OOM) error, you can address this by excluding the most memory-intensive tests. The primary tests known for high memory consumption are `.cpu.groupIntLarge` and `.cpu.groupFloatLarge`. Set the `EXCLUDETESTS` environment variable as shown below:
+
+```bash
+EXCLUDETESTS=".cpu.groupIntLarge .cpu.groupFloatLarge"
+```
+
+and rerun your test.
+
 ## Technical Details
 
 The script calculates the throughput (MiB/sec) of an operation by calculating the data size and the elapsed time of the operation.
