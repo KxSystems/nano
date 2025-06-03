@@ -21,6 +21,8 @@ to the kdb+ I/O models.
 
 Multi-node client testing can be used to either test a single namespace solution, or to test read/write rates for multiple hosts using multiple different storage targets on a shared storage device.
 
+In this document, we use `kdb+ process` and `q process` interchangeably.
+
 ## Prerequisite
 
 Please [install kdb+ 4.1](https://code.kx.com/q/learn/install/). If the q home differs from `$HOME/q` then you need to set `QHOME` in `config/kdbenv`.
@@ -194,6 +196,42 @@ The controller open a TCP connection to all workers so this error typically occu
 
 The ulimit change above is temporary and applies only to the current shell session.
 
+### Out of memory
+The memory need is proportional to the number of threads (`THREADNR`) for several q operations. For CPU tests, because vector lengths are fixed, the total memory required scales directly with the number of kdb+ workers.
+
+If your test run fails with an OutOfMemory (OOM) error, you can address this by excluding the most memory-intensive tests. The primary tests known for high memory consumption are `.cpu.groupIntLarge` and `.cpu.groupFloatLarge`. Set the `EXCLUDETESTS` environment variable as shown below:
+
+```bash
+EXCLUDETESTS=".cpu.groupIntLarge .cpu.groupFloatLarge"
+```
+
+and rerun your test.
+
+### Port in use
+If the benchmark fails with e.g. 
+
+```bash
+ERROR: Port 5501 is in use. Maybe leftover kdb+ processes are running.
+```
+
+then you either need to stop the process that takes the port or set alternative ports for the benchmark.
+
+Most likely the port is taken by previously failed test so either
+
+```bash
+$ killall q
+```
+
+or
+
+```bash
+$ kill -9 $(pidof q)
+```
+
+will do the job. Be careful with these commands as they will terminate ALL q processes running under your user account. Alternatively, you can use `lsof` to find out the process using the port, for example `lsof -i :5501`.
+
+All kdb+ workers and the kdb+ controller need a port. Environment variables `WORKERBASEPORT` and `CONTROLLERPORT` exported in `mthread.sh` set these ports. Feel free to modify them. For `N` workers, ports `WORKERBASEPORT+1` through `WORKERBASEPORT+N` will be used.
+
 ## Technical Details
 
 The script calculates the throughput (MiB/sec) of an operation by calculating the data size and the elapsed time of the operation.
@@ -201,17 +239,17 @@ The script calculates the throughput (MiB/sec) of an operation by calculating th
 Script `./mthread.sh` executes 7 major tests:
    1. CPU
    1. Write
-   1. Read
-   1. Reread
+   1. Sequential read
+   1. Sequential reread
    1. Meta
-   1. Random read
+   1. Random read and reread
    1. xasc
 
 In read-only tests (when DB dir parameter is passed to `mthread.sh` as a third parameter) the [Write](#Write) and [Meta](#Meta) tests are omitted.
 
 All tests start multiple kdb+ processes (set by the first parameter of `./mthread.sh`) each having its own working space on the disk.
 
-The cache is flushed before each test except reread and random reread.
+The cache is flushed before each test except for reread tests.
 
 We detail each test in the next section.
 
@@ -222,7 +260,8 @@ We detail each test in the next section.
       * calculating deltas
       * generating indices based on modulo
       * calculates moving and weighted averages
-      * do arithmetics and implicit iteration
+      * arithmetics and implicit iteration
+      * serialization, deserialization and compressesion
 
 ### Write (`write.q`)
    1. performs three write tests
