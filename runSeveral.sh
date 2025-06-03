@@ -29,7 +29,7 @@ NUMPROCESSES=1
 while [ $NUMPROCESSES -le $LIMIT ]; do
    DATE=$(date +%m%d_%H%M%S)
    DATES+=($DATE)
-   ./mthread.sh $NUMPROCESSES $SCOPE delete ${DATE}
+   ./mthread.sh -p $NUMPROCESSES -s $SCOPE -d ${DATE}
    NUMPROCESSES=$((NUMPROCESSES * 2))
 done
 

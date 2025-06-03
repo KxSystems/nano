@@ -2,37 +2,48 @@
 
 set -euo pipefail
 
-readonly USAGE="Usage: $0 processnr cpuonly|readonly|full keep|delete [date]"
+readonly USAGE="Usage: $0 [-p|--processnr NUMBER] [-s|--scope cpuonly|readonly|full] [--noclean] [-d|--date DATE] [-h|--help]"
 readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 readonly CONTROLLERPORT=5100
 readonly WORKERBASEPORT=5500
+
+# Default values
+NUMPROCESSES=1
+SCOPE="full"
+NOCLEAN=false
+DATE=""
 
 #######################################
 # Functions
 #######################################
 
-validate_input() {
-  if [ $# -lt 3 ]; then
-  	echo $USAGE
-    error_exit "At least three parameters are mandatory" 2
-  fi
+show_help() {
+  cat <<EOF
+$USAGE
 
-  if [[ ! "$1" =~ ^[0-9]+$ ]] || [[ "$1" -le 0 ]]; then
+Options:
+  -h|--help              Show this help message
+  -p|--processnr NUMBER  Number of kdb+ worker processes executing tests in parallel (default: $NUMPROCESSES)
+  -s|--scope SCOPE       Scope of operation: cpuonly, readonly (write and meta tests are skipped), or full (default: $SCOPE)
+  -d|--date DATE         Date to use for readonly operations (format: MMDD_HHMMSS)
+  --noclean              Skip cleanup and keep datafiles (default: $NOCLEAN - perform cleanup)
+EOF
+  exit 0
+}
+
+validate_input() {
+  if [[ ! "$NUMPROCESSES" =~ ^[0-9]+$ ]] || [[ "$NUMPROCESSES" -le 0 ]]; then
   	echo $USAGE
     error_exit "The process number must be a positive integer" 2
   fi
 
-  if [[ ! "$2" =~ ^(cpuonly|readonly|full)$ ]]; then
+  if [[ ! "$SCOPE" =~ ^(cpuonly|readonly|full)$ ]]; then
     error_exit "Invalid scope: $SCOPE (must be 'cpuonly', 'readonly' or 'full')" 2
   fi
 
-  if [[ ! "$3" =~ ^(keep|delete)$ ]]; then
-    error_exit "Invalid cleanup option: $3 (must be 'keep' or 'delete')" 2
+  if [[ "$SCOPE" == "readonly" && -z "$DATE" ]]; then
+    error_exit "Passing a date parameter is mandatory in readonly mode to locate previously generated data files" 5
   fi
-
-  if [[ "$2" == "readonly" && $# -ne 4 ]]; then
-    error_exit "Passing a date (4th) parameter is mandatory in readonly mode to locate previously generated data files" 5
-fi
 }
 
 validate_environment() {
@@ -69,7 +80,7 @@ is_not_obj_store() {
 }
 
 cleanup() {
-  if [[ "$KEEPDELETE" = "delete" && "$SCOPE" != "cpuonly" ]]; then
+  if [[ "$NOCLEANUP" == "false" && "$SCOPE" != "cpuonly" ]]; then
   	echo "cleaning up DB..."
   	j=0
   	for i in $(seq $NUMPROCESSES); do
@@ -225,18 +236,51 @@ run_random_read_test() {
 source "${SCRIPT_DIR}/common.sh"
 validate_input "$@"
 
-readonly NUMPROCESSES=$1
-readonly export SCOPE=$2
-readonly KEEPDELETE=$3
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help)
+      show_help
+      ;;
+    -p|--processnr)
+      NUMPROCESSES="$2"
+      shift 2
+      ;;
+    -s|--scope)
+      SCOPE="$2"
+      shift 2
+      ;;
+    --noclean)
+      NOCLEAN=true
+      shift
+      ;;
+    -d|--date)
+      DATE="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown parameter: $1"
+      echo "$USAGE"
+      exit 1
+      ;;
+  esac
+done
 
-if [ "$#" -eq "4" ]; then
-  echo "Date is set to $4"
-  DATE="$4"
-else
-	DATE=$(date +%m%d_%H%M%S)
+if [[ -z "${DATE:-}" && "$SCOPE" != "readonly" ]]; then
+  DATE=$(date +%m%d_%H%M%S)
 fi
 
 validate_environment
+
+readonly export NUMPROCESSES
+readonly export SCOPE
+readonly export NOCLEAN
+
+echo "Running benchmark with:"
+echo "  Processes: $NUMPROCESSES"
+echo "  Scope: $SCOPE"
+if [[ ${NOCLEAN} == "true" ]]; then
+  echo "  Cleanup disabled"
+fi
 
 check_port $CONTROLLERPORT
 for i in $(seq $NUMPROCESSES); do

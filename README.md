@@ -95,30 +95,17 @@ $ source ./config/env
 
 ### mthread.sh
 
-Executes multiple processes of execution of the benchmark on the execution host
-
-This takes three arguments:
-
-1. The number of executions of q on each node, integer.
-1. `cpuonly|readonly|full` to select between cpuonly, read only and full test. Subtests `write` and `meta` are not executed in read-only tests.
-1. `delete|keep`. Flag, determines if the data created from each process
-   is kept on the filesystem. Useful for testing performance on a fuller
-   filesystem, which could be modeled through running multiple iterations
-   of `mthread.sh`.
-1. Optional: date. This test assumes that data was already generated (`keep` flag was used the previous test). Format of `%m%d_H%M%S` is expected like `0408_152349`.
-
-If you would like the data to be compressed then pass the environment variable `COMPRESS` with the [kdb+ compression parameters](https://code.kx.com/q/kb/file-compression/#compression-parameters).
+Starts multiple processes of execution of the benchmark. Pass `-h` to learn about the parameters.
 
 Example usages
 
 ```bash
-$ ./mthread.sh $(nproc) full delete
-$ COMPRESS="17 2 6" ./mthread.sh 8 full keep
-$ ./mthread.sh 8 readonly keep 0408_152349
+$ ./mthread.sh -p $(nproc)
+$ COMPRESS="17 2 6" ./mthread.sh -p 8 --noclean
+$ ./mthread.sh -p 8 -s readonly --noclean -d 0408_152349
 ```
 
-
-Typical examples of the number of processes to test are 1, 2, 4, 8, 16, 32, 64, 128.
+Typical examples of the number of worker processes to test are 1, 2, 4, 8, 16, 32, 64, 128.
 
 ### multihost.sh
 
@@ -134,7 +121,7 @@ to be added to the sudoers file if you are not already running as root. `multiho
 ```bash
 $ source ./config/kdbenv
 $ source ./config/env
-$ ./multihost.sh $(nproc) full delete
+$ ./multihost.sh -p 32
 ```
 
 ### Running several tests with different process count
