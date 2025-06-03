@@ -195,7 +195,7 @@ EXCLUDETESTS=".cpu.groupIntLarge .cpu.groupFloatLarge"
 and rerun your test.
 
 ### Port in use
-If the benchmark fails with e.g. 
+If the benchmark fails with e.g.
 
 ```bash
 ERROR: Port 5501 is in use. Maybe leftover kdb+ processes are running.
