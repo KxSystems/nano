@@ -65,6 +65,11 @@ docker-builddev-push:
     - source ./config/env
   rules:
     - if: '$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
+      changes:
+        - "!README.md"
+        - "!LICENSE"
+      when: on_success
+    - when: never
   artifacts:
     paths:
       - logs/*/*.log
