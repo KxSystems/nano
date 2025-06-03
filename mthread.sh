@@ -27,6 +27,10 @@ Options:
   -s, --scope SCOPE       Scope of operation: cpuonly, readonly (write and meta tests are skipped), or full (default: $SCOPE)
   -d, --date DATE         Date to use for readonly operations (format: MMDD_HHMMSS)
   --noclean               Skip cleanup and keep datafiles (default: $NOCLEAN - perform cleanup)
+
+Examples:
+  $0 --processnr 8
+  $0 -s cpuonly
 EOF
   exit 0
 }
