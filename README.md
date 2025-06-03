@@ -21,6 +21,8 @@ to the kdb+ I/O models.
 
 Multi-node client testing can be used to either test a single namespace solution, or to test read/write rates for multiple hosts using multiple different storage targets on a shared storage device.
 
+In this document, we use `kdb+ process` and `q process` interchangeably.
+
 ## Prerequisite
 
 Please [install kdb+ 4.1](https://code.kx.com/q/learn/install/). If the q home differs from `$HOME/q` then you need to set `QHOME` in `config/kdbenv`.
@@ -204,6 +206,31 @@ EXCLUDETESTS=".cpu.groupIntLarge .cpu.groupFloatLarge"
 ```
 
 and rerun your test.
+
+### Port in use
+If the benchmark fails with e.g. 
+
+```bash
+ERROR: Port 5501 is in use. Maybe leftover kdb+ processes are running.
+```
+
+then you either need to stop the process that takes the port or set alternative ports for the benchmark.
+
+Most likely the port is taken by previously failed test so either
+
+```bash
+$ killall q
+```
+
+or
+
+```bash
+$ kill -9 $(pidof q)
+```
+
+will do the job. Be careful with these commands as they will terminate ALL q processes running under your user account. Alternatively, you can use `lsof` to find out the process using the port, for example `lsof -i :5501`.
+
+All kdb+ workers and the kdb+ controller need a port. Environment variables `WORKERBASEPORT` and `CONTROLLERPORT` exported in `mthread.sh` set these ports. Feel free to modify them. For `N` workers, ports `WORKERBASEPORT+1` through `WORKERBASEPORT+N` will be used.
 
 ## Technical Details
 
