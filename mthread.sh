@@ -22,11 +22,11 @@ show_help() {
 $USAGE
 
 Options:
-  -h|--help              Show this help message
-  -p|--processnr NUMBER  Number of kdb+ worker processes executing tests in parallel (default: $NUMPROCESSES)
-  -s|--scope SCOPE       Scope of operation: cpuonly, readonly (write and meta tests are skipped), or full (default: $SCOPE)
-  -d|--date DATE         Date to use for readonly operations (format: MMDD_HHMMSS)
-  --noclean              Skip cleanup and keep datafiles (default: $NOCLEAN - perform cleanup)
+  -h, --help              Show this help message
+  -p, --processnr NUMBER  Number of kdb+ worker processes executing tests in parallel (default: $NUMPROCESSES)
+  -s, --scope SCOPE       Scope of operation: cpuonly, readonly (write and meta tests are skipped), or full (default: $SCOPE)
+  -d, --date DATE         Date to use for readonly operations (format: MMDD_HHMMSS)
+  --noclean               Skip cleanup and keep datafiles (default: $NOCLEAN - perform cleanup)
 EOF
   exit 0
 }
@@ -80,7 +80,7 @@ is_not_obj_store() {
 }
 
 cleanup() {
-  if [[ "$NOCLEANUP" == "false" && "$SCOPE" != "cpuonly" ]]; then
+  if [[ "$NOCLEAN" == "false" && "$SCOPE" != "cpuonly" ]]; then
   	echo "cleaning up DB..."
   	j=0
   	for i in $(seq $NUMPROCESSES); do
