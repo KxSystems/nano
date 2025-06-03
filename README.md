@@ -239,17 +239,17 @@ The script calculates the throughput (MiB/sec) of an operation by calculating th
 Script `./mthread.sh` executes 7 major tests:
    1. CPU
    1. Write
-   1. Read
-   1. Reread
+   1. Sequential read
+   1. Sequential reread
    1. Meta
-   1. Random read
+   1. Random read and reread
    1. xasc
 
 In read-only tests (when DB dir parameter is passed to `mthread.sh` as a third parameter) the [Write](#Write) and [Meta](#Meta) tests are omitted.
 
 All tests start multiple kdb+ processes (set by the first parameter of `./mthread.sh`) each having its own working space on the disk.
 
-The cache is flushed before each test except reread and random reread.
+The cache is flushed before each test except for reread tests.
 
 We detail each test in the next section.
 
@@ -260,7 +260,8 @@ We detail each test in the next section.
       * calculating deltas
       * generating indices based on modulo
       * calculates moving and weighted averages
-      * do arithmetics and implicit iteration
+      * arithmetics and implicit iteration
+      * serialization, deserialization and compressesion
 
 ### Write (`write.q`)
    1. performs three write tests
