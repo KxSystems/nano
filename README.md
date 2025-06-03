@@ -166,8 +166,8 @@ By default `flush/directmount.sh` is selected as the flush script which requires
 Example usages:
 
 ```bash
-$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/$USER/nanodata:/data --privileged ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest 4 full delete
-$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/storage1/nanodata:/data1 -v /mnt/storage2/nanodata:/data2 -v ${PWD}/partitions_2disks:/opt/kx/app/partitions:ro -e FLUSH=/opt/kx/app/flush/noflush.sh -e THREADNR=5 ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest 4 full delete
+$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/$USER/nanodata:/data --privileged ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest -p 4
+$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/storage1/nanodata:/data1 -v /mnt/storage2/nanodata:/data2 -v ${PWD}/partitions_2disks:/opt/kx/app/partitions:ro -e FLUSH=/opt/kx/app/flush/noflush.sh -e THREADNR=5 ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest -p 4
 ```
 
 ## Troubleshooting
@@ -232,9 +232,9 @@ Script `./mthread.sh` executes 7 major tests:
    1. Random read and reread
    1. xasc
 
-In read-only tests (when DB dir parameter is passed to `mthread.sh` as a third parameter) the [Write](#Write) and [Meta](#Meta) tests are omitted.
+If the scope is readonly then [Write](#Write) and [Meta](#Meta) tests are omitted.
 
-All tests start multiple kdb+ processes (set by the first parameter of `./mthread.sh`) each having its own working space on the disk.
+All tests start multiple kdb+ processes (set by the parameter `-p` of `./mthread.sh`) each having its own working space on the disk.
 
 The cache is flushed before each test except for reread tests.
 
