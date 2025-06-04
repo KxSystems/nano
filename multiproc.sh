@@ -6,9 +6,9 @@ readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
 source "${SCRIPT_DIR}/common.sh"
 
-readonly OUTPUT=./results/throughput_total.psv
-readonly SCOPE=full
-readonly LIMIT=$COMPUTECOUNT
+OUTPUT=./results/throughput_total.psv
+SCOPE=full
+LIMIT=$COMPUTECOUNT
 
 usage() {
     cat <<EOF
