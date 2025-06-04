@@ -28,7 +28,7 @@ Options:
   -h, --help              Show this help message
   -p, --processnr NUMBER  Number of kdb+ worker processes executing tests in parallel (default: $NUMPROCESSES)
   -s, --scope SCOPE       Scope of operation: cpuonly, readonly (write and meta tests are skipped), or full (default: $SCOPE)
-  -d, --dbsubdir DIR      Subdirectory to use for readonly operations (format: MMDD_HHMMSS)
+  -d, --dbsubdir DIR      Subdirectory to use for readonly operations
   -r, --resultdir DIR     Directory for the results (default: subdirectory in $DEFAULTRESDIRPARENT)
   --noclean               Skip cleanup and keep datafiles (default: $NOCLEAN - perform cleanup)
 
