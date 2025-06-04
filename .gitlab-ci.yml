@@ -65,7 +65,7 @@ docker-builddev-push:
     - source ./config/env
   rules:
     - if: '$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
-      c- changes:
+      changes:
         - src/**/*
         - .gitlab-ci.yml
         - *.sh
