@@ -58,7 +58,7 @@ NUMPROCESSES=1
 while [ $NUMPROCESSES -le $LIMIT ]; do
    DATE=$(date +%m%d_%H%M%S)
    DATES+=($DATE)
-   ${SCRIPT_DIR}/mthread.sh --processnr $NUMPROCESSES --scope $SCOPE --date ${DATE}
+   ${SCRIPT_DIR}/nano.sh --processnr $NUMPROCESSES --scope $SCOPE --date ${DATE}
    NUMPROCESSES=$((NUMPROCESSES * 2))
 done
 

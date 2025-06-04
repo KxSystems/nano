@@ -31,7 +31,7 @@ The script assumes that the following commands are available - see `Dockerfile` 
    * [iostat](https://github.com/sysstat/sysstat)
    * [nc](https://nc110.sourceforge.io/)
 
-The scripts starts several kdb+ processes that open a port for incoming messages. By default, the controller opens port 5100 and the workers open 5500, 5501, 5502, etc. You can change these ports by editing variables CONTROLLERPORT and WORKERBASEPORT in `mthread.sh`.
+The scripts starts several kdb+ processes that open a port for incoming messages. By default, the controller opens port 5100 and the workers open 5500, 5501, 5502, etc. You can change these ports by editing variables CONTROLLERPORT and WORKERBASEPORT in `nano.sh`.
 
 ## Installing and configuring
 
@@ -64,10 +64,10 @@ The environment executing this test must have the associated cloud vendor CLI se
 You can also test the [cache](https://code.kx.com/insights/1.4/core/objstor/kxreaper.html) impact of the object storage library. The recommended way is to
    * provide an object storage path in `partitions`
    * `DATE=$(date +%m%d_%H%M%S)`
-   * run a full test to populate data: `./mthread.sh $(nproc) full keep $DATE`.
+   * run a full test to populate data: `./nano.sh $(nproc) full keep $DATE`.
    * assign an empty directory on a fast local disk to the environment variable `KX_OBJSTR_CACHE_PATH` in file `./config/env`
-   * run the test to populate cache: `./mthread.sh $(nproc) readonly keep $DATE`
-   * run the test again to use cache: `./mthread.sh $(nproc) readonly delete $DATE`
+   * run the test to populate cache: `./nano.sh $(nproc) readonly keep $DATE`
+   * run the test again to use cache: `./nano.sh $(nproc) readonly delete $DATE`
    * delete cache files in object storage cache: `source ./config/env; rm -rf ${KX_OBJSTR_CACHE_PATH}/objects`
 
 The random read kdb+ script is deterministic, i.e. it reads the same blocks in consecutive runs. The script uses [roll](https://code.kx.com/q/ref/deal/#roll-and-deal) for selecting random blocks which uses a fixed seed.
@@ -93,16 +93,16 @@ $ source ./config/kdbenv
 $ source ./config/env
 ```
 
-### mthread.sh
+### nano.sh
 
 Starts multiple processes of execution of the benchmark. Pass `-h` to learn about the parameters.
 
 Example usages
 
 ```bash
-$ ./mthread.sh -p $(nproc)
-$ COMPRESS="17 2 6" ./mthread.sh -p 8 --noclean
-$ ./mthread.sh -p 8 -s readonly --noclean -d 0408_152349
+$ ./nano.sh -p $(nproc)
+$ COMPRESS="17 2 6" ./nano.sh -p 8 --noclean
+$ ./nano.sh -p 8 -s readonly --noclean -d 0408_152349
 ```
 
 Typical examples of the number of worker processes to test are 1, 2, 4, 8, 16, 32, 64, 128.
@@ -113,7 +113,7 @@ This is used to execute kdb+ across multiple hosts in parallel, it grabs the
 aggregate throughputs and latencies. This will be based on the entries in `hostlist`.
 You can also use this to drive the results from one server, by simply adding
 `localhost` as a single entry in `hostlist`.  Or, for a single host calculation, just
-run `mthread.sh` directly.
+run `nano.sh` directly.
 
 Note that the execution of the top-level script `multihost.sh` may require `tty` control
 to be added to the sudoers file if you are not already running as root. `multihost.sh` does ssh to the remote host, so you may need to use `~/.ssh/config` to set passwords or identity files.
@@ -125,12 +125,12 @@ $ ./multihost.sh -p 32
 ```
 
 ### Running several tests with different process count
-If you are interested how the storage medium scales with the number of parallel requests, then you can run `runSeveral.sh`. It simply calls `mthread.sh` with different process numbers and aggregates the results to a final PSV file. The results are saved in file `results/throughput_total.csv` but this can be overwritten by a command line parameter. Run the script with `--help` to learn about the command line parameters.
+If you are interested how the storage medium scales with the number of parallel requests, then you can run `runSeveral.sh`. It simply calls `nano.sh` with different process numbers and aggregates the results to a final PSV file. The results are saved in file `results/throughput_total.csv` but this can be overwritten by a command line parameter. Run the script with `--help` to learn about the command line parameters.
 
 
 ### Results
 
-The results are saved as text files in a sub-directory set by the environment variable `RESULTDIR` (by default it is `results`). Each run of `mthread.sh` saves
+The results are saved as text files in a sub-directory set by the environment variable `RESULTDIR` (by default it is `results`). Each run of `nano.sh` saves
 its results in a new directory, timestamped `mmdd_HHMM`, rounded to the nearest minute. Detailed results, including write rates, small IOPS tests, and so on, are
 contained in the output files (one per system under test) in the `results/mmdd_HHMM-mmdd_HHMM/` files.
 
@@ -217,13 +217,13 @@ $ kill -9 $(pidof q)
 
 will do the job. Be careful with these commands as they will terminate ALL q processes running under your user account. Alternatively, you can use `lsof` to find out the process using the port, for example `lsof -i :5501`.
 
-All kdb+ workers and the kdb+ controller need a port. Environment variables `WORKERBASEPORT` and `CONTROLLERPORT` exported in `mthread.sh` set these ports. Feel free to modify them. For `N` workers, ports `WORKERBASEPORT+1` through `WORKERBASEPORT+N` will be used.
+All kdb+ workers and the kdb+ controller need a port. Environment variables `WORKERBASEPORT` and `CONTROLLERPORT` exported in `nano.sh` set these ports. Feel free to modify them. For `N` workers, ports `WORKERBASEPORT+1` through `WORKERBASEPORT+N` will be used.
 
 ## Technical Details
 
 The script calculates the throughput (MiB/sec) of an operation by calculating the data size and the elapsed time of the operation.
 
-Script `./mthread.sh` executes 7 major tests:
+Script `./nano.sh` executes 7 major tests:
    1. CPU
    1. Write
    1. Sequential read
@@ -234,7 +234,7 @@ Script `./mthread.sh` executes 7 major tests:
 
 If the scope is readonly then [Write](#Write) and [Meta](#Meta) tests are omitted.
 
-All tests start multiple kdb+ processes (set by the parameter `-p` of `./mthread.sh`) each having its own working space on the disk.
+All tests start multiple kdb+ processes (set by the parameter `-p` of `./nano.sh`) each having its own working space on the disk.
 
 The cache is flushed before each test except for reread tests.
 

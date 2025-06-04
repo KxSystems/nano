@@ -3,7 +3,7 @@ FROM kdb-insights-core:4.1.6
 WORKDIR /opt/kx/app
 
 COPY src ./src
-COPY mthread.sh runSeveral.sh common.sh version.txt  ./
+COPY nano.sh runSeveral.sh common.sh version.txt  ./
 COPY flush ./flush
 COPY config/env ./config/env
 
@@ -14,4 +14,4 @@ RUN echo "/data" > ./partitions
 
 RUN yum upgrade -y && yum install -y wget sysstat nc dmidecode numactl hwloc
 
-ENTRYPOINT [ "/bin/bash", "mthread.sh" ]
+ENTRYPOINT [ "/bin/bash", "nano.sh" ]

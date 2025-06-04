@@ -12,7 +12,7 @@ DATE=$(date +%m%d_%H%M%S)
 readonly RESDIR="./results/${DATE}"
 for HOST in $(cat hostlist); do
 	echo $HOST
-	ssh $HOST "cd ${SCRIPT_DIR}; source ./config/kdbenv;source ./config/env;./mthread.sh $@ -d ${DATE}" &
+	ssh $HOST "cd ${SCRIPT_DIR}; source ./config/kdbenv;source ./config/env;./nano.sh $@ -d ${DATE}" &
 done
 wait
 
