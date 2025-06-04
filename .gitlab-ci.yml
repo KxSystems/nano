@@ -100,10 +100,10 @@ nano-multi-cpuonly:
     - echo "${APPDIR}/data1" >> ./partitions
     - DBSIZE=TINY SUDO="" ./nano.sh -p 3 -s cpuonly
 
-multiproc-multi:
+multiproc:
   extends:
     - .nano
   script:
-    - echo "${APPDIR}/data0" > ./partitions
-    - echo "${APPDIR}/data1" >> ./partitions
+    - echo "${APPDIR}/data2" > ./partitions
+    - echo "${APPDIR}/data3" >> ./partitions
     - DBSIZE=TINY SUDO="" ./multiproc.sh -l 3
