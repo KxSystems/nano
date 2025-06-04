@@ -3,7 +3,7 @@ FROM kdb-insights-core:4.1.6
 WORKDIR /opt/kx/app
 
 COPY src ./src
-COPY nano.sh runSeveral.sh common.sh version.txt  ./
+COPY nano.sh multiproc.sh common.sh version.txt  ./
 COPY flush ./flush
 COPY config/env ./config/env
 

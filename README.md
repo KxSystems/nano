@@ -125,7 +125,7 @@ $ ./multihost.sh -p 32
 ```
 
 ### Running several tests with different process count
-If you are interested how the storage medium scales with the number of parallel requests, then you can run `runSeveral.sh`. It simply calls `nano.sh` with different process numbers and aggregates the results to a final PSV file. The results are saved in file `results/throughput_total.csv` but this can be overwritten by a command line parameter. Run the script with `--help` to learn about the command line parameters.
+If you are interested how the storage medium scales with the number of parallel requests, then you can run `multiproc.sh`. It simply calls `nano.sh` with different process numbers and aggregates the results to a final PSV file. The results are saved in file `results/throughput_total.csv` but this can be overwritten by a command line parameter. Run the script with `--help` to learn about the command line parameters.
 
 
 ### Results
