@@ -77,14 +77,14 @@ docker-builddev-push:
     expire_in: 1 day
     when: on_failure
 
-nano-single:
+nano-simple:
   extends:
     - .nano
   script:
     - echo "${CI_PROJECT_DIR}/data" > ./partitions
     - DBSIZE=TINY SUDO="" ./nano.sh
 
-nano-multi:
+nano-multilinepartition:
   extends:
     - .nano
   script:
@@ -92,7 +92,7 @@ nano-multi:
     - echo "${CI_PROJECT_DIR}/data1" >> ./partitions
     - DBSIZE=TINY SUDO="" ./nano.sh -p 3
 
-nano-multi-cpuonly:
+nano-cpuonly:
   extends:
     - .nano
   script:
