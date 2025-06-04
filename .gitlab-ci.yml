@@ -68,7 +68,7 @@ docker-builddev-push:
       changes:
         - src/**/*
         - .gitlab-ci.yml
-        - *.sh
+        - nano.sh
       when: on_success
     - when: never
   artifacts:
