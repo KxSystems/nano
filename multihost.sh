@@ -7,12 +7,12 @@
 set -euo pipefail
 
 readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
-DATE=$(date +%m%d_%H%M%S)
+DBSUBDIR=$(date +%m%d_%H%M%S)
 
-readonly RESDIR="./results/${DATE}"
+readonly RESDIR="./results/${DBSUBDIR}"
 for HOST in $(cat hostlist); do
 	echo $HOST
-	ssh $HOST "cd ${SCRIPT_DIR}; source ./config/kdbenv;source ./config/env;./nano.sh $@ -d ${DATE}" &
+	ssh $HOST "cd ${SCRIPT_DIR}; source ./config/kdbenv;source ./config/env;./nano.sh $@ -d ${DBSUBDIR}" &
 done
 wait
 
