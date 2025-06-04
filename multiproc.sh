@@ -52,20 +52,20 @@ while [[ $# -gt 0 ]]; do
 done
 
 readonly HOST=$(uname -n)
-DATES=()
+RESULTDIRS=()
 
 NUMPROCESSES=1
 while [ $NUMPROCESSES -le $LIMIT ]; do
-   DATE=$(date +%m%d_%H%M%S)
-   DATES+=($DATE)
-   ${SCRIPT_DIR}/nano.sh --processnr $NUMPROCESSES --scope $SCOPE --date ${DATE}
+   RESULTDIR="$SCRIPT_DIR/results/$(date +%m%d_%H%M%S)"
+   RESULTDIRS+=($RESULTDIR)
+   ${SCRIPT_DIR}/nano.sh --processnr $NUMPROCESSES --scope $SCOPE --resultdir ${RESULTDIR}
    NUMPROCESSES=$((NUMPROCESSES * 2))
 done
 
-head -n 1 results/${DATES[1]}/$HOST-throughput.psv > ${OUTPUT}
+head -n 1 ${RESULTDIRS[1]}/$HOST-throughput.psv > ${OUTPUT}
 readonly TMP="$(mktemp)"
-for DATE in ${DATES[@]}; do
-   tail -n +2 results/${DATE}/$HOST-throughput.psv >> ${TMP}
+for RESULTDIR in ${RESULTDIRS[@]}; do
+   tail -n +2 ${RESULTDIR}/$HOST-throughput.psv >> ${TMP}
 done
 
 sort ${TMP} -t '|' -k 3,3 >> ${OUTPUT}
