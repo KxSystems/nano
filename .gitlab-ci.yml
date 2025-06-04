@@ -96,14 +96,12 @@ nano-multi-cpuonly:
   extends:
     - .nano
   script:
-    - echo "${CI_PROJECT_DIR}/data0" > ./partitions
-    - echo "${CI_PROJECT_DIR}/data1" >> ./partitions
+    - echo "${CI_PROJECT_DIR}/data" > ./partitions
     - DBSIZE=TINY SUDO="" ./nano.sh -p 3 -s cpuonly
 
 multiproc:
   extends:
     - .nano
   script:
-    - echo "${CI_PROJECT_DIR}/data2" > ./partitions
-    - echo "${CI_PROJECT_DIR}/data3" >> ./partitions
+    - echo "${CI_PROJECT_DIR}/data" > ./partitions
     - DBSIZE=TINY SUDO="" ./multiproc.sh -l 3
