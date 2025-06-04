@@ -49,7 +49,7 @@ docker-builddev-push:
   rules:
     - if: '$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
 
-.mthread:
+.nano:
   stage: test
   image:
     name: "${IMAGE_URL}"
@@ -66,8 +66,9 @@ docker-builddev-push:
   rules:
     - if: '$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
       changes:
-        - "!README.md"
-        - "!LICENSE"
+        - src/**/*
+        - .gitlab-ci.yml
+        - nano.sh
       when: on_success
     - when: never
   artifacts:
@@ -76,25 +77,31 @@ docker-builddev-push:
     expire_in: 1 day
     when: on_failure
 
-mthread-single:
+nano-simple:
   extends:
-    - .mthread
+    - .nano
   script:
-    - echo "${APPDIR}/data" > ./partitions
-    - DBSIZE=TINY SUDO="" ./mthread.sh 1 full delete
+    - echo "${CI_PROJECT_DIR}/data" > ./partitions
+    - DBSIZE=TINY SUDO="" ./nano.sh
 
-mthread-multi:
+nano-multilinepartition:
   extends:
-    - .mthread
+    - .nano
   script:
-    - echo "${APPDIR}/data0" > ./partitions
-    - echo "${APPDIR}/data1" >> ./partitions
-    - DBSIZE=TINY SUDO="" ./mthread.sh 3 full delete
+    - echo "${CI_PROJECT_DIR}/data0" > ./partitions
+    - echo "${CI_PROJECT_DIR}/data1" >> ./partitions
+    - DBSIZE=TINY SUDO="" ./nano.sh -p 3
 
-mthread-multi-cpuonly:
+nano-cpuonly:
   extends:
-    - .mthread
+    - .nano
   script:
-    - echo "${APPDIR}/data0" > ./partitions
-    - echo "${APPDIR}/data1" >> ./partitions
-    - DBSIZE=TINY SUDO="" ./mthread.sh 3 cpuonly delete
+    - echo "${CI_PROJECT_DIR}/data" > ./partitions
+    - DBSIZE=TINY SUDO="" ./nano.sh -p 3 -s cpuonly
+
+multiproc:
+  extends:
+    - .nano
+  script:
+    - echo "${CI_PROJECT_DIR}/data" > ./partitions
+    - DBSIZE=TINY SUDO="" ./multiproc.sh -l 3

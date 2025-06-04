@@ -41,7 +41,6 @@ export AZURE_STORAGE_SHARED_KEY=mysharedkey
 # number of distinct symbols
 export SYMNR=10000
 
-export RESULTDIR="./results"
 export LOGDIR="./logs"
 
 # Data size for the sequential read/write tests. By default 30% of the physical memory is used.

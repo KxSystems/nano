@@ -2,41 +2,60 @@
 
 set -euo pipefail
 
-readonly USAGE="Usage: $0 processnr cpuonly|readonly|full keep|delete [date]"
+readonly USAGE="Usage: $0 [-p|--processnr NUMBER] [-s|--scope cpuonly|readonly|full] [--noclean] [-d|--dbsubdir DIR] [-r|--resultdir DIR] [-h|--help]"
 readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 readonly CONTROLLERPORT=5100
 readonly WORKERBASEPORT=5500
+
+# Default values
+NUMPROCESSES=1
+SCOPE="full"
+NOCLEAN=false
+readonly DATE=$(date +%m%d_%H%M%S)
+DBSUBDIR=$DATE
+readonly DEFAULTRESDIRPARENT="./results"
+RESDIR="${DEFAULTRESDIRPARENT}/$DATE"
 
 #######################################
 # Functions
 #######################################
 
-validate_input() {
-  if [ $# -lt 3 ]; then
-  	echo $USAGE
-    error_exit "At least three parameters are mandatory" 2
-  fi
+show_help() {
+  cat <<EOF
+$USAGE
 
-  if [[ ! "$1" =~ ^[0-9]+$ ]] || [[ "$1" -le 0 ]]; then
+Options:
+  -h, --help              Show this help message
+  -p, --processnr NUMBER  Number of kdb+ worker processes executing tests in parallel (default: $NUMPROCESSES)
+  -s, --scope SCOPE       Scope of operation: cpuonly, readonly (write and meta tests are skipped), or full (default: $SCOPE)
+  -d, --dbsubdir DIR      Subdirectory to use for readonly operations
+  -r, --resultdir DIR     Directory for the results (default: subdirectory in $DEFAULTRESDIRPARENT)
+  --noclean               Skip cleanup and keep datafiles (default: $NOCLEAN - perform cleanup)
+
+Examples:
+  $0 --processnr 8
+  $0 -p 16 -s cpuonly
+EOF
+  exit 0
+}
+
+validate_input() {
+  if [[ ! "$NUMPROCESSES" =~ ^[0-9]+$ ]] || [[ "$NUMPROCESSES" -le 0 ]]; then
   	echo $USAGE
     error_exit "The process number must be a positive integer" 2
   fi
 
-  if [[ ! "$2" =~ ^(cpuonly|readonly|full)$ ]]; then
+  if [[ ! "$SCOPE" =~ ^(cpuonly|readonly|full)$ ]]; then
     error_exit "Invalid scope: $SCOPE (must be 'cpuonly', 'readonly' or 'full')" 2
   fi
 
-  if [[ ! "$3" =~ ^(keep|delete)$ ]]; then
-    error_exit "Invalid cleanup option: $3 (must be 'keep' or 'delete')" 2
+  if [[ "$SCOPE" == "readonly" && -z "$DBSUBDIR" ]]; then
+    error_exit "Passing a subdir parameter is mandatory in readonly mode to locate previously generated data files" 5
   fi
-
-  if [[ "$2" == "readonly" && $# -ne 4 ]]; then
-    error_exit "Passing a date (4th) parameter is mandatory in readonly mode to locate previously generated data files" 5
-fi
 }
 
 validate_environment() {
-  local required_vars=("FLUSH" "RESULTDIR" "LOGDIR" "QBIN" "THREADNR" "FILENRPERWORKER" 
+  local required_vars=("FLUSH" "LOGDIR" "QBIN" "THREADNR" "FILENRPERWORKER" 
                        "NUMA" "SEQWRITETESTLIMIT" "RANDREADNUMBER" "RANDREADFILESIZE" "DBSIZE")
   
   for var in "${required_vars[@]}"; do
@@ -69,11 +88,11 @@ is_not_obj_store() {
 }
 
 cleanup() {
-  if [[ "$KEEPDELETE" = "delete" && "$SCOPE" != "cpuonly" ]]; then
+  if [[ "$NOCLEAN" == "false" && "$SCOPE" != "cpuonly" ]]; then
   	echo "cleaning up DB..."
   	j=0
   	for i in $(seq $NUMPROCESSES); do
-      local datadir=${array[$j]}/${HOST}.${i}/${DATE}
+      local datadir=${array[$j]}/${HOST}.${i}/${DBSUBDIR}
       if is_not_obj_store ${array[$j]}; then
         rm -rf ${datadir}
       else
@@ -86,7 +105,7 @@ cleanup() {
               ;;
           ms://*)
               echo "Cleanup ${datadir} manually"
-              echo "az storage fs directory delete -f YOURCONTAINER -n ${HOST}.${i}/${DATE} --account-name YOURSTORAGEACCOUNT"
+              echo "az storage fs directory delete -f YOURCONTAINER -n ${HOST}.${i}/${DBSUBDIR} --account-name YOURSTORAGEACCOUNT"
               ;;
           *)
               echo "Unknown object storage prefix ${array[$j]::2}" >&2
@@ -178,9 +197,9 @@ run_test() {
   ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_${TESTER%.*}.log 2 >&1 &
   j=0
   for i in $(seq $NUMPROCESSES); do
-    local DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
+    local datadir=${array[$j]}/${HOST}.${i}/${DBSUBDIR}
     local NUMAPREFIX=$(get_numa_config $i)
-    ${NUMAPREFIX} ${QBIN} ./src/${TESTER} -processes $NUMPROCESSES -db ${DATADIR} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_${TESTER%.*}.log 2>&1 &
+    ${NUMAPREFIX} ${QBIN} ./src/${TESTER} -processes $NUMPROCESSES -db ${datadir} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -s ${THREADNR} -p $((WORKERBASEPORT + i)) > ${LOGFILEPREFIX}${i}_${TESTER%.*}.log 2>&1 &
     j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait -n
@@ -203,7 +222,8 @@ run_random_read_test() {
   j=0
   sleep 5
   for i in $(seq $NUMPROCESSES); do
-  	${QBIN} ./src/randomread.q -testname randomread_${listsize}${mmap:1} -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read disk" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i}_randomread_$listsize.log 2>&1  &
+    local datadir=${array[$j]}/${HOST}.${i}/${DBSUBDIR}
+  	${QBIN} ./src/randomread.q -testname randomread_${listsize}${mmap:1} -listsize ${listsize} ${mmap} -db ${datadir} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read disk" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i}_randomread_$listsize.log 2>&1  &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait
@@ -211,7 +231,8 @@ run_random_read_test() {
   ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller_randomreread_$listsize.log 2 >&1 &
   j=0
   for i in $(seq $NUMPROCESSES); do
-  	${QBIN} ./src/randomread.q -testname randomreread_${listsize}${mmap:1} -listsize ${listsize} ${mmap} -db ${array[$j]}/${HOST}.${i}/${DATE} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read mem" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i}_randomreread_$listsize.log 2>&1  &
+    local datadir=${array[$j]}/${HOST}.${i}/${DBSUBDIR}
+  	${QBIN} ./src/randomread.q -testname randomreread_${listsize}${mmap:1} -listsize ${listsize} ${mmap} -db ${datadir} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read mem" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i}_randomreread_$listsize.log 2>&1  &
   	j=$(( ($j + 1) % $NUMSEGS ))
   done
   wait
@@ -225,18 +246,60 @@ run_random_read_test() {
 source "${SCRIPT_DIR}/common.sh"
 validate_input "$@"
 
-readonly NUMPROCESSES=$1
-readonly export SCOPE=$2
-readonly KEEPDELETE=$3
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help)
+      show_help
+      ;;
+    -p|--processnr)
+      NUMPROCESSES="$2"
+      shift 2
+      ;;
+    -s|--scope)
+      SCOPE="$2"
+      shift 2
+      ;;
+    --noclean)
+      NOCLEAN=true
+      shift
+      ;;
+    -d|--dbsubdir)
+      DBSUBDIR="$2"
+      shift 2
+      ;;
+    -r|--resultdir)
+      RESDIR="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown parameter: $1"
+      echo "$USAGE"
+      exit 1
+      ;;
+  esac
+done
 
-if [ "$#" -eq "4" ]; then
-  echo "Date is set to $4"
-  DATE="$4"
-else
-	DATE=$(date +%m%d_%H%M%S)
+if [[ -z "${DBSUBDIR:-}" && "$SCOPE" != "readonly" ]]; then
+  DBSUBDIR=$(date +%m%d_%H%M%S)
 fi
 
 validate_environment
+
+readonly export NUMPROCESSES
+readonly export SCOPE
+readonly export NOCLEAN
+mkdir -p ${RESDIR} || error_exit "Failed to create results directory ${RESDIR}" 7
+readonly CURRENTLOGDIR="${LOGDIR}/${DATE}" 
+mkdir -p ${CURRENTLOGDIR} || error_exit "Failed to create log directory ${CURRENTLOGDIR}" 8
+
+echo "Running benchmark with:"
+echo "  Processes: $NUMPROCESSES"
+echo "  Scope: $SCOPE"
+echo "  Result directory: $RESDIR"
+echo "  Log directory: $CURRENTLOGDIR"
+if [[ ${NOCLEAN} == "true" ]]; then
+  echo "  Cleanup disabled"
+fi
 
 check_port $CONTROLLERPORT
 for i in $(seq $NUMPROCESSES); do
@@ -256,19 +319,13 @@ readonly NUMSEGS=${#array[@]}
 if [[ $SCOPE == "readonly" ]]; then
   local j=0
   for i in $(seq $NUMPROCESSES); do
-    local datadir=${array[$j]}/${HOST}.${i}/${DATE}
+    local datadir=${array[$j]}/${HOST}.${i}/${DBSUBDIR}
     if ! [ -d ${datadir} ]; then
       error_exit "Data directory ${datadir} does not exits. Mode readonly assumes that data has been generated previously." 6
     fi
     j=$(( ($j + 1) % $NUMSEGS ))
   done
 fi
-
-readonly RESDIR="${RESULTDIR}/${DATE}"
-mkdir -p ${RESDIR} || error_exit "Failed to create results directory ${RESDIR}" 7
-echo "Results will be persisted in ${RESDIR}"
-readonly CURRENTLOGDIR="${LOGDIR}/${DATE}" 
-mkdir -p ${CURRENTLOGDIR} || error_exit "Failed to create log directory ${CURRENTLOGDIR}" 8
 
 readonly RESFILEPREFIX="${RESDIR}/detailed-${HOST}-"
 readonly IOSTATFILE="${RESDIR}/iostat-${HOST}.psv"
@@ -285,7 +342,7 @@ trap cleanup EXIT
 j=0
 for i in $(seq $NUMPROCESSES); do
   if is_not_obj_store ${array[$j]}; then
-    DATADIR=${array[$j]}/${HOST}.${i}/${DATE}
+    DATADIR=${array[$j]}/${HOST}.${i}/${DBSUBDIR}
     if [ $SCOPE = "full" ] && [ -d ${DATADIR} ]; then
       error_exit "${DATADIR} directory already exists. Please remove it and rerun." 7
     fi
