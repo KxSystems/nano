@@ -49,7 +49,7 @@ docker-builddev-push:
   rules:
     - if: '$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
 
-.mthread:
+.nano:
   stage: test
   image:
     name: "${IMAGE_URL}"
@@ -76,24 +76,24 @@ docker-builddev-push:
     expire_in: 1 day
     when: on_failure
 
-mthread-single:
+nano-single:
   extends:
-    - .mthread
+    - .nano
   script:
     - echo "${APPDIR}/data" > ./partitions
     - DBSIZE=TINY SUDO="" ./nano.sh
 
-mthread-multi:
+nano-multi:
   extends:
-    - .mthread
+    - .nano
   script:
     - echo "${APPDIR}/data0" > ./partitions
     - echo "${APPDIR}/data1" >> ./partitions
     - DBSIZE=TINY SUDO="" ./nano.sh -p 3
 
-mthread-multi-cpuonly:
+nano-multi-cpuonly:
   extends:
-    - .mthread
+    - .nano
   script:
     - echo "${APPDIR}/data0" > ./partitions
     - echo "${APPDIR}/data1" >> ./partitions
@@ -101,7 +101,7 @@ mthread-multi-cpuonly:
 
 multiproc-multi:
   extends:
-    - .mthread
+    - .nano
   script:
     - echo "${APPDIR}/data0" > ./partitions
     - echo "${APPDIR}/data1" >> ./partitions
