@@ -155,6 +155,20 @@ $ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/
 $ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/storage1/nanodata:/data1 -v /mnt/storage2/nanodata:/data2 -v ${PWD}/partitions_2disks:/opt/kx/app/partitions:ro -e FLUSH=/opt/kx/app/flush/noflush.sh -e THREADNR=5 ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest -p 4
 ```
 
+### Running nano as a Kubernetes Job
+
+To execute the scripts as a Kubernetes Job, certain configurations are required to ensure proper operation. The script needs elevated permissions for accessing system information (e.g. for getting device type via `lsblk`). You must configure the pod's `securityContext` to run in privileged mode as the root user.
+
+```yaml
+   containers:
+   ...
+      securityContext:
+         privileged: true
+         runAsUser: 0
+```
+
+Running containers in privileged mode or as root increases potential security risks. Refer to the [Kubernetes Security Documentation](https://kubernetes.io/docs/concepts/security/) for best practices.
+
 ## Troubleshooting
 
 ### Too many open files
