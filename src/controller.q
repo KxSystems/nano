@@ -27,7 +27,7 @@ getKBReadLinux: {[devices]
 	iostatError]
   }
 
-getKBRead: $[.z.o ~ `m64; getKBReadMac; getKBReadLinux]
+getKBRead: $["false" ~ lower getenv `IOSTAT; {[x] iostatError}; .z.o ~ `m64; getKBReadMac; getKBReadLinux]
 
 finish: {[x:`j]
   .qlog.info "Sending exit message to workers";

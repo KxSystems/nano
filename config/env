@@ -60,4 +60,6 @@ export RANDREADFILESIZE=$((4000*1024*1024)) # persisting 8 billion items
 # Mainly for testing, you can generate `small`, `tiny` or `double` data
 export DBSIZE=full
 
+export IOSTAT=true  # false to avoid running iostat (and directory to device mapping)
+
 
