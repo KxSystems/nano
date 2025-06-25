@@ -62,4 +62,6 @@ export DBSIZE=full
 
 export IOSTAT=true  # false to avoid running iostat (and directory to device mapping)
 
+# multiplier to repeat CPU tests in order to use sampling-based system monitoring tools
+export CPUREPEAT=50
 
