@@ -356,6 +356,7 @@ echo "testid|iostat_read_throughput|iostat_write_throughput|iostat_readwrite_thr
 
 if [[ "$SCOPE" = "cpuonly" ]]; then
   source ${FLUSH}
+  run_test "CPU CACHE" cpucache.q
   run_test CPU cpu.q
 else
   if [[ "$SCOPE" = "full" ]]; then
