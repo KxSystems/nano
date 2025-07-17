@@ -9,6 +9,6 @@ cpuTestFactory: {[testtype:`C;testid:`s;N:`j;fn;qexpr;param;test:`C;mult:`j]
     sT: .z.n;
     do[CPUREPEAT*N;fn param];
     eT: .z.n;
-    writerFn[testid,"|",test; N; count param; sT, eT; fix[2; getMBPerSec[mult*N*count param; eT-sT]]; "MB/sec\n"];
+    writerFn[testid,"|",test; N; count param; sT, eT; fix[2; getMBPerSec[mult*CPUREPEAT*N*count param; eT-sT]]; "MB/sec\n"];
     }[writerFn;string testid;N;fn;param;test;mult];
   }
