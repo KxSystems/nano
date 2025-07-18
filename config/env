@@ -44,7 +44,7 @@ export SYMNR=10000
 export LOGDIR="./logs"
 
 # Data size for the sequential read/write tests. By default 30% of the physical memory is used.
-# Testing with unnecessary large vectors just prolongs the test execution without adding value, 
+# Testing with unnecessary large vectors just prolongs the test execution without adding value,
 # so a size limit is applied.
 export SEQWRITETESTLIMIT=$((8*1024*1024*1024)) # 8 GB
 

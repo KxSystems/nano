@@ -6,5 +6,5 @@ echo "unmounting gpfs file systems..."
 mmumount $WORKDIR
 sync; echo 3 > /proc/sys/vm/drop_caches
 echo "Mounting GPFS file systems..."
-mmmount $GPFSNAME 
+mmmount $GPFSNAME
 
