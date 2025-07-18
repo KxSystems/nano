@@ -3,18 +3,21 @@
 set -euo pipefail
 
 readonly USAGE="Usage: $0 [-p|--processnr NUMBER] [-s|--scope cpuonly|readonly|full] [--noclean] [-d|--dbsubdir DIR] [-r|--resultdir DIR] [-h|--help]"
-readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
-readonly CONTROLLERPORT=5100
-readonly WORKERBASEPORT=5500
 
-# Default values
+# Defaults of the command-line parameters
 NUMPROCESSES=1
 SCOPE="full"
 NOCLEAN=false
 readonly DATE=$(date +%m%d_%H%M%S)
 DBSUBDIR=$DATE
 readonly DEFAULTRESDIRPARENT="./results"
+
+# Globals
+readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
+
 RESDIR="${DEFAULTRESDIRPARENT}/$DATE"
+readonly CONTROLLERPORT=5100
+readonly WORKERBASEPORT=5500
 
 #######################################
 # Functions
@@ -39,6 +42,19 @@ EOF
   exit 0
 }
 
+check_kdb_binary() {
+  if [[ -z "${QBIN:-}" ]]; then
+    echo "The kdb+ binary path is not set by environment variable QBIN"
+    error_exit "You need to set QBIN in config/kdbenv, then do 'source config/kdbenv'" 3
+  fi
+
+  local KDBVERSION=$("${QBIN}" -q <<< ".z.K" | tr -d 'f')
+
+  if (( $(echo "$KDBVERSION < 4.1" | bc -l) )); then
+    error_exit "kdb+ version 4.1 or later is required" 9
+  fi
+}
+
 validate_input() {
   if [[ ! "$NUMPROCESSES" =~ ^[0-9]+$ ]] || [[ "$NUMPROCESSES" -le 0 ]]; then
   	echo $USAGE
@@ -55,9 +71,9 @@ validate_input() {
 }
 
 validate_environment() {
-  local required_vars=("FLUSH" "LOGDIR" "QBIN" "THREADNR" "FILENRPERWORKER" 
+  local required_vars=("FLUSH" "LOGDIR" "THREADNR" "FILENRPERWORKER"
                        "NUMA" "SEQWRITETESTLIMIT" "RANDREADNUMBER" "RANDREADFILESIZE" "DBSIZE")
-  
+
   for var in "${required_vars[@]}"; do
       if [[ -z "${!var:-}" ]]; then
           error_exit "Required environment variable $var is not set" 3
@@ -120,7 +136,7 @@ cleanup() {
 
 persist_config() {
     echo "Persisting config to ${CONFIG}"
-    
+
     # Create config file with basic information
     cat > "${CONFIG}" <<EOF
 env:
@@ -161,14 +177,14 @@ EOF
         if command -v dmidecode &>/dev/null; then
             $SUDO dmidecode -t memory > "${RESDIR}/dmidecode.out" || echo "Warning: Failed to run dmidecode" >&2
         fi
-        
+
         if command -v numactl &>/dev/null; then
             numactl --hardware > "${RESDIR}/numactl.out" || echo "Warning: Failed to run numactl" >&2
             NUMANODES=$(lscpu | grep "NUMA node(s)" | cut -d":" -f 2 | xargs)
             export NUMANODES
         fi
     fi
-    
+
     if command -v hwloc-ls &>/dev/null; then
       hwloc-ls > "${RESDIR}/hwloc-ls.out" || echo "Warning: Failed to run hwloc-ls" >&2
     fi
@@ -191,7 +207,7 @@ run_test() {
 
   echo
   echo "STARTING $TESTNAME TEST"
-  
+
   touch ${CURRENTLOGDIR}/sync-$HOST
 
   ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} > ${CURRENTLOGDIR}/controller_${TESTER%.*}.log 2 >&1 &
@@ -244,6 +260,7 @@ run_random_read_test() {
 #######################################
 
 source "${SCRIPT_DIR}/common.sh"
+check_kdb_binary
 validate_input "$@"
 
 while [[ $# -gt 0 ]]; do
@@ -289,7 +306,7 @@ readonly export NUMPROCESSES
 readonly export SCOPE
 readonly export NOCLEAN
 mkdir -p ${RESDIR} || error_exit "Failed to create results directory ${RESDIR}" 7
-readonly CURRENTLOGDIR="${LOGDIR}/${DATE}" 
+readonly CURRENTLOGDIR="${LOGDIR}/${DATE}"
 mkdir -p ${CURRENTLOGDIR} || error_exit "Failed to create log directory ${CURRENTLOGDIR}" 8
 
 echo "Running benchmark with:"

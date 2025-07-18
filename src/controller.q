@@ -10,7 +10,7 @@ Alltest:Workers:Devices: ();
 iostatError: `kB_read`kB_wrtn`kB_sum!3#0Nj
 Start: 0Np
 
-getKBReadMac: {[devices] 
+getKBReadMac: {[devices]
   if[devices ~ enlist ""; :iostatError];
   iostatcmd: "iostat -d -I ", (" " sv devices), " 2>&1"; // -I returns the MB read as last column
   r: @[system; iostatcmd; .qlog.error];
