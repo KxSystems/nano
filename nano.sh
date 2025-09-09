@@ -145,7 +145,7 @@ env:
   FILENRPERWORKER: ${FILENRPERWORKER}
   PROCNR: ${NUMPROCESSES}
   FLUSH: "$(basename "${FLUSH}")"
-  DBDIR: "$(cat "${PARFILE}")"
+  DBDIR: "$(for d in $(cat ${PARFILE}); do echo ${d} \($(df -T ${d} | awk 'NR==2 {print $2}')\); done)"
   NUMA: "${NUMA}"
 nano:
   version: "$(cat version.txt)"
