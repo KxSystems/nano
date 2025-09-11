@@ -77,7 +77,14 @@ File `HOSTNAME-throughput.psv` aggregates (calculates the sum) the throughput me
 
 ### Running several tests with different process counts
 
-If you are interested in how the storage medium scales with the number of parallel requests, then you can run `multiproc.sh`. It simply calls `nano.sh` with different process numbers and aggregates the results to a final PSV file. The results are saved in the file `results/throughput_total.csv` but this can be overwritten by a command line parameter. Run the script with `--help` to learn about the command line parameters.
+If you are interested in how the storage medium scales with the number of parallel requests, then you can run `multiproc.sh`. It simply calls `nano.sh` with different values for `--processnr` and aggregates the results to a final PSV file. The results are saved in the file `results/throughput_total.csv` but this can be overwritten by a command line parameter. Run the script with `--help` to learn about the command line parameters.
+
+Example usages
+
+```bash
+$ ./multiproc.sh -o nano_results.psv -l 32
+$ ./multiproc.sh -s cpuonly -p "1 16 128"
+```
 
 
 ### multihost.sh
