@@ -8,21 +8,24 @@ source "${SCRIPT_DIR}/common.sh"
 
 OUTPUT=./results/throughput_total.psv
 SCOPE=full
-LIMIT=$COMPUTECOUNT
+LIMIT=0
+NUMPROCARRAY=()
 
 usage() {
     cat <<EOF
 Usage: $0 [OPTIONS]
 
 Options:
-  -o, --output FILE   Output file path (default: $OUTPUT)
-  -s, --scope SCOPE   Scope of operation: cpuonly, readonly (write and meta tests are skipped), or full (default: $SCOPE)
-  -l, --limit NUM     Maximum number of worker processes (default: $LIMIT)
-  -h, --help          Show this help message and exit
+  -o, --output FILE     Output file path (default: $OUTPUT)
+  -s, --scope SCOPE     Scope of operation: cpuonly, readonly (write and meta tests are skipped), or full (default: $SCOPE)
+  -l, --limit NUMBER    Maximum number of worker processes (default: $COMPUTECOUNT)
+  -p, --processnrs "NUMBERS" Whitespace-separated array of process numbers
+  -h, --help            Show this help message and exit
 
 Examples:
   $0 --output ./myresults.psv --scope cpuonly --limit 8
   $0 -o ./results.psv -s full -l 4
+  $0 -o ./results.psv -p "1 16 128"
 EOF
 }
 
@@ -40,6 +43,10 @@ while [[ $# -gt 0 ]]; do
             LIMIT="$2"
             shift 2
             ;;
+        -p|--processnrs)
+            IFS=' ' read -ra NUMPROCARRAY <<< "$2"
+            shift 2
+            ;;
         -h|--help)
             usage
             exit 0
@@ -54,12 +61,33 @@ done
 readonly HOST=$(uname -n)
 RESULTDIRS=()
 
-NUMPROCESSES=1
-while [ $NUMPROCESSES -le $LIMIT ]; do
+if [ ${#NUMPROCARRAY[@]} -eq 0 ]; then
+    if [ $LIMIT -eq 0 ]; then
+        LIMIT=$COMPUTECOUNT
+    fi
+
+    NUMPROCESSES=1
+    while [ $NUMPROCESSES -le $LIMIT ]; do
+        NUMPROCARRAY+=($NUMPROCESSES)
+        NUMPROCESSES=$((NUMPROCESSES * 2))
+    done
+else
+    if [ $LIMIT -ne 0 ]; then
+        TEMPARRAY=()
+        for pnr in "${NUMPROCARRAY[@]}"; do
+            if [ "$pnr" -le "$LIMIT" ]; then
+                TEMPARRAY+=("$pnr")
+            fi
+        done
+        NUMPROCARRAY=${TEMPARRAY[@]}
+    fi
+fi
+
+
+for pnr in ${NUMPROCARRAY[@]}; do
    RESULTDIR="$SCRIPT_DIR/results/$(date +%m%d_%H%M%S)"
    RESULTDIRS+=($RESULTDIR)
-   ${SCRIPT_DIR}/nano.sh --processnr $NUMPROCESSES --scope $SCOPE --resultdir ${RESULTDIR}
-   NUMPROCESSES=$((NUMPROCESSES * 2))
+   ${SCRIPT_DIR}/nano.sh --processnr $pnr --scope $SCOPE --resultdir ${RESULTDIR}
 done
 
 head -n 1 ${RESULTDIRS[1]}/$HOST-throughput.psv > ${OUTPUT}
