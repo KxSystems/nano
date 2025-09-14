@@ -13,6 +13,7 @@ if[not "full" ~ lower getenv `DBSIZE;
 
 
 if[ not OBJSTORE;
+  tinyRepr: (" " sv string 3#tinyVec), "...";
   .write.tinyAppend: {[]
     .qlog.info "starting append tiny test";
     ftinyAppend: hsym `$DB, "/tinyAppend";
@@ -21,7 +22,7 @@ if[ not OBJSTORE;
     do[N; .[ftinyAppend;();,; tinyVec]];
     system "sync ", DB, "/tinyAppend";
     eT: .z.n;
-    writeRes["write disk"; ".write.tinyAppend|open append tiny, sync once"; ".[;();,;", (" " sv string tinyVec), "]"; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
+    writeRes["write disk"; ".write.tinyAppend|open append tiny, sync once"; ".[;();,;", tinyRepr, "]"; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
   };
 
   .write.tinyAppendToHandler: {[]
@@ -35,7 +36,7 @@ if[ not OBJSTORE;
     system "sync ", DB, "/tinyAppendFH";
     eT: .z.n;
     hclose H;
-    writeRes["write disk"; ".write.tinyAppendToHandler|append tiny, sync once"; "H ", " " sv string tinyVec; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
+    writeRes["write disk"; ".write.tinyAppendToHandler|append tiny, sync once"; "H ", tinyRepr; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
   };
 
   .write.smallAppendToHandler: {[]
@@ -61,26 +62,21 @@ if[ not OBJSTORE;
     do[N; .[ftinyReplace;();:; tinyVec]];
     system "sync ", DB, "/tinyReplace";
     eT: .z.n;
-    writeRes["write disk"; ".write.tinyReplace|open replace tiny, sync once"; ".[;();:;", (" " sv string tinyVec), "]"; N; count tinyVec; sT, eT; fix[3; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
+    writeRes["write disk"; ".write.tinyReplace|open replace tiny, sync once"; ".[;();:;", tinyRepr, "]"; N; count tinyVec; sT, eT; fix[3; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
   };
   ];
 
 
 ssm: `long$MODIFIER * (0.3 * .Q.w[]`mphy) & "J"$getenv `SEQWRITETESTLIMIT;  // vectors can reserve memory twice the length of the vector
 ssm: (ssm-(ssm mod 1024*1024)) div processcount;
-SAMPLESIZE: ssm div SIZEOFLONG;
+HUGELENGTH: ssm div SIZEOFLONG;
+hugeVec: til HUGELENGTH
+largeSymVec: LARGELENGTH?sym;
 
 TBLSIZE: (`long$MODIFIER * "J"$getenv `SORTFILESIZE) div SIZEOFLONG
 
-.write.createList: {[]
-  .qlog.info "starting list creation test of length ", string[`int$SAMPLESIZE % 1000 * 1000], " M";
-  sT:.z.n;
-  `privmem set til SAMPLESIZE;
-  eT: .z.n;
-  writeRes["write mem"; ".write.createList|create list"; "til"; 1; SAMPLESIZE; sT, eT; fix[2; getMBPerSec[SAMPLESIZE; eT-sT]]; "MB/sec\n"];
-  }
-
-
+fSymCol: .Q.dd[KDBTBL; `sym]
+fFloatCol: .Q.dd[KDBTBL; `floatcol]
 
 if[count getenv `COMPRESS;
   .qlog.info "setting compression parameters to ", getenv `COMPRESS;
@@ -119,19 +115,15 @@ $[OBJSTORE; [
   .qlog.info "using temporal dir ", tmpdir;
 
   lrfileTmpH:hsym `$lrfileTmp: tmpdir, fReadFileName;
-  .write.set: {[]
-    sT:.z.n;
-    lrfileTmpH set privmem;
-    eT: .z.n;
-    writeRes["write disk"; ".write.set|write rate"; "set"; 1; count privmem; sT, eT; fix[2; getMBPerSec[SAMPLESIZE; eT-sT]]; "MB/sec\n"];
-  };
+  testFactory["write disk"; `.write.setHuge;1;set[lrfileTmpH];"set";hugeVec;"write huge";1];
+
   .write.cloudcmd: {[]
     sT:.z.n;
     system cloudcmd[lrfileTmp; fReadFileName];
     eT: .z.n;
     .qlog.info "Write test finished";
     hdel lrfileTmpH;
-    writeRes["write objstore";".write.cloudcmd|cli cp rate";"vendor obj store cli cp"; 1; count lrfileTmp; sT, eT; fix[2; getMBPerSec[SAMPLESIZE; eT-sT]]; "MB/sec\n"];
+    writeRes["write objstore";".write.cloudcmd|cli cp rate";"vendor obj store cli cp"; 1; count lrfileTmp; sT, eT; fix[2; getMBPerSec[HUGELENGTH; eT-sT]]; "MB/sec\n"];
   };
   .write.prepare: {[]
     .qlog.info "creating files for read tests";
@@ -147,20 +139,23 @@ $[OBJSTORE; [
     hdel hsym `$ffile4Tmp
   }
   ];[
-  .write.set: {[]
-    .qlog.info "starting set test";
-    sT:.z.n;
-    fRead set privmem;
-    eT: .z.n;
-    writeRes["write disk";".write.set|write rate";"set";1; count privmem; sT, eT; fix[2; getMBPerSec[SAMPLESIZE; eT-sT]]; "MB/sec\n"];
-  };
-  .write.sync: {[]
-    .qlog.info "starting sync test";
-    sT: .z.n;
-    system "sync ", DB, fReadFileName;
-    eT: .z.n;
-    writeRes["write disk";".write.sync|sync rate";"system sync"; 1; count privmem; sT, eT; fix[2; getMBPerSec[SAMPLESIZE; eT-sT]]; "MB/sec\n"];
-  };
+
+  fReadSmall: hsym `$DB, "/seqreadsmall";
+  testFactory["write disk"; `.write.setIntSmall;1;set[fReadSmall];"set";smallVec;"write int small";1];
+  testFactory["write disk"; `.write.syncIntSmall;1;system;"system sync";"sync ",1_string fReadSmall;"sync int small";SMALLLENGTH];
+  
+  fReadMedium: hsym `$DB, "/seqreadmedium";
+  testFactory["write disk"; `.write.setIntMedium;1;set[fReadMedium];"set";mediumVec;"write int medium";1];
+  testFactory["write disk"; `.write.syncIntMedium;1;system;"system sync";"sync ",1_string fReadMedium;"sync int medium";MEDIUMLENGTH];
+
+  testFactory["write disk"; `.write.setLargeSym;1;set[fSymCol];"set";largeSymVec;"write sym large";1];
+  testFactory["write disk"; `.write.syncLargeSym;1;system;"system sync";"sync ",1_string fSymCol;"sync sym large";LARGELENGTH];
+  
+  testFactory["write disk"; `.write.setLargeFloat;1;set[fFloatCol];"set";largeFloatVec;"write float large";1];
+  testFactory["write disk"; `.write.syncLargeFloat;1;system;"system sync";"sync ",1_string fFloatCol;"sync float large";LARGELENGTH];
+
+  testFactory["write disk"; `.write.setIntHuge;1;set[fRead];"set";hugeVec;"write int huge";1];
+  testFactory["write disk"; `.write.syncIntHuge;1;system;"system sync";"sync ",DB,fReadFileName;"sync int huge";HUGELENGTH];
 
   disksize: MODIFIER * SIZEOFLONG * "J"$getenv `RANDREADFILESIZE;
 
@@ -176,30 +171,29 @@ $[OBJSTORE; [
     eT: .z.n;
     writeRes["write disk";".write.appendSmall|open append small, sync once";".[;();,;til 16*k]"; chunkNr*FILENRPERWORKER; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize*FILENRPERWORKER; eT-sT]]; "MB/sec\n"];
   };
-  .write.appendMidSym: {[]
+  .write.appendLargeSym: {[]
     .qlog.info "creating files for xasc tests";
     .qlog.info "starting append large sym vector test";
     chunkSize: LARGELENGTH;
-    largeSymVec: chunkSize?sym;
     chunkNr: `long$TBLSIZE % SIZEOFLONG * chunkSize * 1+2 xlog processcount; // enumerated symbols are stored as longs
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
-    do[chunkNr; .[fSymCol;();,;`sym$largeSymVec]];
+    do[chunkNr; .[fSymCol;();,;largeSymVec]];
     system "sync ", 1_string fSymCol;
     eT: .z.n;
-    writeRes["write disk";".write.appendMidSym|open append mid sym, sync once";".[;();,;`sym$]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
+    writeRes["write disk";".write.appendLargeSym|open append mid sym, sync once";".[;();,;`sym$]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
   };
-  .write.appendMidFloat: {[]
+  .write.appendLargeFloat: {[]
     .qlog.info "creating files for xasc tests";
     .qlog.info "starting append large float vector test";
-    chunkSize: count largeFloatVec;
+    chunkSize: LARGELENGTH;
     chunkNr: `long$TBLSIZE % SIZEOFLONG * chunkSize * 1+2 xlog processcount; // enumerated symbols are stored as longs
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
     do[chunkNr; .[fFloatCol;();,;largeFloatVec]];
-    system "sync ", 1_string fSymCol;
+    system "sync ", 1_string fFloatCol;
     eT: .z.n;
-    writeRes["write disk";".write.appendMidFloat|open append mid float, sync once";".[;();,;]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
+    writeRes["write disk";".write.appendLargeFloat|open append mid float, sync once";".[;();,;]"; chunkNr; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize; eT-sT]]; "MB/sec\n"];
   };
   .write.makeTable: {[]
     .qlog.info "make ", (1_string KDBDB), " a normal kdb+ database (for e.g. xasc test)";
@@ -231,7 +225,12 @@ write:{[file]
 //////////////////////////////////////////
 
 exitcustom: {[]
-  if[OBJSTORE; hdel tmpdirH]};
+  $[OBJSTORE; 
+    hdel tmpdirH;
+    [
+      hdel fReadSmall;
+      hdel fReadMedium;
+    ]]};
 
 sendTests[controller;DB;`.write]
 

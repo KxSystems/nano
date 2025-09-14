@@ -53,8 +53,6 @@ getTests: {[ns:`s] .Q.dd[ns;] each except[; `] key ns}
 fRead: hsym `$DB, fReadFileName: "/seqread"
 KDBDB: hsym `$DB, "/kdbdb"
 KDBTBL: .Q.dd[KDBDB; `tbl]
-fSymCol: .Q.dd[KDBTBL; `sym]
-fFloatCol: .Q.dd[KDBTBL; `floatcol]
 
 FILENRPERWORKER: "I"$getenv `FILENRPERWORKER
 
@@ -67,7 +65,6 @@ flock: hsym `$DB, "/locktest"
 
 MEMRATIOMODIFIERS: `double`full`small`tiny!2 1 0.2 0.05
 MODIFIER: 1f^MEMRATIOMODIFIERS `$lower getenv `DBSIZE
-CPUREPEAT: 1^"I"$getenv `CPUREPEAT
 
 processcount: "I"$string `$argv `processes
 
@@ -81,6 +78,17 @@ sendTests:{[c:`s;db:`C;nm:`s]
     if[.z.p > s+TASKSENDTIMEOUT; .qlog.error "Timeout sending tests to the controller"; exit 1];
     system "sleep 1"];
     .qlog.info "Tests were successfully sent to the controller";
+  }
+
+testFactory: {[testtype:`C;testid:`s;N:`j;fn;qexpr;param;test:`C;mult:`j]
+  writerFn: writeRes[testtype;;qexpr];
+  testid set {[writerFn;testid;N;fn;param;test;mult;dontcare] / the namespaced testID is the function name
+    .qlog.info "starting test ", test;
+    sT: .z.n;
+    do[N;fn param];
+    eT: .z.n;
+    writerFn[testid,"|",test; N; count param; sT, eT; fix[2; getMBPerSec[mult*N*count param; eT-sT]]; "MB/sec\n"];
+    }[writerFn;string testid;N;fn;param;test;mult];
   }
 
 .z.exit: {

@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-readonly USAGE="Usage: $0 [-p|--processnr NUMBER] [-s|--scope cpuonly|readonly|full] [--noclean] [-d|--dbsubdir DIR] [-r|--resultdir DIR] [-h|--help]"
+readonly USAGE="Usage: $0 [-p|--processnr NUMBER] [-s|--scope cpuonly|diskonly|readonly|full] [--noclean] [-d|--dbsubdir DIR] [-r|--resultdir DIR] [-h|--help]"
 
 # Defaults of the command-line parameters
 NUMPROCESSES=1
@@ -30,7 +30,7 @@ $USAGE
 Options:
   -h, --help              Show this help message
   -p, --processnr NUMBER  Number of kdb+ worker processes executing tests in parallel (default: $NUMPROCESSES)
-  -s, --scope SCOPE       Scope of operation: cpuonly, readonly (write and meta tests are skipped), or full (default: $SCOPE)
+  -s, --scope SCOPE       Scope of operation: cpuonly, diskonly, readonly (write and meta tests are skipped), or full (default: $SCOPE)
   -d, --dbsubdir DIR      Subdirectory to use for readonly operations
   -r, --resultdir DIR     Directory for the results (default: subdirectory in $DEFAULTRESDIRPARENT)
   --noclean               Skip cleanup and keep datafiles (default: $NOCLEAN - perform cleanup)
@@ -61,8 +61,8 @@ validate_input() {
     error_exit "The process number must be a positive integer" 2
   fi
 
-  if [[ ! "$SCOPE" =~ ^(cpuonly|readonly|full)$ ]]; then
-    error_exit "Invalid scope: $SCOPE (must be 'cpuonly', 'readonly' or 'full')" 2
+  if [[ ! "$SCOPE" =~ ^(cpuonly|diskonly|readonly|full)$ ]]; then
+    error_exit "Invalid scope: $SCOPE (must be 'cpuonly', 'diskonly', 'readonly' or 'full')" 2
   fi
 
   if [[ "$SCOPE" == "readonly" && -z "$DBSUBDIR" ]]; then
@@ -350,8 +350,6 @@ readonly AGGRFILEPREFIX="${RESDIR}/${HOST}-"
 readonly LOGFILEPREFIX="${CURRENTLOGDIR}/${HOST}-${NUMPROCESSES}t-"
 readonly CONFIG="${RESDIR}/config.yaml"
 
-persist_config
-
 trap cleanup EXIT
 
 # important that this it outside this loop with "q prepare", as first time after a mount as the
@@ -360,7 +358,7 @@ j=0
 for i in $(seq $NUMPROCESSES); do
   if is_not_obj_store ${array[$j]}; then
     DATADIR=${array[$j]}/${HOST}.${i}/${DBSUBDIR}
-    if [ $SCOPE = "full" ] && [ -d ${DATADIR} ]; then
+    if [[ $SCOPE == "full" &&  -d ${DATADIR} ]]; then
       error_exit "${DATADIR} directory already exists. Please remove it and rerun." 7
     fi
 	  mkdir -p ${DATADIR}
@@ -369,16 +367,24 @@ for i in $(seq $NUMPROCESSES); do
 	j=$(( ($j + 1) % $NUMSEGS ))
 done
 
+persist_config
+
 echo "testid|iostat_read_throughput|iostat_write_throughput|iostat_readwrite_throughput" > ${IOSTATFILE}
 
-if [[ "$SCOPE" = "cpuonly" ]]; then
+if [[ "$SCOPE" == "cpuonly" ]]; then
   source ${FLUSH}
   run_test "CPU CACHE" cpucache.q
   run_test CPU cpu.q
 else
-  if [[ "$SCOPE" = "full" ]]; then
+  if [[ "$SCOPE" == "full" ]]; then
     source ${FLUSH}
+    run_test "CPU CACHE" cpucache.q
     run_test CPU cpu.q
+    source ${FLUSH}
+    run_test WRITE write.q
+    source ${FLUSH}
+    run_test "META DATA" meta.q
+  elif [[ "$SCOPE" == "diskonly" ]]; then
     source ${FLUSH}
     run_test WRITE write.q
     source ${FLUSH}
