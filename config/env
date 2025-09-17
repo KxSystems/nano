@@ -49,12 +49,12 @@ export LOGDIR="./logs"
 export SEQWRITETESTLIMIT=$((8*1024*1024*1024)) # 8 GB
 
 # Data size for xasc test.
-export SORTFILESIZE=$((16*1024*1024*1024)) # 16 GB
+export SORTFILESIZE=$((250*1000*1000)) # 250 million items
 
 # For the random read, we create files of size (RANDREADFILESIZE div FILEPERWORKER)
 # then random read altogether RANDREADAMOUNT amount of data.
-export RANDREADNUMBER=$((100*1024*1024)) #reading 100 million items
-export RANDREADFILESIZE=$((4000*1024*1024)) # persisting 8 billion items
+export RANDREADNUMBER=$((100*1000*1000)) #reading 100 million items
+export RANDREADFILESIZE=$((4000*1000*1000)) # persisting 4 billion items
 
 
 # Mainly for testing, you can generate `small`, `tiny` or `double` data

@@ -53,6 +53,8 @@ getTests: {[ns:`s] .Q.dd[ns;] each except[; `] key ns}
 fRead: hsym `$DB, fReadFileName: "/seqread"
 KDBDB: hsym `$DB, "/kdbdb"
 KDBTBL: .Q.dd[KDBDB; `tbl]
+fSymCol: .Q.dd[KDBTBL; `sym]
+fFloatCol: .Q.dd[KDBTBL; `floatcol]
 
 FILENRPERWORKER: "I"$getenv `FILENRPERWORKER
 

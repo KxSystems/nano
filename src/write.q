@@ -73,11 +73,6 @@ HUGELENGTH: ssm div SIZEOFLONG;
 hugeVec: til HUGELENGTH
 largeSymVec: LARGELENGTH?sym;
 
-TBLSIZE: (`long$MODIFIER * "J"$getenv `SORTFILESIZE) div SIZEOFLONG
-
-fSymCol: .Q.dd[KDBTBL; `sym]
-fFloatCol: .Q.dd[KDBTBL; `floatcol]
-
 if[count getenv `COMPRESS;
   .qlog.info "setting compression parameters to ", getenv `COMPRESS;
   .z.zd: "J"$" " vs getenv `COMPRESS];
@@ -171,11 +166,14 @@ $[OBJSTORE; [
     eT: .z.n;
     writeRes["write disk";".write.appendSmall|open append small, sync once";".[;();,;til 16*k]"; chunkNr*FILENRPERWORKER; chunkSize; sT, eT; fix[2; getMBPerSec[chunkNr*chunkSize*FILENRPERWORKER; eT-sT]]; "MB/sec\n"];
   };
+
+  TBLLENGTH: `long$MODIFIER * "J"$getenv `SORTFILESIZE;
+  
   .write.appendLargeSym: {[]
     .qlog.info "creating files for xasc tests";
     .qlog.info "starting append large sym vector test";
-    chunkSize: LARGELENGTH;
-    chunkNr: `long$TBLSIZE % SIZEOFLONG * chunkSize * 1+2 xlog processcount; // enumerated symbols are stored as longs
+    chunkSize: count largeSymVec;
+    chunkNr: `long$TBLLENGTH % chunkSize * 1+2 xlog processcount; // enumerated symbols are stored as longs
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
     do[chunkNr; .[fSymCol;();,;largeSymVec]];
@@ -186,8 +184,8 @@ $[OBJSTORE; [
   .write.appendLargeFloat: {[]
     .qlog.info "creating files for xasc tests";
     .qlog.info "starting append large float vector test";
-    chunkSize: LARGELENGTH;
-    chunkNr: `long$TBLSIZE % SIZEOFLONG * chunkSize * 1+2 xlog processcount; // enumerated symbols are stored as longs
+    chunkSize: count largeFloatVec;
+    chunkNr: `long$TBLLENGTH % chunkSize * 1+2 xlog processcount; // enumerated symbols are stored as longs
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
     do[chunkNr; .[fFloatCol;();,;largeFloatVec]];
