@@ -135,11 +135,11 @@ $[OBJSTORE; [
   }
   ];[
 
-  fReadSmall: hsym `$DB, "/seqreadsmall";
+
   testFactory["write disk"; `.write.setIntSmall;1;set[fReadSmall];"set";smallVec;"write int small";1];
   testFactory["write disk"; `.write.syncIntSmall;1;system;"system sync";"sync ",1_string fReadSmall;"sync int small";SMALLLENGTH];
   
-  fReadMedium: hsym `$DB, "/seqreadmedium";
+
   testFactory["write disk"; `.write.setIntMedium;1;set[fReadMedium];"set";mediumVec;"write int medium";1];
   testFactory["write disk"; `.write.syncIntMedium;1;system;"system sync";"sync ",1_string fReadMedium;"sync int medium";MEDIUMLENGTH];
 
@@ -149,7 +149,7 @@ $[OBJSTORE; [
   testFactory["write disk"; `.write.setLargeFloat;1;set[fFloatCol];"set";largeFloatVec;"write float large";1];
   testFactory["write disk"; `.write.syncLargeFloat;1;system;"system sync";"sync ",1_string fFloatCol;"sync float large";LARGELENGTH];
 
-  testFactory["write disk"; `.write.setIntHuge;1;set[fRead];"set";hugeVec;"write int huge";1];
+  testFactory["write disk"; `.write.setIntHuge;1;set[fReadHuge];"set";hugeVec;"write int huge";1];
   testFactory["write disk"; `.write.syncIntHuge;1;system;"system sync";"sync ",DB,fReadFileName;"sync int huge";HUGELENGTH];
 
   disksize: MODIFIER * SIZEOFLONG * "J"$getenv `RANDREADFILESIZE;
@@ -223,12 +223,8 @@ write:{[file]
 //////////////////////////////////////////
 
 exitcustom: {[]
-  $[OBJSTORE; 
-    hdel tmpdirH;
-    [
-      hdel fReadSmall;
-      hdel fReadMedium;
-    ]]};
+  if[OBJSTORE; hdel tmpdirH]
+  };
 
 sendTests[controller;DB;`.write]
 

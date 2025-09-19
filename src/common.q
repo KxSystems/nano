@@ -50,7 +50,9 @@ getDevice:{[db:`C]
 
 getTests: {[ns:`s] .Q.dd[ns;] each except[; `] key ns}
 
-fRead: hsym `$DB, fReadFileName: "/seqread"
+fReadSmall: hsym `$DB, "/seqreadSmall";
+fReadMedium: hsym `$DB, "/seqreadMedium";
+fReadHuge: hsym `$DB, fReadFileName: "/seqreadHuge"
 KDBDB: hsym `$DB, "/kdbdb"
 KDBTBL: .Q.dd[KDBDB; `tbl]
 fSymCol: .Q.dd[KDBTBL; `sym]
