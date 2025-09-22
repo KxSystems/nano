@@ -67,10 +67,11 @@ if[ not OBJSTORE;
   ];
 
 
-ssm: `long$MODIFIER * (0.3 * .Q.w[]`mphy) & "J"$getenv `SEQWRITETESTLIMIT;  // vectors can reserve memory twice the length of the vector
-ssm: (ssm-(ssm mod 1024*1024)) div processcount;
-HUGELENGTH: ssm div SIZEOFLONG;
-hugeVec: til HUGELENGTH
+HUGELENGTH: `long$MODIFIER * "J"$getenv `HUGELENGTH;
+if[ .Q.w[][`mphy] < processcount*16*HUGELENGTH;
+  HUGELENGTH: .Q.w[][`mphy] div 2 * 16 * processcount; / use half of the physical memory
+  .qlog.info "Reducing HUGELENGTH to ", string[HUGELENGTH], " due to memory limit"];
+hugeVec: til HUGELENGTH;
 largeSymVec: LARGELENGTH?sym;
 
 if[count getenv `COMPRESS;
@@ -209,18 +210,6 @@ $[OBJSTORE; [
   };
   ]
   ];
-
-//////////////////////////////////////////
-/  this is deprecated and currently unused...
-WSAMPLESIZE:`long$ssm%16
-write:{[file]
-    / this is to allow any 3rd party performance monotoring tools to see a time gap
-  system"sleep 5";
-  STDOUT(string .z.p);
-  STDOUT"write `",(string file)," - ",(string floor 0.5+(ssm%(2 xexp 20))%value "\\t `",(string file)," 1:WSAMPLESIZE#key 11+rand 111")," MB/sec";hdel file;
-  STDOUT(string .z.p);
-  }
-//////////////////////////////////////////
 
 exitcustom: {[]
   if[OBJSTORE; hdel tmpdirH]
