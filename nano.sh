@@ -72,7 +72,8 @@ validate_input() {
 
 validate_environment() {
   local required_vars=("FLUSH" "LOGDIR" "THREADNR" "FILENRPERWORKER"
-                       "NUMA" "SEQWRITETESTLIMIT" "RANDREADNUMBER" "RANDREADFILESIZE" "DBSIZE")
+                       "NUMA" "TINYLENGTH" "SMALLLENGTH" "MEDIUMLENGTH" "LARGELENGTH" "HUGELENGTH" 
+                       "RANDREADNUMBER" "RANDREADFILESIZE" "DBSIZE")
 
   for var in "${required_vars[@]}"; do
       if [[ -z "${!var:-}" ]]; then
@@ -154,7 +155,11 @@ kdb:
   minor: "$("${QBIN}" -q <<< ".z.k")"
   qbin: "${QBIN}"
 dbize:
-  SEQWRITETESTLIMIT: ${SEQWRITETESTLIMIT}
+  TINYLENGTH: ${TINYLENGTH}
+  SMALLLENGTH: ${SMALLLENGTH}
+  MEDIUMLENGTH: ${MEDIUMLENGTH}
+  LARGELENGTH: ${LARGELENGTH}
+  HUGELENGTH: ${HUGELENGTH}
   RANDREADNUMBER: ${RANDREADNUMBER}
   RANDREADFILESIZE: ${RANDREADFILESIZE}
   DBSIZE: "${DBSIZE}"

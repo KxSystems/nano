@@ -2,7 +2,7 @@
 export COMPRESS=""
 
 # Number of threads each kdb+ process
-export THREADNR=1
+export THREADNR=4
 
 # Number of files each worker process reads during the random read test
 export FILENRPERWORKER=4
@@ -43,10 +43,15 @@ export SYMNR=10000
 
 export LOGDIR="./logs"
 
-# Data size for the sequential read/write tests. By default 30% of the physical memory is used.
-# Testing with unnecessary large vectors just prolongs the test execution without adding value,
-# so a size limit is applied.
-export SEQWRITETESTLIMIT=$((8*1024*1024*1024)) # 8 GB
+export TINYLENGTH=2047                # object size is 16KB, should fit into a typical L1 cache (32KB)
+export SMALLLENGTH=$((      63*1024)) # obj size is 512KB, should fit into a typical L2 cache (1 or 2MB)
+export MEDIUMLENGTH=$((  4*127*1024)) # obj size is 4MB, should fit into a typical L3 cache depending on the number of workers
+export LARGELENGTH=$(( 31*1024*1024)) # obj size is 256MB, should fit into memory only if process count > 1
+
+# Data size for the sequential read/write tests. The size is automatically reduced if there is not enough physical memory.
+# Testing with unnecessary large vectors just prolongs the test execution without adding value.
+export HUGELENGTH=$((1024*1024*1024)) # obj size is 16GB should fit into memory. 
+
 
 # Data size for xasc test.
 export SORTFILESIZE=$((250*1000*1000)) # 250 million items
