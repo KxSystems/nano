@@ -139,14 +139,14 @@ $[OBJSTORE; [
 
   testFactory["write disk"; `.write.setIntSmall;1;set[fReadSmall];"set";smallVec;"write int small";1];
   testFactory["write disk"; `.write.syncIntSmall;1;system;"system sync";"sync ",1_string fReadSmall;"sync int small";SMALLLENGTH];
-  
+
 
   testFactory["write disk"; `.write.setIntMedium;1;set[fReadMedium];"set";mediumVec;"write int medium";1];
   testFactory["write disk"; `.write.syncIntMedium;1;system;"system sync";"sync ",1_string fReadMedium;"sync int medium";MEDIUMLENGTH];
 
   testFactory["write disk"; `.write.setLargeSym;1;set[fSymCol];"set";largeSymVec;"write sym large";1];
   testFactory["write disk"; `.write.syncLargeSym;1;system;"system sync";"sync ",1_string fSymCol;"sync sym large";LARGELENGTH];
-  
+
   testFactory["write disk"; `.write.setLargeFloat;1;set[fFloatCol];"set";largeFloatVec;"write float large";1];
   testFactory["write disk"; `.write.syncLargeFloat;1;system;"system sync";"sync ",1_string fFloatCol;"sync float large";LARGELENGTH];
 
@@ -169,7 +169,7 @@ $[OBJSTORE; [
   };
 
   TBLLENGTH: `long$MODIFIER * "J"$getenv `SORTFILESIZE;
-  
+
   .write.appendLargeSym: {[]
     .qlog.info "creating files for xasc tests";
     .qlog.info "starting append large sym vector test";

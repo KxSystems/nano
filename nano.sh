@@ -72,7 +72,7 @@ validate_input() {
 
 validate_environment() {
   local required_vars=("FLUSH" "LOGDIR" "THREADNR" "FILENRPERWORKER"
-                       "NUMA" "TINYLENGTH" "SMALLLENGTH" "MEDIUMLENGTH" "LARGELENGTH" "HUGELENGTH" 
+                       "NUMA" "TINYLENGTH" "SMALLLENGTH" "MEDIUMLENGTH" "LARGELENGTH" "HUGELENGTH"
                        "RANDREADNUMBER" "RANDREADFILESIZE" "DBSIZE")
 
   for var in "${required_vars[@]}"; do
