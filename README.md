@@ -1,102 +1,102 @@
-# nano benchmark
+# Nano Benchmark
 
 © KX 2025
 
-"nano" calculates basic raw CPU and I/O capabilities of non-volatile storage, as measured from kdb+ perspective. It is considered a storage, memory and CPU benchmark that performs sequential/random read and write together with aggregation (e.g. sum and sort) and meta operations (like opening a file).
+"Nano" is a benchmark utility that measures the raw CPU, memory, and I/O performance of a system from the perspective of a kdb+ process. It performs a series of tests including sequential/random reads and writes, data aggregation (e.g., `sum`, `sort`), and filesystem metadata operations (e.g., opening a file).
 
-Nano measures results from running on one kdb+ process or aggregated across several worker processes. The kdb+ processes can be attached either directly to storage, or connected to a distributed/shared storage system.
+The benchmark can measure performance using a single kdb+ process or aggregate results from multiple worker processes. These processes can run against local storage or a distributed/shared file system. Throughput and latency are measured directly within kdb+/q and cover operations like data creation, ingestion, memory mapping (mmap), and reads. An option to test with compressed data is also included.
 
-The throughput and latency measurements are taken directly from kdb+/q, results include read/mmap allocation, creation and ingest of data. There is an option to test compressed data.
+It's designed to validate the performance of a system's CPU and storage before proceeding with more comprehensive testing.
 
-This utility is used to confirm the basic expectations for the CPU and storage subsystem prior to a more detailed testing regime.
+While Nano does not simulate a multi-column tick database, it effectively demonstrates the maximum I/O capabilities of kdb+ on the system at a lower level. It is also a valuable tool for examining OS settings, file systems, testing scalability, and identifying I/O-related bottlenecks via stress testing.
 
-Nano does not simulate parallel IO rates via the creation of multi-column tick databases, but instead shows both a maximum I/O capability for kdb+ on the system under test, and is a useful utility to examine OS settings, scalability, and identify any pinch points related to the kdb+ I/O models.
+Multi-node client testing can be used to test read/write rates for multiple hosts targeting a shared storage device.
 
-Multi-node client testing can be used to test read/write rates for multiple hosts using multiple different storage targets on a shared storage device.
+_Throughout this document, "kdb+ process" and "q process" are used interchangeably._
 
-In this document, we use "kdb+ process" and "q process" interchangeably.
+## Prerequisites
 
-## Prerequisite
+   * **kdb+ 4.1 or later must be installed**. You can find installation instructions [install kdb+ 4.1](https://code.kx.com/q/learn/install/). If your kdb+ installation is not in `$HOME/q`, you must set the `QHOME` environment variable in `config/kdbenv`.
+   * **Required command-line utilities**: The scripts require the following tools to be available in your `PATH`. See the `Dockerfile` for a complete list of dependencies.
+      * [iostat](https://github.com/sysstat/sysstat) (from the sysstat package)
+      * [nc](https://nc110.sourceforge.io/) (netcat)
+   * **Network Ports**: The scripts launch several kdb+ processes that listen for IPC messages. By default, the controller listens on port 5100, and workers use ports 5500, 5501, 5502, and so on. These can be configured by editing the `CONTROLLERPORT` and `WORKERBASEPORT` variables in `nano.sh`.
 
-Please [install kdb+ 4.1](https://code.kx.com/q/learn/install/). If the q home differs from `$HOME/q` then you need to set `QHOME` in `config/kdbenv`.
+## Installation and Configuration
 
-The script assumes that the following commands are available - see `Dockerfile` for more information
-   * [iostat](https://github.com/sysstat/sysstat)
-   * [nc](https://nc110.sourceforge.io/)
+Clone or copy all scripts into a single working directory.
 
-The scripts start several kdb+ processes that open a port for incoming messages. By default, the controller opens port 5100 and the workers open 5500, 5501, 5502, etc. You can change these ports by editing the variables CONTROLLERPORT and WORKERBASEPORT in `nano.sh`.
+**Important**: Do not place the scripts in the directory you intend to use for I/O testing, as this directory may be unmounted by certain test routines. If running across multiple nodes, this directory should be on a shared file system (e.g., NFS).
 
-## Installing and configuring
-
-Place these scripts in a single working directory. **Do not** place these scripts directly in the destination location being used for the IO testing, as that directory may be unmounted during the tests. If the scripts are to be executed across multiple nodes, place the directory containing them in a shared (e.g NFS) directory.
-
-The scripts can best be run as root user or started with high priority.
+For best results, run the scripts as the root user or with a high process priority (e.g., using **nice**).
 
 ### Parameters
 
-The benchmark can run with many parameters. Some parameters are set as environment variables (e.g. the number of secondary threads of the kdb+ processes) and some are set by command line parameters (e.g. the number of worker kdb+ processes). Environment variables are placed in `config/env`.
+The benchmark is configured using both environment variables and command-line arguments. Environment variables are set in `config/env`.
 
-One key environment variable is `FLUSH` which points to a storage cache flush script. Some sample scripts are provided and the default assumes locally attached block storage, for which `echo 3 > /proc/sys/vm/drop_caches` does the job. If the root user is not available to you, the flush script will have to be placed in the sudo list by your systems administrator.
+One key environment variable is `FLUSH`, which must point to a script that flushes the system's storage cache. Sample scripts are provided in the `flush/` directory. The default script, `directmount.sh`, assumes locally attached block storage and uses `echo 3 | ${SUDO} tee /proc/sys/vm/drop_caches` to clear caches. If you are not running as root (i.e. `SUDO=sudo` in `config/env`), your system administrator will need to grant passwordless `sudo` permissions for this script.
 
 ### Storage disks
 
-Create a directory on each storage medium where data will be written to during the test. List these data directories in file `partitions`. Use absolute path names.
+   1. Create a dedicated test directory on each storage device or partition you wish to benchmark.
+   1. Add the absolute paths of these directories to the `partitions` file, one per line.
 
-Using a single-line entry is a simple way of testing a single shared/parallel  system. This would allow the shared FS to control the distribution of the data across a number of storage targets (objects, et al) automatically.
+Using a single entry in the `partitions` file is a simple way to test a shared/parallel file system, allowing it to manage data distribution across its storage targets.
 
-## Running the scripts
+## Running the Benchmark
 
-It is recommended to exit all memory-heavy applications. The benchmark uses cca. half of the free memory and creates files on disks accordingly.
+Before running, it is recommended to close all cpu, storage and memory-intensive applications. The benchmark does not use more then third of the available free memory and sizes its test files accordingly.
 
-Scripts below rely on environment variables (e.g. `QBIN`) so first do
+The scripts rely on environment variables defined in the configuration files. Source them before execution:
 
 ```bash
 $ source ./config/kdbenv
 $ source ./config/env
 ```
 
-### nano.sh
+### `nano.sh`
 
-Starts multiple processes of execution of the benchmark. Pass `-h` to learn about the parameters.
+This script starts the benchmark on a single host with multiple worker processes. Use the `-h` flag for a full list of options.
 
-Example usages
+Example Usages:
 
 ```bash
+# Run with worker processes number equal to the thread count of the system
 $ ./nano.sh -p $(nproc)
+
+# Run with 8 workers and skip cleaning up the data directories afterward
 $ ./nano.sh -p 8 --noclean
+
+# Rerun a read-only test on an existing dataset from a previous run
 $ ./nano.sh -p 8 -s readonly --noclean -d 0408_152349
 ```
 
-Typical examples of the number of worker processes to test are 1, 2, 4, 8, 16, 32, 64, 128.
+Typical worker counts for scalability testing are 1, 2, 4, 8, 16, 32, 64, ... see `multiproc.sh`.
 
-### Results
+### `multiproc.sh`
 
-The results are saved as PSV files set by the command line parameter `resultdir`. If `resultdir` is not set then `results/mmdd_HHMMSS` is used.
+To analyze how storage and CPU performance scales with an increasing number of parallel requests, use `multiproc.sh`. This script repeatedly calls `nano.sh` with different worker counts and aggregates the results into a single summary file. Use `--help` to see all options.
 
-File `HOSTNAME-throughput.psv` aggregates (calculates the sum) the throughput metrics from the detailed result files. Column `throughput` displays the throughput of the test from kdb+ perspective. The read/write throughput based on `iostat` is also displayed. Column `accuracy` tries to capture the impact of the [offset problem](#accuracy). For each test, it calculates the maximal difference of start times and divides it by the average test elapsed time.
-
-### Running several tests with different process counts
-
-If you are interested in how the storage medium scales with the number of parallel requests, then you can run `multiproc.sh`. It simply calls `nano.sh` with different values for `--processnr` and aggregates the results to a final PSV file. The results are saved in the file `results/throughput_total.csv` but this can be overwritten by a command line parameter. Run the script with `--help` to learn about the command line parameters.
-
-Example usages
+Example Usages:
 
 ```bash
+# Run tests for 1, 2, 4, 8, 16, and 32 workers, saving the summary to a custom file
 $ ./multiproc.sh -o nano_results.psv -l 32
+
+# Run only the CPU tests for 1, 16, and 128 workers
 $ ./multiproc.sh -s cpuonly -p "1 16 128"
 ```
 
+### `multihost.sh`
 
-### multihost.sh
+For multi-node tests, list the hostnames or IP addresses of the other nodes in the `hostlist` file. The script will use `ssh` to start the benchmark on each remote node. Each server will run the same number of worker processes, and no data is shared between processes.
 
-For multinode tests (`multihost.sh`), list the other nodes in the file `hostlist`. The script will `ssh` into the remote node to start the main script.
+Prerequisites for multi-host testing:
+   * All nodes must be time-synchronized (e.g., using NTP).
+   * Passwordless `ssh` access must be configured from the control node to all hosts in hostlist. You may need to configure `~/.ssh/config`.
+   * If running as a non-root user, then you need `sudo` permissions on remote hosts.
 
-Each server in `hostlist` list will create the same number of processes of execution on each node,
-and no data is shared between any individual processes.
-
-If running across a cluster of nodes, each of the nodes must be time-synced (e.g. `ntp`).
-
-Note that the execution of the top-level script `multihost.sh` may require `tty` control to be added to the sudoers file if you are not already running as root. `multihost.sh` does ssh to the remote host, so you may need to use `~/.ssh/config` to set passwords or identity files.
+Example Usage:
 
 ```bash
 $ source ./config/kdbenv
@@ -104,18 +104,46 @@ $ source ./config/env
 $ ./multihost.sh -p 32
 ```
 
-### log files
+### Results and Logs
 
-The script reports the progress on the standard output. The log of each kdb+ process is available in the directory `logs/mmdd_HHMMSS`.
+#### Results
 
-### Object storage support
+Results are saved in PSV (pipe-separated values) format in the directory specified by the `--resultdir` argument. If omitted, results are saved to `results/mmdd_HHMMSS`.
+   * `HOSTNAME-throughput.psv`: This file summarizes the throughput metrics from all workers. More details of some columns:
+      * `throughput`: The total throughput measured from within the kdb+ processes.
+      * The read/write throughput reported by `iostat` is also included for comparison.
+      * `accuracy`: An estimate of the test synchronization error. It is calculated as the maximum start time difference across all workers, divided by the average test duration.
 
-nano version 2.1+ supports object storage. You simply need to put the object storage path into file partitions. See [object storage kx page](https://code.kx.com/insights/1.4/core/objstor/main.html) for information about setup and required environment variables. Example lines:
+The results are saved as PSV files set by the command line parameter `resultdir`. If `resultdir` is not set then `results/mmdd_HHMMSS` is used.
+
+
+#### Log Files
+
+Progress is reported to standard output. Detailed logs for each kdb+ process are available in the `logs/mmdd_HHMMSS` directory.
+
+### Advanced Usage
+
+### Object Storage Support
+
+Nano v2.1+ supports benchmarking object storage (S3, GCS, Azure Blob Storage). Simply add the object storage path to your partitions file. Refer to the [KX documentation on object storage](https://code.kx.com/insights/1.4/core/objstor/main.html) for setup and required environment variables.
+
+Example partitions entries:
    * `s3://kxnanotest/firsttest`
    * `gs://kxnanotest/firsttest`
    * `ms://kxnanotest.blob.core.windows.net/firsttest`
 
-The environment executing this test must have the associated cloud vendor CLI set up and configured as if they were manually uploading files to object storage.
+The execution environment must be configured with the appropriate cloud vendor's CLI tools and credentials, as if you were manually accessing object storage.
+
+#### Testing Object Storage Cache
+
+You can also measure the performance impact of the local cache. The recommended procedure is:
+   1. Provide an object storage path in the partitions file.
+   1. Set a unique subdirectory for the test data: `export DBDIR=$(date +%m%d_%H%M%S)`.
+   1. Run a full test to populate the object store: `./nano.sh -p $(nproc) --noclean --dbsubdir $DBDIR`.
+   1. Enable the local cache by setting `KX_OBJSTR_CACHE_PATH` in `./config/env` to an empty directory on a fast local disk.
+   1. Run a read-only test to populate the cache: `./nano.sh -p $(nproc) -s readonly --dbsubdir $DBDIR --noclean`.
+   1. Run the read-only test again to measure performance with a warm cache: `./nano.sh -p $(nproc) -s readonly --dbsubdir $DBDIR`.
+   1. Clean up the local cache directory when finished: `source ./config/env; rm -rf ${KX_OBJSTR_CACHE_PATH:?}/objects`.
 
 You can also test the [cache](https://code.kx.com/insights/1.4/core/objstor/kxreaper.html) impact of the object storage library. The recommended way is to
    * Provide an object storage path in `partitions`
@@ -126,45 +154,63 @@ You can also test the [cache](https://code.kx.com/insights/1.4/core/objstor/kxre
    * Run the test again to use cache: `./nano.sh --processnr $(nproc) --scope readonly --dbsubdir $DBDIR`
    * Delete cache files in object storage cache: `source ./config/env; rm -rf ${KX_OBJSTR_CACHE_PATH}/objects`
 
-The random read kdb+ script is deterministic, i.e. it reads the same blocks in consecutive runs. The script uses [roll](https://code.kx.com/q/ref/deal/#roll-and-deal) for selecting random blocks which uses a fixed seed.
+The random read test is deterministic; it uses a fixed seed to ensure it reads the same data blocks in the same order on consecutive runs, which is crucial for cache testing.
 
-Environment variable `THREADNR` plays an important role in random read speed from object storage. See https://code.kx.com/insights/1.6/core/objstor/main.html#secondary-threads for more accounts.
+The `THREADNR` environment variable can significantly impact random read performance from object storage. See the [documentation on secondary threads](https://code.kx.com/insights/1.6/core/objstor/main.html#secondary-threads) for details.
 
 
-### Accuracy
+### Docker Image
 
-The bash script starts a controller kdb+ process that is responsible for starting each test kdb+ function at the same time on all worker kdb+ processes. This cannot be achieved perfectly, there is some offset so the aggregate results are better considered as upper bounds. You can check the startup offset by e.g. checking the `starttime` column of the detailed results files. The more kdb+ workers there are, the larger the offset is.
-
-### Docker image
-
-A Docker image is available for nano on Gitlab and on nexus:
+A pre-built Docker image is available from GitLab and Nexus.
 
 ```bash
+# Pull from GitLab
 $ docker pull registry.gitlab.com/kxdev/benchmarking/nano/nano:latest
+
+# Pull from KX Nexus
 $ docker pull ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest
 ```
 
-The nano scripts are placed in the docker directory `/opt/kx/app` -see `Dockerfile`
+The nano scripts are located at `/opt/kx/app` inside the container. To run the benchmark, you must mount several host directories into the container:
+   * **License**: Mount your kdb+ license directory to `/tmp/qlic`.
+   * **Results**: Mount a host directory to `/appdir` where the results and logs subdirectories will be created.
+   * **Test Data**: Mount the storage you wish to test to a directory like `/data`.
 
 To run the script by docker, you need to mount there directories to target directories
    1. `/tmp/qlic`: contains your kdb+ license file
    1. `/appdir`: results and logs are saved here into subdirectories `results` and `logs` respectively
    1. `/data`: that is on the storage you would like to test. For multi-partition test, you need to overwrite `/opt/kx/app/partitions` with your partition file.
 
-You can overwrite default environment variables (e.g. `THREADNR`) that are listed in `./config/env`.
+You can override default environment variables from config/env using Docker's `-e` flag.
 
-By default `flush/directmount.sh` is selected as the flush script which requires the `--privileged` options. You can choose other flush scripts by setting the environment variable `FLUSH`. For example, setting `FLUSH` to `/opt/kx/app/noflush.sh` does not require privileged mode.
+By default, the container uses the `flush/directmount.sh` script, which requires the `--privileged` flag. To run without privileged mode, you can select a different flush script, such as `noflush.sh`, by setting the `FLUSH` environment variable.
 
-Example usages:
+Example Usages:
 
 ```bash
-$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/$USER/nanodata:/data --privileged ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest -p 4
-$ docker run --rm -it -v $QHOME:/tmp/qlic:ro -v /mnt/$USER/nano:/appdir -v /mnt/storage1/nanodata:/data1 -v /mnt/storage2/nanodata:/data2 -v ${PWD}/partitions_2disks:/opt/kx/app/partitions:ro -e FLUSH=/opt/kx/app/flush/noflush.sh -e THREADNR=5 ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest -p 4
+# Single storage mount, privileged mode
+docker run --rm -it \
+  -v $QHOME:/tmp/qlic:ro \
+  -v /mnt/$USER/nano:/appdir \
+  -v /mnt/$USER/nanodata:/data \
+  --privileged \
+  ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest -p 4
+
+# Multi-storage mount, non-privileged mode, overriding THREADNR
+docker run --rm -it \
+  -v $QHOME:/tmp/qlic:ro \
+  -v /mnt/$USER/nano:/appdir \
+  -v /mnt/storage1/nanodata:/data1 \
+  -v /mnt/storage2/nanodata:/data2 \
+  -v ${PWD}/partitions_2disks:/opt/kx/app/partitions:ro \
+  -e FLUSH=/opt/kx/app/flush/noflush.sh \
+  -e THREADNR=5 \
+  ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest -p 4
 ```
 
-### Running nano as a Kubernetes Job
+### Running as a Kubernetes Job
 
-To execute the scripts as a Kubernetes Job, certain configurations are required to ensure proper operation. The script needs elevated permissions for accessing system information (e.g. for getting device type via `lsblk`). You must configure the pod's `securityContext` to run in privileged mode as the root user.
+To run Nano as a Kubernetes Job, the pod requires elevated permissions to access system-level information (e.g., using `lsblk` to get device types). You must configure the pod's `securityContext` to run in privileged mode as the root user.
 
 ```yaml
    containers:
@@ -174,126 +220,100 @@ To execute the scripts as a Kubernetes Job, certain configurations are required 
          runAsUser: 0
 ```
 
-Running containers in privileged mode or as root increases potential security risks. Refer to the [Kubernetes Security Documentation](https://kubernetes.io/docs/concepts/security/) for best practices.
+⚠️ **Security Warning**: Running containers in privileged mode or as root significantly increases security risks. Please consult the [Kubernetes Security Documentation](https://kubernetes.io/docs/concepts/security/) for best practices.
 
 ## Troubleshooting
 
-### Too many open files
-If you see the error `Too many open files` in a log file, then increase the limit by
+### 'Too many open files'
+
+If you encounter a 'Too many open files' error, the limit on open file descriptors is too low. The controller opens a TCP connection to each worker, so this is common with a high worker count (e.g., 512).
+
+Increase the limit for the current session with:
 
 ```bash
 $ ulimit -n 2048
 ```
 
-The controller open a TCP connection to all workers so this error typically occurs with a large number of workers (e.g. 512).
-
-The ulimit change above is temporary and applies only to the current shell session.
+To make this change permanent, you must edit `/etc/security/limits.conf` or a similar system configuration file.
 
 ### Out of memory
-The memory need is proportional to the number of threads (`THREADNR`) for several q operations. For CPU tests, because vector lengths are fixed, the total memory required scales directly with the number of kdb+ workers.
 
-If your test run fails with an OutOfMemory (OOM) error, you can address this by excluding the most memory-intensive tests. The primary tests known for high memory consumption are `.cpu.groupIntLarge` and `.cpu.groupFloatLarge`. Set the `EXCLUDETESTS` environment variable as shown below:
+Memory usage for some CPU tests is proportional to the number of secondary threads (`THREADNR`) and increases with the number of worker processes (parameter `-p`).
+
+If a test run fails with an OutOfMemory (OOM) error, you can exclude the most memory-intensive tests by setting the `EXCLUDETESTS` environment variable:
 
 ```bash
 EXCLUDETESTS=".cpu.groupIntLarge .cpu.groupFloatLarge"
 ```
 
-and rerun your test.
+### 'Port in use'
+If the benchmark fails with an error like `ERROR: Port 5501 is in use`, another process is occupying a required port. This is often due to a kdb+ process from a previously failed test run.
 
-### Port in use
-If the benchmark fails with e.g.
-
-```bash
-ERROR: Port 5501 is in use. Maybe leftover kdb+ processes are running.
-```
-
-then you either need to stop the process that takes the port or set alternative ports for the benchmark.
-
-Most likely, the port is taken by a previously failed test, so either
+You can terminate leftover `q` processes using:
 
 ```bash
 $ killall q
-```
-
-or
-
-```bash
+# or
 $ kill -9 $(pidof q)
 ```
 
-will do the job. Be careful with these commands as they will terminate ALL q processes running under your user account. Alternatively, you can use `lsof` to find out the process using the port, for example, `lsof -i :5501`.
+**Caution**: These commands will terminate all running q processes for your user, not just those started by the benchmark.
 
-All kdb+ workers and the kdb+ controller need a port. Environment variables `WORKERBASEPORT` and `CONTROLLERPORT` exported in `nano.sh` set these ports. Feel free to modify them. For `N` workers, ports `WORKERBASEPORT+1` through `WORKERBASEPORT+N` will be used.
+Alternatively, you can identify the specific process using `lsof -i :5501` and terminate it, or modify the `WORKERBASEPORT` and `CONTROLLERPORT` variables in `nano.sh` to use different ports.
 
 ## Technical Details
 
-The script calculates the throughput (MiB/sec) of an operation by calculating the data size and the elapsed time of the operation.
+The benchmark executes up to 7 major test suites. The cache is flushed before each suite, except for "reread" tests. If the scope is set to readonly, the Write and Meta tests are skipped.
 
-Script `./nano.sh` executes 7 major tests:
-   1. CPU
-   1. Write
-   1. Sequential read
-   1. Sequential reread
-   1. Meta
-   1. Random read and reread
-   1. xasc
-
-If the scope is readonly then [Write](#Write) and [Meta](#Meta) tests are omitted.
+   1. CPU (`cpucache.q` and `cpu.q`)
+   1. Write (`write.q`)
+   1. Sequential read (`read.q`)
+   1. Sequential reread (`reread.q`)
+   1. Meta (`meta.q`)
+   1. Random read and reread (`randomread.q`)
+   1. xasc (``xasc.q`)
 
 All tests start multiple kdb+ processes (set by the parameter `-p` of `./nano.sh`) each having its own working space on the disk.
 
-The cache is flushed before each test, except for reread tests.
-
-We detail each test in the next section.
-
 ### CPU (`cpu.q`)
-   1. starts a few tests on in-memory lists that mainly stress the CPU and memory. It uses tiny, small (16k long), medium and large vectors fitting into L1, L2, L3 caches and into memory. Test include
-      * creating random permutation
-      * sorting
-      * calculating deltas
-      * generating indices based on modulo
-      * calculates moving and weighted averages
-      * arithmetics and implicit iteration
-      * serialization, deserialization and compressesion
+
+This suite stresses CPU speed, cache performance, and main memory bandwidth using in-memory arrays of various sizes designed to fit within L1, L2, L3 caches, and main memory. Tests include:
+   * Random permutation generation and sorting
+   * Vector arithmetic (deltas, moving/weighted averages)
+   * Serialization, deserialization, and compression
 
 ### Write (`write.q`)
-   1. performs three write tests
-      1. `open append tiny`: appending tiny integer list to the end of list (this operation includes opening and closing a file): `[; (); ,; 2 3 5 7]`
-      1. `append tiny`: appending tiny integer list to a handle of a kdb+ file: `H: hopen ...; H 2 3 5 7`
-      1. `open replace tiny`: overwriting file content with two integers: `[; (); :; 42 7]`
-   1. `create list`: creates a list in memory (function `til`), i.e. allocating memory and filling it with consecutive longs. The length of the list is set by `SEQWRITETESTLIMIT`.
-   1. `write rate`: writes the list (`set`) to the file `readtest`.
-   1. `sync rate`: calling the system command `sync` on `readtest`.
-   1. `open append small`: appends a small integer list many times to a file.
-   1. `open append large sym`: appends a large block a few times to a file. The result file is the `sym` column of a splayed table used in the `xasc` test.
-   1. saves files for meta test:
-      1. two long lists of length 63k
-      1. a long list of length 31M
-
+These tests measure raw write performance using several methods common in kdb+ applications.
+   `set`: Writes data using the kdb+ set (:) operator.
+   `Append`: Appends data to a file using a file handle or file symbol.
+   `sync`: Executes system sync call to flush OS file caches to persistent storage, ensuring data durability (making sure that recent data is not lost in case of hardware outage). It is executed after write/append. The Linux `sync` command synchronizes cached data to permanent storage. This data includes modified superblocks, modified inodes, delayed reads and writes, and others
 
 ### Sequential read (`read.q`)
-   1. memory maps (`get`) file `readtest` to variable `mapped`
-   1. attempts to force `readtest` to be resident in memory (`-23!`) by calling the Linux command `madvice` with parameter `MADV_WILLNEED`.
-   1. calls `max` on the `mapped` that sequentially marches through all pages
-   1. performs binary read by calling `read1`
+This test simulates a full vector scan.
+   1. A test file is memory-mapped into the process using `get`.
+   1. The OS is advised that this memory region will be needed soon via `madvise` (`-23!`).
+   1. A `max` operation is performed on the mapped vector, forcing a sequential read of all its data pages.
+   1. A binary read is performed using `read1`.
 
 ### Sequential reread (`reread.q`)
-This is the same as the first two steps of test read. We do not flush the cache before this test so the data pages are already in cache. Reread is not expected to involve any data copy so its execution (`mmap` and `madvise`) should be much faster than [Read](#Read).
+This test is identical to the Sequential Read test, but it is run **without flushing the cache**. This measures the performance of accessing data that is already resident in the OS page cache. The `mmap` and `madvise` operations should be significantly faster as no disk I/O is required.
 
 ### Meta (`meta.q`)
-The meta operations are executed (variable `N`) thousand times and the average execution time is returned.
+This suite measures the performance of filesystem metadata operations by executing them thousands of times and averaging the latency.
+   * **Open/Close**: `hclose hopen x`
+   * **File Size**: `hcount x`
+   * **Read & Parse**: `get` on a small kdb+ data file.
+   * **File Lock**: Uses [enum extend](https://code.kx.com/q/ref/enum-extend/)(.Q.en) to acquire a lock on a file.
 
-   1. opening then closing a kdb+ file: `hclose hopen x`
-   1. getting the size of a file: `hcount`
-   1. read and parse kdb+ data: `get`
-   1. locking file. [Enum extend](https://code.kx.com/q/ref/enum-extend/) is used for this which achieves more.
+### Random read (`randomread.q`)
+This test simulates indexed reads from a large on-disk vector, a common operation in `select` queries with where clauses. Each subtest reads a total of 800 MiB of data using different block sizes (1 MiB, 64 KiB, or 4 KiB).
+   * **Random Read**: Indexes into an on-disk vector.
+   * **MMaps Random Read**: First memory-maps the file, then performs the indexed reads.
 
-### Random read
+If a kdb+ database is loaded with [.Q.MAP](https://code.kx.com/q/ref/dotq/#map-maps-partitions), partitions are memory-mapped on startup, and subsequent `select` queries perform only the random read portion. The throughput is calculated based on the _useful_ data read (e.g., 8 bytes for a long integer), not the total data read from disk by the OS, which may be larger due to prefetching (`read_ahead_kb`).
+
 This test consists of four subtests. Each subtest random reads 800 MiB of data by indexing a list stored on disk. Consecutive integers are used for indexing. Each random read uses a different random offset ([deal](https://code.kx.com/q/ref/deal/#roll-and-deal)). 800 MB is achieved either by reading blocks of sizes 1M, 64k or 4k. Each random read can also perform a `mmap`. This test is denoted by a `mmaps` postfix, e.g. `mmaps,random read 64k` stands for random reading integer list of size 64k after a memory map.
 
-In a typical `select` statement with a `where` clause kdb+ does random reads with memory mappings. If you started your kdb+ process with [.Q.MAP](https://code.kx.com/q/ref/dotq/#map-maps-partitions) then memory mapping is done during `.Q.MAP` and the select statement only does a random read.
+### xasc (`xasc.q`)
 
-The throughput is based on the *useful* data read. For example, if you index a vector of long by 8000 consecutive numbers then the useful data size is 8x8000 bytes (the size of a long is 8 bytes). In reality, Linux may read much more data from the disk due to e.g. the prefetch technique. Just change the content of  `/sys/block/DBDEVICE/queue/read_ahead_kb` and see how the throughput changes. The disk may be fully saturated but the useful throughput is smaller.
-
-### xasc
-The script does an on-disk sort by `xasc` on `sym`. The second test is applying attribute `p` on column `sym`.
+This test performs two operations: an on-disk sort by the `sym` column using `xasc`, followed by applying the parted attribute (`p#`) to the same column. Given that these operations write data to storage, `sync` performance tests were also added to the suite.

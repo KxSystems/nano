@@ -3,3 +3,4 @@ logs
 config
 qpbuild
 partitions
+scripts/fsBenchmark/.env
