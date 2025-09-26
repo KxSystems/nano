@@ -36,7 +36,7 @@ randomreadwithmmap:{[blocksize:`j]
     sT:.z.n;
     ({[idxBase;f;offset] get[f] offset+idxBase;}[idxBase].) each idxpairs;
     eT: .z.n;
-    writeRes[argv[`testtype];".randomread.", argv[`testname], "|mmap,random read ",sizeM[blockLength];"get,+,@"; sum count each offsetlists; blockLength; sT, eT; fix[2;getMBPerSec[blockLength*sum count each offsetlists; eT-sT]];"MB/sec\n"];
+    writeRes[argv[`testtype];".randomread.", argv[`testname], "|mmap, random read ",sizeM[blockLength];"get,+,@"; sum count each offsetlists; blockLength; sT, eT; fix[2;getMBPerSec[blockLength*sum count each offsetlists; eT-sT]];"MB/sec\n"];
     }[blockNr; blockLength]
   };
 

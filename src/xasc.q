@@ -11,7 +11,7 @@ ALLCOLLSENGTH: COLLENTH * count cols KDBTBL // assuming column types have the sa
   writeRes["read write disk";".xasc.xasc|disk sort";"xasc"; 1; ALLCOLLSENGTH; sT, eT; fix[2;getMBPerSec[ALLCOLLSENGTH; eT-sT]]; "MB/sec\n"];
   }
 
-testFactory["write disk"; `.xasc.syncAfterSort;1;system;"system sync";"sync ",1_string KDBTBL;"sync table after sort";ALLCOLLSENGTH]; / assuming two columns 
+testFactory["write disk"; `.xasc.syncAfterSort;1;system;"system sync";"sync ",1_string KDBTBL;"sync table after sort";ALLCOLLSENGTH]; / assuming two columns
 
 .xasc.phash: {[]
   .qlog.info "Starting p# test";
@@ -21,7 +21,7 @@ testFactory["write disk"; `.xasc.syncAfterSort;1;system;"system sync";"sync ",1_
   writeRes["read mem write disk";".xasc.phash|add attribute";"@[; `sym; `p#]"; 1; COLLENTH; sT, eT; fix[2;getMBPerSec[COLLENTH; eT-sT]]; "MB/sec\n"];
   }
 
-testFactory["write disk"; `.xasc.syncAfterPhash;1;system;"system sync";"sync ",1_string .Q.dd[KDBTBL;`sym];"sync table after phash";COLLENTH];
+testFactory["write disk"; `.xasc.syncAfterPhash;1;system;"system sync";"sync ",1_string .Q.dd[KDBTBL;`sym];"sync column after parted attribute";COLLENTH];
 
 sendTests[controller;DB;`.xasc]
 
