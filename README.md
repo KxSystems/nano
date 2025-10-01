@@ -286,10 +286,10 @@ This suite stresses CPU speed, cache performance, and main memory bandwidth usin
 ### Write (`write.q`)
 These tests measure raw write performance using several methods common in kdb+ applications.
 
-   **Write sequentially**: Writes data using the kdb+ `set` operator.
-   **Append**: Appends data to a file using a file handle or file symbol.
-   **Replace**: Overwrites and existing vector.
-   **sync**: Executes system sync call to flush OS file caches to persistent storage, ensuring data durability (making sure that recent data is not lost in case of hardware outage). It is executed after write/append. The Linux `sync` command synchronizes cached data to permanent storage. This data includes modified superblocks, modified inodes, delayed reads and writes, and others
+   * **Write sequentially**: Writes data using the kdb+ `set` operator.
+   * **Append**: Appends data to a file using a file handle or file symbol.
+   * **Replace**: Overwrites and existing vector.
+   * **sync**: Executes system sync call to flush OS file caches to persistent storage, ensuring data durability (making sure that recent data is not lost in case of hardware outage). It is executed after write/append. The Linux `sync` command synchronizes cached data to permanent storage. This data includes modified superblocks, modified inodes, delayed reads and writes, and others
 
 ### Sequential read (`read.q`)
 This test simulates a full vector scan.
