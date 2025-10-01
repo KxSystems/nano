@@ -11,9 +11,15 @@ system "l src/samplearrays.q";
 if[not "full" ~ lower getenv `DBSIZE;
   .qlog.warn "Test runs with ", getenv[`DBSIZE], " data. Reduce ratio is ", string MODIFIER];
 
+HUGELENGTH: `long$MODIFIER * "J"$getenv `HUGELENGTH;
+if[ .Q.w[][`mphy] < processcount*16*HUGELENGTH;
+  HUGELENGTH: .Q.w[][`mphy] div 2 * 16 * processcount; / use half of the physical memory
+  .qlog.info "Reducing HUGELENGTH to ", string[HUGELENGTH], " due to memory limit"];
+hugeVec: til HUGELENGTH;
+largeSymVec: LARGELENGTH?sym;
+vecRepr: {(" " sv string 3#x), "..."};
 
 if[ not OBJSTORE;
-  tinyRepr: (" " sv string 3#tinyVec), "...";
   .write.tinyAppend: {[]
     .qlog.info "starting append tiny test";
     ftinyAppend: hsym `$DB, "/tinyAppend";
@@ -22,7 +28,7 @@ if[ not OBJSTORE;
     do[N; .[ftinyAppend;();,; tinyVec]];
     system "sync ", DB, "/tinyAppend";
     eT: .z.n;
-    writeRes["write disk"; ".write.tinyAppend|open append tiny, sync once"; ".[;();,;", tinyRepr, "]"; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
+    writeRes["write disk"; ".write.tinyAppend|open append tiny, sync once"; ".[;();,;", vecRepr[tinyVec], "]"; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
   };
 
   .write.tinyAppendToHandler: {[]
@@ -36,7 +42,7 @@ if[ not OBJSTORE;
     system "sync ", DB, "/tinyAppendFH";
     eT: .z.n;
     hclose H;
-    writeRes["write disk"; ".write.tinyAppendToHandler|append tiny, sync once"; "H ", tinyRepr; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
+    writeRes["write disk"; ".write.tinyAppendToHandler|append tiny, sync once"; "H ", vecRepr[tinyVec]; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
   };
 
   .write.smallAppendToHandler: {[]
@@ -53,26 +59,28 @@ if[ not OBJSTORE;
     writeRes["write disk"; ".write.smallAppendToHandler|append small, sync once"; "H til 16*k"; N; count smallVec; sT, eT; fix[2; getMBPerSec[N * count smallVec; eT-sT]]; "MB/sec\n"];
   };
 
-  .write.tinyReplace: {[]
-    .qlog.info "starting replace tiny test";
-    ftinyReplace: hsym `$DB, "/tinyReplace";
-    ftinyReplace set smallVec;
-    N:100;
-    sT: .z.n;
-    do[N; .[ftinyReplace;();:; tinyVec]];
-    system "sync ", DB, "/tinyReplace";
-    eT: .z.n;
-    writeRes["write disk"; ".write.tinyReplace|open replace tiny, sync once"; ".[;();:;", tinyRepr, "]"; N; count tinyVec; sT, eT; fix[3; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
-  };
+  ftinyReplace: hsym `$DB, "/tinyReplace";
+  ftinyReplace set tinyVec;
+  testFactory["write disk"; `.write.tinyReplace;10000;.[ftinyReplace;();:;];".[;();:;", vecRepr[tinyVec], "]";tinyVec;"open replace int tiny";1];
+
+  fsmallReplace: hsym `$DB, "/smallReplace";
+  fsmallReplace set smallVec;
+  testFactory["write disk"; `.write.smallReplace;1000;.[fsmallReplace;();:;];".[;();:;", vecRepr[smallVec], "]";smallVec;"open replace int small";1];
+
+  fmediumReplace: hsym `$DB, "/mediumReplace";
+  fmediumReplace set mediumVec;
+  testFactory["write disk"; `.write.mediumReplace;200;.[fmediumReplace;();:;];".[;();:;", vecRepr[mediumVec], "]";mediumVec;"open replace int medium";1];
+
+  flargeReplace: hsym `$DB, "/largeReplace";
+  flargeReplace set largeVec;
+  testFactory["write disk"; `.write.largeReplace;10;.[flargeReplace;();:;];".[;();:;", vecRepr[largeVec], "]";largeVec;"open replace int large";1];
+
+  fhugeReplace: hsym `$DB, "/hugeReplace";
+  fhugeReplace set hugeVec;
+  testFactory["write disk"; `.write.hugeReplace;2;.[fhugeReplace;();:;];".[;();:;", vecRepr[hugeVec], "]";hugeVec;"open replace int huge";1];
+
   ];
 
-
-HUGELENGTH: `long$MODIFIER * "J"$getenv `HUGELENGTH;
-if[ .Q.w[][`mphy] < processcount*16*HUGELENGTH;
-  HUGELENGTH: .Q.w[][`mphy] div 2 * 16 * processcount; / use half of the physical memory
-  .qlog.info "Reducing HUGELENGTH to ", string[HUGELENGTH], " due to memory limit"];
-hugeVec: til HUGELENGTH;
-largeSymVec: LARGELENGTH?sym;
 
 if[count getenv `COMPRESS;
   .qlog.info "setting compression parameters to ", getenv `COMPRESS;
