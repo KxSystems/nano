@@ -278,19 +278,22 @@ All tests start multiple kdb+ processes (set by the parameter `-p` of `./nano.sh
 ### CPU (`cpu.q`)
 
 This suite stresses CPU speed, cache performance, and main memory bandwidth using in-memory arrays of various sizes designed to fit within L1, L2, L3 caches, and main memory. Tests include:
+
    * Random permutation generation and sorting
    * Vector arithmetic (deltas, moving/weighted averages)
    * Serialization, deserialization, and compression
 
 ### Write (`write.q`)
 These tests measure raw write performance using several methods common in kdb+ applications.
-   `set`: Writes data using the kdb+ set (:) operator.
-   `Append`: Appends data to a file using a file handle or file symbol.
-   `Replace`: Overwrites and existing vector.
-   `sync`: Executes system sync call to flush OS file caches to persistent storage, ensuring data durability (making sure that recent data is not lost in case of hardware outage). It is executed after write/append. The Linux `sync` command synchronizes cached data to permanent storage. This data includes modified superblocks, modified inodes, delayed reads and writes, and others
+
+   **Write sequentially**: Writes data using the kdb+ `set` operator.
+   **Append**: Appends data to a file using a file handle or file symbol.
+   **Replace**: Overwrites and existing vector.
+   **sync**: Executes system sync call to flush OS file caches to persistent storage, ensuring data durability (making sure that recent data is not lost in case of hardware outage). It is executed after write/append. The Linux `sync` command synchronizes cached data to permanent storage. This data includes modified superblocks, modified inodes, delayed reads and writes, and others
 
 ### Sequential read (`read.q`)
 This test simulates a full vector scan.
+
    1. A test file is memory-mapped into the process using `get`.
    1. The OS is advised that this memory region will be needed soon via `madvise` (`-23!`).
    1. A `max` operation is performed on the mapped vector, forcing a sequential read of all its data pages.
@@ -301,6 +304,7 @@ This test is identical to the Sequential Read test, but it is run **without flus
 
 ### Meta (`meta.q`)
 This suite measures the performance of filesystem metadata operations by executing them thousands of times and averaging the latency.
+
    * **Open/Close**: `hclose hopen x`
    * **File Size**: `hcount x`
    * **Read & Parse**: `get` on a small kdb+ data file.
