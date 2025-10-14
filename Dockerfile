@@ -2,8 +2,10 @@ FROM kdb-insights-core:4.1.6
 
 WORKDIR /opt/kx/app
 
+ARG NANOVERSION
+
 COPY src ./src
-COPY nano.sh multiproc.sh common.sh version.txt  ./
+COPY nano.sh multiproc.sh common.sh  ./
 COPY flush ./flush
 COPY config/env ./config/env
 

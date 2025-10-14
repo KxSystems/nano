@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # an example for GPFS network file system for which client may hold its own cache/state.
 # change this...
 GPFSNAME=nanotest

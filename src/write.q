@@ -12,6 +12,7 @@ if[not "full" ~ lower getenv `DBSIZE;
   .qlog.warn "Test runs with ", getenv[`DBSIZE], " data. Reduce ratio is ", string MODIFIER];
 
 HUGELENGTH: `long$MODIFIER * "J"$getenv `HUGELENGTH;
+DECAY:1+2 xlog processcount;
 if[ .Q.w[][`mphy] < processcount*16*HUGELENGTH;
   HUGELENGTH: .Q.w[][`mphy] div 2 * 16 * processcount; / use half of the physical memory
   .qlog.info "Reducing HUGELENGTH to ", string[HUGELENGTH], " due to memory limit"];
@@ -28,6 +29,7 @@ if[ not OBJSTORE;
     do[N; .[ftinyAppend;();,; tinyVec]];
     system "sync ", DB, "/tinyAppend";
     eT: .z.n;
+    hdel ftinyAppend;
     writeRes["write disk"; ".write.tinyAppend|open append tiny, sync once"; ".[;();,;", vecRepr[tinyVec], "]"; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
   };
 
@@ -42,6 +44,7 @@ if[ not OBJSTORE;
     system "sync ", DB, "/tinyAppendFH";
     eT: .z.n;
     hclose H;
+    hdel ftinyAppendFH;
     writeRes["write disk"; ".write.tinyAppendToHandler|append tiny, sync once"; "H ", vecRepr[tinyVec]; N; count tinyVec; sT, eT; fix[2; getMBPerSec[N * count tinyVec; eT-sT]]; "MB/sec\n"];
   };
 
@@ -56,29 +59,9 @@ if[ not OBJSTORE;
     system "sync ", DB, "/smallAppendFH";
     eT: .z.n;
     hclose H;
+    hdel fsmallAppendFH;
     writeRes["write disk"; ".write.smallAppendToHandler|append small, sync once"; "H til 16*k"; N; count smallVec; sT, eT; fix[2; getMBPerSec[N * count smallVec; eT-sT]]; "MB/sec\n"];
   };
-
-  ftinyReplace: hsym `$DB, "/tinyReplace";
-  ftinyReplace set tinyVec;
-  testFactory["write disk"; `.write.tinyReplace;10000;.[ftinyReplace;();:;];".[;();:;", vecRepr[tinyVec], "]";tinyVec;"open replace int tiny";1];
-
-  fsmallReplace: hsym `$DB, "/smallReplace";
-  fsmallReplace set smallVec;
-  testFactory["write disk"; `.write.smallReplace;1000;.[fsmallReplace;();:;];".[;();:;", vecRepr[smallVec], "]";smallVec;"open replace int small";1];
-
-  fmediumReplace: hsym `$DB, "/mediumReplace";
-  fmediumReplace set mediumVec;
-  testFactory["write disk"; `.write.mediumReplace;200;.[fmediumReplace;();:;];".[;();:;", vecRepr[mediumVec], "]";mediumVec;"open replace int medium";1];
-
-  flargeReplace: hsym `$DB, "/largeReplace";
-  flargeReplace set largeVec;
-  testFactory["write disk"; `.write.largeReplace;10;.[flargeReplace;();:;];".[;();:;", vecRepr[largeVec], "]";largeVec;"open replace int large";1];
-
-  fhugeReplace: hsym `$DB, "/hugeReplace";
-  fhugeReplace set hugeVec;
-  testFactory["write disk"; `.write.hugeReplace;2;.[fhugeReplace;();:;];".[;();:;", vecRepr[hugeVec], "]";hugeVec;"open replace int huge";1];
-
   ];
 
 
@@ -119,7 +102,7 @@ $[OBJSTORE; [
   .qlog.info "using temporal dir ", tmpdir;
 
   lrfileTmpH:hsym `$lrfileTmp: tmpdir, fReadFileName;
-  testFactory["write disk"; `.write.setHuge;1;set[lrfileTmpH];"set";hugeVec;"write huge";1];
+  testFactory[writeRes["write disk";;"set"]; `.write.setHuge;1;(set[lrfileTmpH];hugeVec;::);"write huge";1];
 
   .write.cloudcmd: {[]
     sT:.z.n;
@@ -144,22 +127,43 @@ $[OBJSTORE; [
   }
   ];[
 
+  testFactory[writeRes["write disk";;"set"]; `.write.setIntTiny;1;(set[fReadTiny];tinyVec;::);"write int tiny";1];
+  testFactory[writeRes["write disk";;"system sync"]; `.write.syncIntTiny;1;(system;"sync ",1_string fReadTiny;::);"sync int tiny";TINYLENGTH];
+  testFactory[writeRes["write disk";;"@[;10 2 49...;:;42]"]; `.write.tinyReplace;20000 div DECAY;
+    (@[fReadTiny;;:;42];neg[TINYLENGTH div 5]?TINYLENGTH;::);"open replace int tiny";1];
 
-  testFactory["write disk"; `.write.setIntSmall;1;set[fReadSmall];"set";smallVec;"write int small";1];
-  testFactory["write disk"; `.write.syncIntSmall;1;system;"system sync";"sync ",1_string fReadSmall;"sync int small";SMALLLENGTH];
+
+  testFactory[writeRes["write disk";;"set"]; `.write.setIntSmall;1;(set[fReadSmall];smallVec;::);"write int small";1];
+  testFactory[writeRes["write disk";;"system sync"]; `.write.syncIntSmall;1;(system;"sync ",1_string fReadSmall;::);"sync int small";SMALLLENGTH];
+  testFactory[writeRes["write disk";;"@[;10 2 49...;:;42]"]; `.write.smallReplace;2000 div DECAY;
+    (@[fReadSmall;;:;42];neg[SMALLLENGTH div 5]?SMALLLENGTH;::);"open replace random int small";1];
 
 
-  testFactory["write disk"; `.write.setIntMedium;1;set[fReadMedium];"set";mediumVec;"write int medium";1];
-  testFactory["write disk"; `.write.syncIntMedium;1;system;"system sync";"sync ",1_string fReadMedium;"sync int medium";MEDIUMLENGTH];
+  testFactory[writeRes["write disk";;"set"]; `.write.setIntMedium;1;(set[fReadMedium];mediumVec;::);"write int medium";1];
+  testFactory[writeRes["write disk";;"system sync"]; `.write.syncIntMedium;1;(system;"sync ",1_string fReadMedium;::);"sync int medium";MEDIUMLENGTH];
+  testFactory[writeRes["write disk";;"@[;10 2 49...;:;42]"]; `.write.mediumReplace;500 div DECAY;
+    (@[fReadMedium;;:;42];neg[MEDIUMLENGTH div 5]?MEDIUMLENGTH;::);"open replace random int medium";1];
 
-  testFactory["write disk"; `.write.setLargeSym;1;set[fSymCol];"set";largeSymVec;"write sym large";1];
-  testFactory["write disk"; `.write.syncLargeSym;1;system;"system sync";"sync ",1_string fSymCol;"sync sym large";LARGELENGTH];
+  testFactory[writeRes["write disk";;"set"]; `.write.setLargeSym;1;(set[fSymCol];largeSymVec;::);"write sym large";1];
+  testFactory[writeRes["write disk";;"system sync"]; `.write.syncLargeSym;1;(system;"sync ",1_string fSymCol;::);"sync sym large";LARGELENGTH];
 
-  testFactory["write disk"; `.write.setLargeFloat;1;set[fFloatCol];"set";largeFloatVec;"write float large";1];
-  testFactory["write disk"; `.write.syncLargeFloat;1;system;"system sync";"sync ",1_string fFloatCol;"sync float large";LARGELENGTH];
+  testFactory[writeRes["write disk";;"set"]; `.write.setLargeFloat;1;(set[fFloatCol];largeFloatVec;::);"write float large";1];
+  testFactory[writeRes["write disk";;"system sync"]; `.write.syncLargeFloat;1;(system;"sync ",1_string fFloatCol;::);"sync float large";LARGELENGTH];
+  testFactory[writeRes["write disk";;"@[;10 2 49...;:;3.14]"]; `.write.largeFloatReplace;1;
+    (@[fFloatCol;;:;3.14];neg[LARGELENGTH div 100*DECAY]?LARGELENGTH;::);"open replace random float large";1];
+  testFactory[writeRes["write disk";;"system sync"]; `.write.syncLargeFloatAfterReplace;1;(system;"sync ",1_string fFloatCol;::);"sync float large after replace";LARGELENGTH];
 
-  testFactory["write disk"; `.write.setIntHuge;1;set[fReadHuge];"set";hugeVec;"write int huge";1];
-  testFactory["write disk"; `.write.syncIntHuge;1;system;"system sync";"sync ",DB,fReadFileName;"sync int huge";HUGELENGTH];
+
+  testFactory[writeRes["write disk";;"set"]; `.write.setIntHuge;1;(set[fReadHuge];hugeVec;::);"write int huge";1];
+  testFactory[writeRes["write disk";;"system sync"]; `.write.syncIntHuge;1;(system;"sync ",DB,fReadFileName;::);"sync int huge";HUGELENGTH];
+  idx:neg[HUGELENGTH div 5000*DECAY]?HUGELENGTH;
+  testFactory[writeRes["write disk";;"@[;10 2 49...;:;42]"]; `.write.hugeReplace;1;
+    (@[fReadHuge;;:;42];idx;::);"open replace random int huge";1];
+  testFactory[writeRes["write disk";;"system sync"]; `.write.syncIntHugeAfterReplace;1;(system;"sync ",DB,fReadFileName;::);"sync int huge after replace";HUGELENGTH];
+  testFactory[writeRes["write disk";;"@[;2 10 49...;:;1089]"]; `.write.hugeReplaceSorted;1;
+    (@[fReadHuge;;:;1089];asc idx;::);"open replace sorted int huge";1];
+  testFactory[writeRes["write disk";;"system sync"]; `.write.syncIntHugeAfterSortedReplace;1;(system;"sync ",DB,fReadFileName;::);"sync int huge after sorted replace";HUGELENGTH];
+
 
   disksize: MODIFIER * SIZEOFLONG * "J"$getenv `RANDREADFILESIZE;
 
@@ -167,7 +171,7 @@ $[OBJSTORE; [
     .qlog.info "creating files for random read test";
     .qlog.info "starting append small test";
     chunkSize: count smallVec;
-    chunkNr: `long$disksize % SIZEOFLONG * chunkSize * FILENRPERWORKER * 1+2 xlog processcount;
+    chunkNr: `long$disksize % SIZEOFLONG * chunkSize * FILENRPERWORKER * DECAY;
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
     chunkNr {[chunkNr;f] do[chunkNr; .[f;();,;smallVec]]}' fsRandomRead;
@@ -182,7 +186,7 @@ $[OBJSTORE; [
     .qlog.info "creating files for xasc tests";
     .qlog.info "starting append large sym vector test";
     chunkSize: count largeSymVec;
-    chunkNr: `long$TBLLENGTH % chunkSize * 1+2 xlog processcount; // enumerated symbols are stored as longs
+    chunkNr: `long$TBLLENGTH % chunkSize * DECAY; // enumerated symbols are stored as longs
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
     do[chunkNr; .[fSymCol;();,;largeSymVec]];
@@ -194,7 +198,7 @@ $[OBJSTORE; [
     .qlog.info "creating files for xasc tests";
     .qlog.info "starting append large float vector test";
     chunkSize: count largeFloatVec;
-    chunkNr: `long$TBLLENGTH % chunkSize * 1+2 xlog processcount; // enumerated symbols are stored as longs
+    chunkNr: `long$TBLLENGTH % chunkSize * DECAY; // enumerated symbols are stored as longs
     .qlog.info "Appending ", string[chunkNr], " times long block of length ", string chunkSize;
     sT: .z.n;
     do[chunkNr; .[fFloatCol;();,;largeFloatVec]];

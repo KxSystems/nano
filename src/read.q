@@ -1,6 +1,15 @@
 system "l src/common.q";
 
 
+.read.readTiny: {[]
+  .qlog.info "Starting mmap read int tiny test";
+  sT:.z.n;
+  `mappedTiny set get fReadTiny;
+  {-23!x;} mappedTiny;
+  eT: .z.n;
+  writeRes["read disk write mem"; ".read.readTiny|sequential read int tiny";"get,-23!"; 1; count mappedTiny; sT, eT; fix[2;getMBPerSec[count mappedTiny; eT-sT]]; "MB/sec\n"];
+  }
+
 .read.readSmall: {[]
   .qlog.info "Starting mmap read int small test";
   sT:.z.n;

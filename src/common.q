@@ -24,7 +24,12 @@ controller: `$"::",argv `controller;
 
 msstring:{(string x)," ms"}
 // df returns partition like /dev/nvme0n1p1
-getFilesystem: {[db:`C] first " " vs last system "df ", db}
+getFilesystem: {[db:`C]
+  if["zfs" ~ first system "findmnt -n -o FSTYPE -T ",db;
+    pool: first system "findmnt -n -o SOURCE -T ", db;
+    :@[;1] "\t" vs last system "zpool list -vHP ", pool;
+  ];
+  first " " vs last system "df ", db}
 
 getDeviceOSX:{
   $[1 = count system "diskutil list|grep physical";
@@ -39,17 +44,12 @@ getDevice:{[db:`C]
   fs: getFilesystem[db];
   if["overlay" ~ fs; :fs];   / Inside Docker, NYI
   if["disk" ~ last system "lsblk -o type ", fs; :fs];
-  p: ssr[;"/dev/";""] fs;
-  // disk is looked up from partition by e.g. /sys/class/block/nvme0n1p1
-  if[not (`$p) in key `$":/sys/class/block";
-    .qlog.warn "Unable to map partition ", p, " to a device";
-    :""];
-  l:first system "readlink /sys/class/block/", p;
-  "/dev",deltas[-2#l ss "/"] sublist l
+  "/dev/", first system "lsblk -dno pkname ", fs
   }
 
 getTests: {[ns:`s] .Q.dd[ns;] each except[; `] key ns}
 
+fReadTiny: hsym `$DB, "/seqreadTiny";
 fReadSmall: hsym `$DB, "/seqreadSmall";
 fReadMedium: hsym `$DB, "/seqreadMedium";
 fReadHuge: hsym `$DB, fReadFileName: "/seqreadHuge"
@@ -84,15 +84,15 @@ sendTests:{[c:`s;db:`C;nm:`s]
     .qlog.info "Tests were successfully sent to the controller";
   }
 
-testFactory: {[testtype:`C;testid:`s;N:`j;fn;qexpr;param;test:`C;mult:`j]
-  writerFn: writeRes[testtype;;qexpr];
-  testid set {[writerFn;testid;N;fn;param;test;mult;dontcare] / the namespaced testID is the function name
+testFactory: {[writerFn; testid:`s; N:`j; (fn; param; postprocfn); test:`C; mult:`j]
+  testid set {[writerFn;testid;N;(fn;param;postprocfn);test;mult;dontcare] / the namespaced testID is the function name
     .qlog.info "starting test ", test;
     sT: .z.n;
     do[N;fn param];
     eT: .z.n;
     writerFn[testid,"|",test; N; count param; sT, eT; fix[2; getMBPerSec[mult*N*count param; eT-sT]]; "MB/sec\n"];
-    }[writerFn;string testid;N;fn;param;test;mult];
+    postprocfn[];
+    }[writerFn;string testid;N;(fn;param;postprocfn);test;mult];
   }
 
 .z.exit: {

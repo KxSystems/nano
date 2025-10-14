@@ -138,6 +138,16 @@ cleanup() {
 persist_config() {
     echo "Persisting config to ${CONFIG}"
 
+    if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+      GITBRANCH=$(git rev-parse --abbrev-ref HEAD)
+      GITCOMMIT=$(git rev-parse HEAD)
+      GITLASTCOMMITDATE=$(git log -1 --date=iso --format=%cd)
+    else
+      GITBRANCH=""
+      GITCOMMIT=""
+      GITLASTCOMMITDATE=""
+    fi
+
     # Create config file with basic information
     cat > "${CONFIG}" <<EOF
 env:
@@ -149,7 +159,11 @@ env:
   DBDIR: "$(for d in $(cat ${PARFILE}); do echo ${d} \($(df -T ${d} | awk 'NR==2 {print $2}')\); done)"
   NUMA: "${NUMA}"
 nano:
-  version: "$(cat version.txt)"
+  version: "${NANOVERSION:-}"
+  git:
+    branch: "${GITBRANCH}"
+    commit: "${GITCOMMIT}"
+    commitdate: "${GITLASTCOMMITDATE}"
 kdb:
   major: $("${QBIN}" -q <<< ".z.K" | tr -d 'f')
   minor: "$("${QBIN}" -q <<< ".z.k")"
@@ -235,7 +249,7 @@ run_test() {
 run_random_read_test() {
   local listsize=$1
   local mmap=$2
-  source ${FLUSH}
+  ${FLUSH}
   echo "test${mmap} with block size ${listsize}"
 
   touch ${CURRENTLOGDIR}/sync-$HOST
@@ -377,26 +391,26 @@ persist_config
 echo "testid|iostat_read_throughput|iostat_write_throughput|iostat_readwrite_throughput" > ${IOSTATFILE}
 
 if [[ "$SCOPE" == "cpuonly" ]]; then
-  source ${FLUSH}
+  ${FLUSH}
   run_test "CPU CACHE" cpucache.q
   run_test CPU cpu.q
 else
   if [[ "$SCOPE" == "full" ]]; then
-    source ${FLUSH}
+    ${FLUSH}
     run_test "CPU CACHE" cpucache.q
     run_test CPU cpu.q
-    source ${FLUSH}
+    ${FLUSH}
     run_test WRITE write.q
-    source ${FLUSH}
+    ${FLUSH}
     run_test "META DATA" meta.q
   elif [[ "$SCOPE" == "diskonly" ]]; then
-    source ${FLUSH}
+    ${FLUSH}
     run_test WRITE write.q
-    source ${FLUSH}
+    ${FLUSH}
     run_test "META DATA" meta.q
   fi
 
-  source ${FLUSH}
+  ${FLUSH}
   run_test "SEQUENTIAL READ" read.q
   run_test "SEQUENTIAL RE-READ" reread.q
 
@@ -411,7 +425,7 @@ else
     SEED=$((SEED+1))
   done
 
-  source ${FLUSH}
+  ${FLUSH}
   run_test XASC xasc.q
 fi
 
