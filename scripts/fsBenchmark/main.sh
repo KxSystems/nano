@@ -15,7 +15,7 @@ set -euo pipefail
 readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 readonly ZPOOL_NAME="kxnanotestpool"
 readonly FILESYSTEMS=("ext4" "xfs" "btrfs" "f2fs" "zfs")
-OUTPUT_DIR="." # Might be overwritten from command-line argument in main()
+OUTPUT_DIR="${SCRIPT_DIR}" # Might be overwritten from command-line argument in main()
 
 # Log messages with a prefix.
 # Usage: log "INFO" "Message here"
@@ -72,32 +72,28 @@ check_dependencies() {
 ensure_unmounted() {
     if mountpoint -q "$MOUNT_POINT"; then
         log "INFO" "Unmounting '$MOUNT_POINT'..."
-        sudo umount "$MOUNT_POINT"
+        if [[ $(findmnt -n -o FSTYPE -T $MOUNT_POINT) == "zfs" ]]; then
+            sudo zfs unmount "$MOUNT_POINT"
+        else
+            sudo umount "$MOUNT_POINT"
+        fi
+
     fi
 }
 
 # Completely wipe filesystem signatures and data from the device.
 wipe_device() {
+
+    if sudo zpool list "$ZPOOL_NAME" &>/dev/null; then
+        log "INFO" "Destroying ZFS pool '$ZPOOL_NAME'..."
+        sudo zpool destroy "$ZPOOL_NAME"
+    fi
+
     log "INFO" "Wiping all data and signatures from '$DEVICE'..."
     sudo wipefs -a "$DEVICE" &>/dev/null || true
     # Overwrite the start of the disk to remove any lingering metadata (e.g., ZFS labels).
     sudo dd if=/dev/zero of="$DEVICE" bs=1M count=100 status=none &>/dev/null || true
     sync
-}
-
-cleanup_zfs() {
-    if sudo zpool list "$ZPOOL_NAME" >/dev/null 2>&1; then
-        log "INFO" "Destroying ZFS pool $ZPOOL_NAME..."
-        sudo zpool destroy "$ZPOOL_NAME"
-    fi
-
-    # Additional cleanup to ensure device is free
-    if [ -b "$DEVICE" ]; then
-        log "INFO" "Cleaning up ZFS metadata from $DEVICE..."
-        sudo wipefs -a "$DEVICE" 2>/dev/null || true
-        sudo dd if=/dev/zero of="$DEVICE" bs=1M count=100 status=none 2>/dev/null || true
-        sync
-    fi
 }
 
 # Create a filesystem on the target device.
@@ -115,7 +111,7 @@ create_fs() {
             sudo mkfs.ext4 -F "$DEVICE"
             ;;
         "zfs")
-            sudo zpool create -f "$ZPOOL_NAME" "$DEVICE"
+            sudo zpool create -O compression=off -f "$ZPOOL_NAME" "$DEVICE"
             ;;
         *)
             error_exit "Unknown filesystem type: '$fs'." 10
@@ -173,19 +169,7 @@ run_performance_test() {
 
 # Clean up after a test run.
 cleanup_fs() {
-    local fs="$1"
-    log "INFO" "Cleaning up after '$fs' test."
-
     ensure_unmounted
-
-    if [[ "$fs" == "zfs" ]]; then
-        if sudo zpool list "$ZPOOL_NAME" &>/dev/null; then
-            log "INFO" "Destroying ZFS pool '$ZPOOL_NAME'..."
-            sudo zpool destroy "$ZPOOL_NAME"
-        fi
-    fi
-
-    # For all types, wipe the device to prepare for the next run.
     wipe_device
 }
 
@@ -202,7 +186,7 @@ main() {
     for fs in "${FILESYSTEMS[@]}"; do
         log "INFO" "#################### Starting Test for: ${fs^^} ####################"
 
-        cleanup_fs "$fs" # Start with a clean slate
+        cleanup_fs # Start with a clean slate
         create_fs "$fs"
         mount_fs "$fs"
         run_performance_test "$fs"
@@ -214,8 +198,7 @@ main() {
 
     # Final cleanup
     log "INFO" "All filesystem tests completed. Performing final cleanup..."
-    ensure_unmounted
-    wipe_device
+    cleanup_fs
     log "INFO" "Script finished."
 }
 

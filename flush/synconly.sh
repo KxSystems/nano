@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 echo "Skipping flush, executing sync only"
 
 

@@ -1,2 +1,0 @@
-export REGISTRY="registry.gitlab.com"
-export PROJECTDIR="kxdev/benchmarking/nano"

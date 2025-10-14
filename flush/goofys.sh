@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # an example with a network file system which hold its own cache.
 # goofys is just an example here. You will need to change this script for yours
 

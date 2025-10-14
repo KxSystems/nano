@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # an example with a network file system which hold its own cache.
 # You will need to change this script for your networked file system under test
 

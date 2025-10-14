@@ -1,14 +1,32 @@
+---
 default:
   tags:
     - kxi-gitlab-runner
 
 stages:
   - build
+  - release-dev
   - test
+  - release-prod
 
-.docker-beforescript:
-  stage: build
-  image: "docker:20.10.23"
+variables:
+  IMAGE_NAME: "kx-nano"
+  INSIGHTS_CORE_VERSION: "4.1.6"
+
+.mr-only-rules:
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+
+.main-only-rules:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+.release-only-rules:
+  rules:
+    - if: $CI_COMMIT_TAG
+
+.docker-base:
+  image: "docker:latest"
   before_script:
     - |
       if [ -z "$DOCKER_AUTH_CONFIG" ]
@@ -19,35 +37,65 @@ stages:
 
     - mkdir -p $HOME/.docker && echo $DOCKER_AUTH_CONFIG > $HOME/.docker/config.json
     - echo ${INT_NEXUS_PASS_RW} | docker login ${INSIGHTS_DEV_NEXUS_REGISTRY} -u ${INT_NEXUS_USER_RW} --password-stdin
+    - echo ${KX_DOWNLOADS_CI_TOKEN_PROD} | docker login portal.dl.kx.com -u ${KX_DOWNLOADS_CI_USER_PROD} --password-stdin
+
+.docker-build:
   script:
-    - INSIGHTSVER=4.1.6
-    - wget https://${INT_NEXUS_USER_RO}:${INT_NEXUS_PASS_RO}@ext-nexus.kxi-dev.kx.com/repository/kx-insights-packages/kdbInsightsCore/${INSIGHTSVER}-rc1/kdb-insights-core.tar
+    - wget https://${INT_NEXUS_USER_RO}:${INT_NEXUS_PASS_RO}@nexus.kxi-dev.kx.com/repository/kx-insights-packages/kdbInsightsCore/${INSIGHTS_CORE_VERSION}-rc1/kdb-insights-core.tar
     - docker load < kdb-insights-core.tar
-    - IMAGE_URL="$INSIGHTS_DEV_NEXUS_REGISTRY/benchmarking/nano:$(cat version.txt)"
-    - docker build -t "${IMAGE_URL}" .
+    - TAG=${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}
+    - docker build --build-arg NANOVERSION=${TAG} -t "${IMAGE_NAME}:${TAG}" .
+
+.docker-push:
+  script:
+    - TAG=${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA} # TODO: fix code duplication
+    - IMAGE_URL="$DOCKER_REGISTRY/${IMAGE_NAME}:${TAG}"
+    - docker tag ${IMAGE_NAME}:${TAG} ${IMAGE_URL}
     - docker push "${IMAGE_URL}"
-    - docker rmi "${IMAGE_URL}"
-    - docker rmi kdb-insights-core:${INSIGHTSVER}
     - echo "IMAGE_URL=${IMAGE_URL}" > img.env
 
-docker-buildpub-push:
-  variables:
-    TARGET: "pub"
-  extends:
-    - .docker-beforescript
-  rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+.docker-cleanup:
+  after_script:
+    - docker rmi "${IMAGE_URL}" || true
+    - docker rmi kdb-insights-core:${INSIGHTSVER}  || true
 
-docker-builddev-push:
-  variables:
-    TARGET: "dev"
+docker-build:
+  stage: build
   extends:
-    - .docker-beforescript
+    - .docker-base
+  script:
+    - !reference [.docker-build, script]
+  rules:
+    - !reference [.mr-only-rules, rules]
+    - !reference [.release-only-rules, rules]
+    - !reference [.main-only-rules, rules]
+
+docker-push-nexus:
+  stage: release-dev
+  variables:
+    DOCKER_REGISTRY: $INSIGHTS_DEV_NEXUS_REGISTRY
+  extends:
+    - .docker-base
+  script:
+    - !reference [.docker-push, script]
   artifacts:
     reports:
       dotenv: img.env
   rules:
-    - if: '$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
+    - !reference [.mr-only-rules, rules]
+    - !reference [.release-only-rules, rules]
+    - !reference [.main-only-rules, rules]
+
+docker-push-portal:
+  stage: release-prod
+  variables:
+    DOCKER_REGISTRY: "portal.dl.kx.com"
+  extends:
+    - .docker-base
+  script:
+    - !reference [.docker-push, script]
+  rules:
+    - !reference [.release-only-rules, rules]
 
 .nano:
   stage: test
@@ -56,7 +104,7 @@ docker-builddev-push:
     entrypoint: [""]
     pull_policy: always
   needs:
-    - job: docker-builddev-push
+    - job: docker-push-nexus
   variables:
     QLIC: /tmp/qlic
   before_script:
@@ -64,7 +112,7 @@ docker-builddev-push:
     - echo -n "$KDB_LICENSE_B64" | base64 -d > "$QLIC/kc.lic"
     - source ./config/env
   rules:
-    - if: '$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
+    - if: "$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH"
       changes:
         - src/**/*
         - .gitlab-ci.yml
