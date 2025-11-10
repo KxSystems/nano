@@ -25,7 +25,9 @@ controller: `$"::",argv `controller;
 msstring:{(string x)," ms"}
 // df returns partition like /dev/nvme0n1p1
 getFilesystem: {[db:`C]
-  if["zfs" ~ first system "findmnt -n -o FSTYPE -T ",db;
+  fstype: first system "findmnt -n -o FSTYPE -T ", db;
+  if[fstype like "nfs*"; :""]; / NYI
+  if[fstype ~ "zfs";
     pool: first system "findmnt -n -o SOURCE -T ", db;
     :@[;1] "\t" vs last system "zpool list -vHP ", pool;
   ];
@@ -42,7 +44,8 @@ getDevice:{[db:`C]
   if[.z.o=`m64;:getDeviceOSX[]];
 
   fs: getFilesystem[db];
-  if["overlay" ~ fs; :fs];   / Inside Docker, NYI
+  if["" ~ fs; :fs];
+  if["overlay" ~ fs; :""];   / Inside Docker, NYI
   if["disk" ~ last system "lsblk -o type ", fs; :fs];
   "/dev/", first system "lsblk -dno pkname ", fs
   }
