@@ -161,14 +161,11 @@ The `THREADNR` environment variable can significantly impact random read perform
 
 ### Docker Image
 
-A pre-built Docker image is available from GitLab and Nexus.
+A pre-built Docker image is available from KX download portal.
 
 ```bash
 # Pull from GitLab
-$ docker pull registry.gitlab.com/kxdev/benchmarking/nano/nano:latest
-
-# Pull from KX Nexus
-$ docker pull ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest
+$ docker pull portal.dl.kx.com/kx-nano:latest
 ```
 
 The nano scripts are located at `/opt/kx/app` inside the container. To run the benchmark, you must mount several host directories into the container:
@@ -194,7 +191,7 @@ docker run --rm -it \
   -v /mnt/$USER/nano:/appdir \
   -v /mnt/$USER/nanodata:/data \
   --privileged \
-  ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest -p 4
+  portal.dl.kx.com/kx-nano:latest -p 4
 
 # Multi-storage mount, non-privileged mode, overriding THREADNR
 docker run --rm -it \
@@ -205,7 +202,7 @@ docker run --rm -it \
   -v ${PWD}/partitions_2disks:/opt/kx/app/partitions:ro \
   -e FLUSH=/opt/kx/app/flush/noflush.sh \
   -e THREADNR=5 \
-  ext-dev-registry.kxi-dev.kx.com/benchmarking/nano:latest -p 4
+  portal.dl.kx.com/kx-nano:latest -p 4
 ```
 
 ### Running as a Kubernetes Job

@@ -19,6 +19,7 @@ getKBReadMac: {[devices]
   }
 
 getKBReadLinux: {[devices]
+  if[devices ~ enlist ""; :iostatError];
   iostatcmd: "iostat -dk -o JSON ", (" " sv devices), " 2>&1";
   r: @[system; iostatcmd; .qlog.error];
   :$[0h ~ type r; [
