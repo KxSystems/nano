@@ -243,7 +243,7 @@ run_test() {
   sync_across_hosts
 
   # air gap for any remote stats collection....
-  sleep 3
+  sleep 2
 }
 
 run_random_read_test() {
@@ -255,7 +255,7 @@ run_random_read_test() {
   touch ${CURRENTLOGDIR}/sync-$HOST
   ${QBIN} ./src/controller.q -iostatfile ${IOSTATFILE} -s $NUMPROCESSES -q -p ${CONTROLLERPORT} >> ${CURRENTLOGDIR}/controller_randomread_$listsize.log 2 >&1 &
   j=0
-  sleep 5
+  sleep 3
   for i in $(seq $NUMPROCESSES); do
     local datadir=${array[$j]}/${HOST}.${i}/${DBSUBDIR}
   	${QBIN} ./src/randomread.q -testname randomread_${listsize}${mmap:1} -listsize ${listsize} ${mmap} -db ${datadir} -result ${RESFILEPREFIX}${i}.psv -controller ${CONTROLLERPORT} -testtype "read disk" -s ${THREADNR} -S ${SEED} -p $((WORKERBASEPORT + i)) >> ${LOGFILEPREFIX}${i}_randomread_$listsize.log 2>&1  &
@@ -277,6 +277,7 @@ run_random_read_test() {
 #######################################
 # Main Script Execution
 #######################################
+START_TIME=$(date +%s)
 
 source "${SCRIPT_DIR}/common.sh"
 check_kdb_binary
@@ -435,10 +436,11 @@ ${QBIN} ./src/postproc.q -inputs ${RESFILEPREFIX} -iostatfile ${IOSTATFILE} -pro
 #
 # an air gap for any storage stats gathering before unlinks go out ...
 #
-sleep 3
+sleep 2
 
 sync ${RESDIR}
 sync ${CURRENTLOGDIR}
 
-echo "Benchmark completed successfully"
+END_TIME=$(date +%s)
+echo "Benchmark completed successfully in $(date -u -d "@$((END_TIME - START_TIME))" +%T)"
 exit 0

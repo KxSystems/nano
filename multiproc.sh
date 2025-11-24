@@ -83,6 +83,7 @@ else
     fi
 fi
 
+START_TIME=$(date +%s)
 
 for pnr in ${NUMPROCARRAY[@]}; do
    RESULTDIR="$SCRIPT_DIR/results/$(date +%m%d_%H%M%S)"
@@ -90,6 +91,7 @@ for pnr in ${NUMPROCARRAY[@]}; do
    ${SCRIPT_DIR}/nano.sh --processnr $pnr --scope $SCOPE --resultdir ${RESULTDIR}
 done
 
+echo "Aggregating nano throughput results into ${OUTPUT}"
 head -n 1 ${RESULTDIRS[1]}/$HOST-throughput.psv > ${OUTPUT}
 readonly TMP="$(mktemp)"
 for RESULTDIR in ${RESULTDIRS[@]}; do
@@ -98,3 +100,6 @@ done
 
 sort ${TMP} -t '|' -k 3,3 >> ${OUTPUT}
 rm ${TMP}
+
+END_TIME=$(date +%s)
+echo "Benchmark completed successfully in $(date -u -d "@$((END_TIME - START_TIME))" +%T)"
